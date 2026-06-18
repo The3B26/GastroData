@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GastroFinance - The 3B Buchhaltung</title>
     
-    <!-- PWA / Homescreen Icons (Dein image.png wird als App-Logo geladen) -->
+    <!-- PWA / Homescreen Icons -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="image.png">
@@ -29,33 +29,25 @@
             --border-color: rgba(197, 168, 92, 0.25);
         }
 
-        /* PERFEKTER MOBILE LOCK (Dynamic Viewport Height) */
+        /* PERFEKTER MOBILE-LOCK: Verhindert Wackeln, nutzt dVH für exakte Bildschirmhöhe */
         html, body {
-            overflow: hidden;
-            overscroll-behavior: none;
-            max-width: 100vw;
-            width: 100%;
-            height: 100%;
-            height: 100dvh; /* FIX: Dynamische Höhe (ignoriert Browser-Leisten-Fehler) */
-            position: relative;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden; /* Hauptfenster scrollt NICHT */
             background-color: #FAF9F6;
             color: var(--charcoal);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            margin: 0;
-            padding: 0;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Isolierter Scroll-Bereich mit weichem Scrolling und Platz nach unten */
-        .scrollable-content {
-            flex: 1; /* FIX: Nimmt sich exakt den restlichen Platz */
+        /* Der Scroll-Container innerhalb der App */
+        #scroll-container {
+            height: 100%;
             overflow-y: auto;
-            padding-bottom: 150px; /* FIX: Genug Platz für die Bottom-Bar */
-            -webkit-overflow-scrolling: touch;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch; /* Smoothes iOS Scrollen */
+            padding-bottom: 150px; /* GARANTIERT, dass nichts unten abgeschnitten wird */
         }
 
         .gold-title { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
@@ -66,7 +58,6 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             border-radius: 20px;
             width: 100%;
-            max-width: 100%;
             box-sizing: border-box;
         }
 
@@ -76,7 +67,7 @@
             border-radius: 12px;
             padding: 14px 12px;
             color: var(--charcoal);
-            font-size: 16px !important; 
+            font-size: 16px !important; /* Verhindert Auto-Zoom auf iPhones */
             font-weight: 600;
             width: 100%;
             box-sizing: border-box;
@@ -150,471 +141,457 @@
             40%, 80% { transform: translateX(10px); }
         }
 
-        /* Pull-to-refresh Animation */
+        /* Pull-to-refresh */
         #pull-to-refresh-spinner {
             height: 0;
             overflow: hidden;
             transition: height 0.3s ease, opacity 0.3s ease;
             opacity: 0;
         }
-        #pull-to-refresh-spinner.active {
-            height: 60px;
-            opacity: 1;
-        }
     </style>
 </head>
-<body class="flex flex-col">
+<body>
 
-    <!-- PULL TO REFRESH -->
-    <div id="pull-to-refresh-spinner" class="flex items-center justify-center gap-2.5 text-stone-600 font-bold text-sm bg-stone-50/80 w-full shadow-inner z-10 flex-shrink-0">
-        <i class="fa-solid fa-arrows-rotate animate-spin text-[#C5A85C]"></i>
-        <span>Cloud Sync...</span>
-    </div>
-
-    <!-- MAIN WRAPPER -->
-    <div id="main-app-container" class="w-full flex-grow overflow-hidden flex flex-col justify-start">
-
-        <!-- ================= LOGIN SCREEN ================= -->
-        <div id="login-screen" class="h-full overflow-y-auto flex items-center justify-center w-full px-4 relative pb-10 pt-10">
-            
-            <div class="absolute top-6 right-6 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-stone-200 shadow-sm">
-                <div id="db-status-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
-                <span id="db-status-text" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
-            </div>
-
-            <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center">
-                <div class="flex justify-center mb-6">
-                    <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
-                        <img src="image.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
-                        <div id="fallback-logo" class="hidden w-full h-full flex items-center justify-center bg-stone-50">
-                            <span class="gold-title text-2xl font-black text-[#C5A85C]">3B</span>
-                        </div>
-                    </div>
-                </div>
-
-                <h1 class="gold-title text-2xl font-extrabold text-stone-900 mb-1">GastroFinance</h1>
-                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-6">Bitte PIN eingeben</p>
-                
-                <div class="flex gap-4 mb-6" id="pin-dots-container">
-                    <div class="pin-dot"></div>
-                    <div class="pin-dot"></div>
-                    <div class="pin-dot"></div>
-                    <div class="pin-dot"></div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-y-4 gap-x-6 justify-items-center mb-2">
-                    <button type="button" onclick="pressPin('1')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">1</span></button>
-                    <button type="button" onclick="pressPin('2')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">2</span></button>
-                    <button type="button" onclick="pressPin('3')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">3</span></button>
-                    <button type="button" onclick="pressPin('4')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">4</span></button>
-                    <button type="button" onclick="pressPin('5')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">5</span></button>
-                    <button type="button" onclick="pressPin('6')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">6</span></button>
-                    <button type="button" onclick="pressPin('7')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">7</span></button>
-                    <button type="button" onclick="pressPin('8')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">8</span></button>
-                    <button type="button" onclick="pressPin('9')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">9</span></button>
-                    
-                    <button type="button" onclick="clearPin()" class="w-16 h-16 flex items-center justify-center text-xs font-bold text-stone-500 hover:text-stone-900 cursor-pointer">Löschen</button>
-                    <button type="button" onclick="pressPin('0')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">0</span></button>
-                    <button type="button" onclick="backspacePin()" class="w-16 h-16 flex items-center justify-center text-stone-500 hover:text-stone-900 cursor-pointer">
-                        <i class="fa-solid fa-delete-left text-xl"></i>
-                    </button>
-                </div>
-            </div>
+    <!-- ================= LOGIN SCREEN (ABSOLUTE TOP LAYER = IMMER KLICKBAR) ================= -->
+    <div id="login-screen" class="fixed inset-0 z-50 bg-[#FAF9F6] flex flex-col items-center justify-center w-full h-[100dvh] px-4 overflow-y-auto">
+        
+        <div class="absolute top-6 right-6 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-stone-200 shadow-sm">
+            <div id="db-status-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
+            <span id="db-status-text" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
         </div>
 
-        <!-- ================= APP PORTAL ================= -->
-        <div id="app-portal" class="hidden w-full px-4 sm:px-6 lg:px-8 pt-4 flex-col h-full overflow-hidden">
+        <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center my-auto">
+            <div class="flex justify-center mb-6">
+                <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
+                    <img src="image.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
+                    <div id="fallback-logo" class="hidden w-full h-full flex items-center justify-center bg-stone-50">
+                        <span class="gold-title text-2xl font-black text-[#C5A85C]">3B</span>
+                    </div>
+                </div>
+            </div>
+
+            <h1 class="gold-title text-2xl font-extrabold text-stone-900 mb-1">GastroFinance</h1>
+            <p class="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-6">Bitte PIN eingeben</p>
             
-            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full mb-4 flex-shrink-0 z-20 relative">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-full overflow-hidden border border-[#C5A85C]/35 bg-white p-0.5 flex-shrink-0">
-                        <img src="image.png" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
+            <div class="flex gap-4 mb-6" id="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-y-4 gap-x-6 justify-items-center mb-2 relative z-50">
+                <button type="button" onclick="pressPin('1')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">1</span></button>
+                <button type="button" onclick="pressPin('2')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">2</span></button>
+                <button type="button" onclick="pressPin('3')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">3</span></button>
+                <button type="button" onclick="pressPin('4')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">4</span></button>
+                <button type="button" onclick="pressPin('5')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">5</span></button>
+                <button type="button" onclick="pressPin('6')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">6</span></button>
+                <button type="button" onclick="pressPin('7')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">7</span></button>
+                <button type="button" onclick="pressPin('8')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">8</span></button>
+                <button type="button" onclick="pressPin('9')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">9</span></button>
+                
+                <button type="button" onclick="clearPin()" class="w-16 h-16 flex items-center justify-center text-xs font-bold text-stone-500 hover:text-stone-900 cursor-pointer">Löschen</button>
+                <button type="button" onclick="pressPin('0')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">0</span></button>
+                <button type="button" onclick="backspacePin()" class="w-16 h-16 flex items-center justify-center text-stone-500 hover:text-stone-900 cursor-pointer">
+                    <i class="fa-solid fa-delete-left text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= APP PORTAL ================= -->
+    <div id="app-portal" class="hidden flex flex-col h-[100dvh] w-full relative">
+        
+        <!-- HEADER (Statisch oben) -->
+        <header class="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full m-4 max-w-[calc(100%-32px)] mx-auto z-20 bg-white/95">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full overflow-hidden border border-[#C5A85C]/35 bg-white p-0.5 flex-shrink-0">
+                    <img src="image.png" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
+                </div>
+                <div>
+                    <h1 class="gold-title text-base font-bold text-stone-900 leading-tight">The 3B - GastroFinance</h1>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="text-[10px] text-stone-500 font-bold" id="user-role-display">Rolle: Buchhaltung</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-stone-100">
+                <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadFromJSONBin()" title="Tippe zum manuellen Aktualisieren">
+                    <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
+                    <span id="db-status-text-inner" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
+                </div>
+                <button type="button" onclick="logout()" class="p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-600 transition-all text-sm border border-stone-200 cursor-pointer">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SCROLL-BEREICH FÜR INHALT -->
+        <div id="scroll-container" class="flex-1 w-full px-4 sm:px-6">
+            
+            <!-- Custom Pull-to-Refresh Spinner im Scroll-Bereich -->
+            <div id="pull-to-refresh-spinner" class="w-full flex justify-center items-center gap-2.5 text-stone-600 font-bold text-sm bg-stone-50/80 shadow-sm rounded-xl mb-4">
+                <i class="fa-solid fa-arrows-rotate animate-spin text-[#C5A85C]"></i>
+                <span>Cloud Sync...</span>
+            </div>
+
+            <!-- ===== TAB 1: DASHBOARD ===== -->
+            <section id="tab-dashboard" class="tab-content space-y-6 w-full max-w-full">
+                <div class="glass-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-[#C5A85C] text-base"></i>
+                        <span class="font-bold text-sm text-stone-700 uppercase tracking-wider">Zeitfenster</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
+                        <select id="filter-preset" onchange="applyPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm">
+                            <option value="all">Gesamte Historie</option>
+                            <option value="this-month" selected>Dieser Monat</option>
+                            <option value="last-30">Letzte 30 Tage</option>
+                        </select>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Von:</span>
+                            <input type="date" id="filter-from" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
+                            <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dashboard-empty" class="hidden text-center py-16 px-4 glass-card max-w-lg mx-auto space-y-4">
+                    <div class="w-16 h-16 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
+                        <i class="fa-solid fa-folder-open text-[#C5A85C] text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="gold-title text-base font-bold text-stone-900 leading-tight">The 3B - GastroFinance</h1>
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="text-[10px] text-stone-500 font-bold" id="user-role-display">Rolle: Buchhaltung</span>
-                        </div>
+                        <h3 class="font-bold text-stone-900 text-lg">Keine Buchungen vorhanden</h3>
+                        <p class="text-stone-500 text-sm mt-1">Erfasse Tageswerte manuell oder lade Excel-Mappen hoch.</p>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-stone-100">
-                    <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadFromJSONBin()" title="Tippe zum manuellen Aktualisieren">
-                        <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
-                        <span id="db-status-text-inner" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
+                <div id="dashboard-active" class="space-y-6 w-full max-w-full">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
+                            <div class="text-2xl sm:text-3xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Bar (Netto) + Karte</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
+                            <div class="text-2xl sm:text-3xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Alle Ausgaben addiert</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn</span>
+                            <div class="text-2xl sm:text-3xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Umsatz minus Ausgaben</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Tüte</span>
+                            <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Gewinn minus Karte</span>
+                            </div>
+                        </div>
                     </div>
-                    <button type="button" onclick="logout()" class="p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-600 transition-all text-sm border border-stone-200 cursor-pointer">
-                        <i class="fa-solid fa-power-off"></i>
-                    </button>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                        <div class="glass-card p-6 lg:col-span-2 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Entwicklungstrend</h3>
+                            <div class="relative h-64 w-full overflow-hidden" id="trend-chart-parent">
+                                <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Einnahmeverteilung</h3>
+                            <div class="relative flex flex-col items-center justify-center w-full">
+                                <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
+                                <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </header>
+            </section>
 
-            <div class="scrollable-content w-full flex-grow">
-
-                <!-- ===== TAB 1: DASHBOARD ===== -->
-                <section id="tab-dashboard" class="tab-content space-y-6 w-full max-w-full">
-                    <div class="glass-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-sliders text-[#C5A85C] text-base"></i>
-                            <span class="font-bold text-sm text-stone-700 uppercase tracking-wider">Zeitfenster</span>
-                        </div>
-                        <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
-                            <select id="filter-preset" onchange="applyPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm">
-                                <option value="all">Gesamte Historie</option>
-                                <option value="this-month" selected>Dieser Monat</option>
-                                <option value="last-30">Letzte 30 Tage</option>
-                            </select>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <span class="text-stone-400 text-xs font-bold w-8">Von:</span>
-                                <input type="date" id="filter-from" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
-                            </div>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
-                                <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
-                            </div>
-                            <button type="button" onclick="exportStatisticsReport()" class="btn-gold w-full sm:w-auto py-3 px-6 text-sm flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-file-pdf"></i> Bericht
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="dashboard-empty" class="hidden text-center py-16 px-4 glass-card max-w-lg mx-auto space-y-4">
-                        <div class="w-16 h-16 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
-                            <i class="fa-solid fa-folder-open text-[#C5A85C] text-xl"></i>
+            <!-- ===== TAB 2: MANUELLE ERFASSUNG ===== -->
+            <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 sm:p-6 w-full max-w-full">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                            <i class="fa-solid fa-pen-nib text-xl text-[#C5A85C]"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-stone-900 text-lg">Keine Buchungen vorhanden</h3>
-                            <p class="text-stone-500 text-sm mt-1">Erfasse Tageswerte manuell oder lade Excel-Mappen hoch.</p>
+                            <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Tagesbericht pflegen</h3>
+                            <p class="text-xs text-stone-500 font-medium">Berechnung exakt: Bar (Netto) + Karte = Umsatz</p>
                         </div>
                     </div>
 
-                    <div id="dashboard-active" class="space-y-6 w-full max-w-full">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
-                                <div class="text-2xl sm:text-3xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Davon Karte:</span>
-                                    <span class="text-stone-800" id="kpi-sub-card">0,00 €</span>
+                    <form id="form-manual-entry" class="space-y-6 w-full">
+                        <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
+                            
+                            <!-- Einnahmen Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
+                                <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
+                                    <i class="fa-solid fa-cash-register text-emerald-600 mr-1"></i> Einnahmen
+                                </h4>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Datum der Mappe</label>
+                                    <input type="date" id="entry-date" onchange="handleEntryDateChange()" class="modern-input w-full block">
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Bar (Zahl aus Excel eintragen)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
+                                    <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: 150€ Wechselgeld werden hiervon intern abgezogen.</span>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-card" oninput="calculateLiveFormula()" placeholder="z.B. 570.00" class="modern-input pr-8 w-full block">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
-                                <div class="text-2xl sm:text-3xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Davon Bar:</span>
-                                    <span class="text-stone-800" id="kpi-sub-expbar">0,00 €</span>
-                                </div>
-                            </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn (E36)</span>
-                                <div class="text-2xl sm:text-3xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Marge:</span>
-                                    <span class="text-stone-850 font-extrabold" id="kpi-sub-margin">0%</span>
-                                </div>
-                            </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Tüte (E38)</span>
-                                <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Wechselgeld:</span>
-                                    <span class="text-stone-800">150,00 €</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                            <div class="glass-card p-6 lg:col-span-2 w-full">
-                                <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Entwicklungstrend</h3>
-                                <div class="relative h-64 w-full overflow-hidden" id="trend-chart-parent">
-                                    <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                            <!-- Ausgaben Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
+                                <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
+                                    <i class="fa-solid fa-receipt text-red-500 mr-1"></i> Ausgaben
+                                </h4>
+                                <div class="border-t border-stone-200 pt-3 flex flex-col sm:flex-row gap-3 w-full">
+                                    <div class="w-full">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Bar (E9)</label>
+                                        <input type="number" step="0.01" min="0" id="entry-exp-sumbar" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
+                                    </div>
+                                    <div class="w-full">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Karte (E10)</label>
+                                        <input type="number" step="0.01" min="0" id="entry-exp-sumcard" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-card p-6 w-full">
-                                <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Einnahmeverteilung</h3>
-                                <div class="relative flex flex-col items-center justify-center w-full">
-                                    <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
-                                    <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
+
+                            <!-- Formel & Speichern Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
+                                <div class="space-y-4 w-full">
+                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
+                                        <i class="fa-solid fa-code-branch mr-1"></i> Live-Berechnung
+                                    </h4>
+                                    <div class="space-y-3 w-full">
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Umsatz Summe</span>
+                                                <span class="text-[8px] text-stone-500">Bar (Netto) + Karte</span>
+                                            </div>
+                                            <span class="text-base font-black truncate max-w-[100px] text-right" id="calc-preview-total">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Gewinn</span>
+                                                <span class="text-[8px] text-stone-500">Umsatz - Ausgaben</span>
+                                            </div>
+                                            <span class="text-emerald-400 text-base font-black truncate max-w-[100px] text-right" id="calc-preview-profit">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Tüte</span>
+                                                <span class="text-[8px] text-stone-500">Gewinn - Karte</span>
+                                            </div>
+                                            <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-4 w-full">
+                                    <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest">
+                                        Speichern <i class="fa-solid fa-save ml-2"></i>
+                                    </button>
                                 </div>
                             </div>
+
                         </div>
+                    </form>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 3: HISTORIE ===== -->
+            <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-stone-500"></i>
+                        <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
                     </div>
-                </section>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <input type="text" id="hist-search" placeholder="Datum suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
+                        <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
+                            <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
+                        </button>
+                    </div>
+                </div>
 
-                <!-- ===== TAB 2: MANUELLE ERFASSUNG ===== -->
-                <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full max-w-full">
+                <div class="glass-card overflow-hidden w-full relative">
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse table-auto min-w-[750px]">
+                            <thead class="sticky top-0 bg-stone-50 shadow-sm z-10">
+                                <tr class="text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-4 whitespace-nowrap border-b border-stone-200">Datum</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar (Netto)</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Karte</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200 text-stone-800">Umsatz Summe</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Ausgaben</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Gewinn</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Tüte</th>
+                                    <th class="p-4 text-center whitespace-nowrap border-b border-stone-200">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-stone-100 text-sm font-semibold">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
+            <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     
-                    <div class="glass-card p-4 sm:p-6 w-full max-w-full">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
-                                <i class="fa-solid fa-pen-nib text-xl text-[#C5A85C]"></i>
+                    <!-- EXCEL UPLOAD -->
+                    <div class="glass-card p-6 space-y-4 w-full">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
+                                <i class="fa-solid fa-file-excel text-[#C5A85C] text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Tagesbericht pflegen</h3>
-                                <p class="text-xs text-stone-500 font-medium">Berechnung der Werte (Bar + Karte = Umsatz)</p>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Excel-Import</h3>
+                                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Liest Werte nach Bild-Vorlage aus</p>
                             </div>
                         </div>
 
-                        <form id="form-manual-entry" class="space-y-6 w-full">
-                            <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
-                                
-                                <!-- Einnahmen Block -->
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
-                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
-                                        <i class="fa-solid fa-cash-register text-emerald-600 mr-1"></i> Einnahmen
-                                    </h4>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Datum der Mappe</label>
-                                        <input type="date" id="entry-date" onchange="handleEntryDateChange()" class="modern-input w-full block">
-                                    </div>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Bar (Zahl aus Excel eintragen)</label>
-                                        <div class="relative w-full">
-                                            <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block">
-                                            <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
-                                        </div>
-                                        <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: 150€ Wechselgeld werden intern abgezogen.</span>
-                                    </div>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
-                                        <div class="relative w-full">
-                                            <input type="number" step="0.01" min="0" id="entry-rev-card" oninput="calculateLiveFormula()" placeholder="z.B. 570.00" class="modern-input pr-8 w-full block">
-                                            <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Ausgaben Block -->
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
-                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
-                                        <i class="fa-solid fa-receipt text-red-500 mr-1"></i> Ausgaben
-                                    </h4>
-                                    <div class="border-t border-stone-200 pt-3 flex flex-col sm:flex-row gap-3 w-full">
-                                        <div class="w-full">
-                                            <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Bar (E9)</label>
-                                            <input type="number" step="0.01" min="0" id="entry-exp-sumbar" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
-                                        </div>
-                                        <div class="w-full">
-                                            <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Karte (E10)</label>
-                                            <input type="number" step="0.01" min="0" id="entry-exp-sumcard" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Formel & Speichern Block -->
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
-                                    <div class="space-y-4 w-full">
-                                        <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
-                                            <i class="fa-solid fa-code-branch mr-1"></i> Live-Berechnung
-                                        </h4>
-                                        <div class="space-y-3 w-full">
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Umsatz Summe</span>
-                                                    <span class="text-[8px] text-stone-500">Bar (Netto) + Karte</span>
-                                                </div>
-                                                <span class="text-base font-black truncate max-w-[100px] text-right" id="calc-preview-total">0,00 €</span>
-                                            </div>
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Gewinn</span>
-                                                    <span class="text-[8px] text-stone-500">Umsatz - Ausgaben</span>
-                                                </div>
-                                                <span class="text-emerald-400 text-base font-black truncate max-w-[100px] text-right" id="calc-preview-profit">0,00 €</span>
-                                            </div>
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Tüte</span>
-                                                    <span class="text-[8px] text-stone-500">Gewinn - Karte</span>
-                                                </div>
-                                                <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="pt-4 w-full">
-                                        <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest">
-                                            Speichern <i class="fa-solid fa-save ml-2"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
+                        <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                             class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer">
+                            <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                            <div class="space-y-3">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-[#C5A85C]/70"></i>
+                                <p class="font-bold text-stone-800 text-sm">Tippe hier, um Excel-Mappen hochzuladen.</p>
                             </div>
-                        </form>
+                        </div>
                     </div>
 
-                </section>
+                    <!-- JSON BIN & ADMIN SETTINGS -->
+                    <div class="flex flex-col gap-6 w-full">
+                        
+                        <!-- DATENBANK PROFILE -->
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
+                                    <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
+                                </div>
+                                <p class="text-xs text-stone-500 font-medium">Verbinde die App mit deiner JSONBin.</p>
+                            </div>
+                            
+                            <div class="space-y-3 w-full mt-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. The 3B)</label>
+                                    <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin API-Key</label>
+                                    <input type="password" id="jsonbin-key" placeholder="$2a$10$..." class="modern-input text-sm py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
+                                    <input type="text" id="jsonbin-id" placeholder="6a342a..." class="modern-input text-sm py-2">
+                                </div>
+                                
+                                <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk"></i> Profil Speichern
+                                </button>
+                            </div>
 
-                <!-- ===== TAB 3: HISTORIE ===== -->
-                <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
-                    
-                    <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-layer-group text-stone-500"></i>
-                            <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
+                            <!-- Gespeicherte Profile Liste -->
+                            <div class="border-t border-stone-200 pt-4 w-full mt-4">
+                                <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Datenbanken</h5>
+                                <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
+                            </div>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <input type="text" id="hist-search" placeholder="Datum suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
-                            <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
-                                <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
+
+                        <!-- BENUTZERVERWALTUNG (Nur Admin) -->
+                        <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
+                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Benutzerverwaltung</h4>
+                            </div>
+                            <p class="text-xs text-stone-500 font-medium">Verwalte hier die Sicherheits-PINs (4-stellig).</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN (Vollzugriff)</label>
+                                    <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="Aktuell: 1991" class="modern-input text-center font-bold tracking-widest text-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN (Inhaber)</label>
+                                    <input type="password" id="cfg-read-pin" maxlength="4" placeholder="Aktuell: 2024" class="modern-input text-center font-bold tracking-widest text-lg">
+                                </div>
+                            </div>
+                            <button type="button" onclick="saveNewPins()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
+                                PINs speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="glass-card overflow-hidden w-full relative">
-                        <div class="overflow-x-auto w-full block">
-                            <table class="w-full text-left border-collapse table-auto min-w-[750px]">
-                                <!-- STICKY HEADER FÜR KLARE SICHT BEIM SCROLLEN -->
-                                <thead class="sticky top-0 bg-stone-50 shadow-sm z-10">
-                                    <tr class="text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
-                                        <th class="p-4 whitespace-nowrap border-b border-stone-200">Datum</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar (Netto)</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Karte</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200 text-stone-800">Umsatz Summe</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Ausgaben</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Gewinn</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Tüte</th>
-                                        <th class="p-4 text-center whitespace-nowrap border-b border-stone-200">Aktion</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-table-body" class="divide-y divide-stone-100 text-sm font-semibold">
-                                    <!-- Loaded dynamically -->
-                                </tbody>
-                            </table>
+                </div>
+
+                <!-- PREVIEW TABLE -->
+                <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <div>
+                            <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
+                            <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center">
+                                <i class="fa-solid fa-check mr-2"></i> (<span id="preview-count-text">0</span>) Übernehmen
+                            </button>
                         </div>
                     </div>
-
-                </section>
-
-                <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
-                <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                        
-                        <!-- EXCEL UPLOAD -->
-                        <div class="glass-card p-6 space-y-4 w-full">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
-                                    <i class="fa-solid fa-file-excel text-[#C5A85C] text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Excel-Import</h3>
-                                    <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Liest Werte nach Bild-Vorlage aus</p>
-                                </div>
-                            </div>
-
-                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
-                                 class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer">
-                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
-                                <div class="space-y-3">
-                                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-[#C5A85C]/70"></i>
-                                    <p class="font-bold text-stone-800 text-sm">Tippe hier, um Excel-Mappen hochzuladen.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- JSON BIN & ADMIN SETTINGS -->
-                        <div class="flex flex-col gap-6 w-full">
-                            
-                            <!-- DATENBANK PROFILE -->
-                            <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-4">
-                                        <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
-                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
-                                    </div>
-                                    <p class="text-xs text-stone-500 font-medium">Füge neue Cloud-Verbindungen (JSONBin) hinzu.</p>
-                                </div>
-                                
-                                <div class="space-y-3 w-full mt-4">
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. Hauptfiliale)</label>
-                                        <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin API-Key</label>
-                                        <input type="password" id="jsonbin-key" placeholder="$2a$10$..." class="modern-input text-sm py-2">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
-                                        <input type="text" id="jsonbin-id" placeholder="64b3ef..." class="modern-input text-sm py-2">
-                                    </div>
-                                    
-                                    <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-floppy-disk"></i> Profil Speichern
-                                    </button>
-                                </div>
-
-                                <!-- Gespeicherte Profile Liste -->
-                                <div class="border-t border-stone-200 pt-4 w-full mt-4">
-                                    <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Datenbanken</h5>
-                                    <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
-                                </div>
-                            </div>
-
-                            <!-- BENUTZERVERWALTUNG (Nur Admin) -->
-                            <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
-                                    <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Benutzerverwaltung</h4>
-                                </div>
-                                <p class="text-xs text-stone-500 font-medium">Verwalte hier die Sicherheits-PINs (4-stellig).</p>
-                                
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN (Vollzugriff)</label>
-                                        <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="Aktuell: 1991" class="modern-input text-center font-bold tracking-widest text-lg">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN (Inhaber)</label>
-                                        <input type="password" id="cfg-read-pin" maxlength="4" placeholder="Aktuell: 2024" class="modern-input text-center font-bold tracking-widest text-lg">
-                                    </div>
-                                </div>
-                                <button type="button" onclick="saveNewPins()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
-                                    PINs speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
-                                </button>
-                            </div>
-                        </div>
-
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-stone-50 border-b border-stone-100 text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-3">Mappe</th>
+                                    <th class="p-3 text-right">Bar (Netto)</th>
+                                    <th class="p-3 text-right">Karte</th>
+                                    <th class="p-3 text-right">Umsatz Summe</th>
+                                    <th class="p-3 text-right">Gewinn</th>
+                                    <th class="p-3 text-right">Tüte</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold"></tbody>
+                        </table>
                     </div>
+                </div>
+            </section>
 
-                    <!-- PREVIEW TABLE -->
-                    <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                            <div>
-                                <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
-                            </div>
-                            <div class="flex items-center gap-3 w-full sm:w-auto">
-                                <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
-                                <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center">
-                                    <i class="fa-solid fa-check mr-2"></i> (<span id="preview-count-text">0</span>) Übernehmen
-                                </button>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto w-full block">
-                            <table class="w-full text-left border-collapse min-w-[700px]">
-                                <thead>
-                                    <tr class="bg-stone-50 border-b border-stone-100 text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
-                                        <th class="p-3">Mappe</th>
-                                        <th class="p-3 text-right">Bar (Netto)</th>
-                                        <th class="p-3 text-right">Karte</th>
-                                        <th class="p-3 text-right">Umsatz Summe</th>
-                                        <th class="p-3 text-right">Gewinn</th>
-                                        <th class="p-3 text-right">Tüte</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-            </div>
         </div>
     </div>
 
     <!-- ================= BOTTOM NAV ================= -->
-    <nav id="bottom-tab-bar" class="hidden fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-md">
+    <nav id="bottom-tab-bar" class="hidden fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-md">
         <div class="bg-white/95 backdrop-blur-md rounded-2xl px-2 py-2 flex justify-between items-center shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-stone-200">
             <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="flex-1 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 text-stone-400 transition-all">
                 <i class="fa-solid fa-chart-pie text-xl"></i>
@@ -649,7 +626,7 @@
     </div>
 
     <!-- Modale -->
-    <div id="custom-modal" class="hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-card max-w-sm w-full p-8 rounded-3xl text-center bg-white border border-stone-200">
             <h5 class="font-black text-stone-900 mb-3 text-lg" id="modal-title">Aktion</h5>
             <p class="text-sm text-stone-500 mb-8 font-medium leading-relaxed" id="modal-desc">Bist du sicher?</p>
@@ -668,11 +645,9 @@
         let tempImportBuffer = [];
         let enteredPin = ""; 
 
-        // Profile Manager
         let dbProfiles = [];
         let activeProfileId = null;
 
-        // Security PINs laden
         let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
         let readPin = localStorage.getItem('gastro_read_pin') || "2024";
 
@@ -684,7 +659,6 @@
                 dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
             }
 
-            // Lade Profile
             if (localStorage.getItem('gastro_db_profiles')) {
                 dbProfiles = JSON.parse(localStorage.getItem('gastro_db_profiles'));
             }
@@ -811,6 +785,7 @@
         function completeLogin() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-portal').classList.remove('hidden');
+            document.getElementById('app-portal').classList.add('flex');
             document.getElementById('bottom-tab-bar').classList.remove('hidden');
 
             if (loggedInUser === 'inhaber') {
@@ -826,7 +801,6 @@
             switchTab('dashboard');
             renderAll();
             
-            // Auto Load falls Profil aktiv
             if(activeProfileId) {
                 loadFromJSONBin(true); 
             }
@@ -853,6 +827,7 @@
         function logout() {
             loggedInUser = null;
             document.getElementById('app-portal').classList.add('hidden');
+            document.getElementById('app-portal').classList.remove('flex');
             document.getElementById('bottom-tab-bar').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
             clearPin();
@@ -893,9 +868,10 @@
             renderAll();
         }
 
-        // --- PULL TO REFRESH LOGIK ---
+        // --- PULL TO REFRESH LOGIK (Im Scroll-Container) ---
         function setupPullToRefresh() {
-            const scrollable = document.querySelector('.scrollable-content');
+            const scrollable = document.getElementById('scroll-container');
+            const spinner = document.getElementById('pull-to-refresh-spinner');
             
             scrollable.addEventListener('touchstart', e => {
                 if (scrollable.scrollTop <= 0) { 
@@ -908,26 +884,25 @@
                 if (!isPulling) return;
                 const pullDistance = e.touches[0].pageY - startY;
                 if (pullDistance > 60 && scrollable.scrollTop <= 0) {
-                    document.getElementById('pull-to-refresh-spinner').classList.add('active');
+                    spinner.style.height = '60px';
+                    spinner.style.opacity = '1';
                 }
             }, { passive: true });
 
             scrollable.addEventListener('touchend', () => {
                 if (isPulling) {
-                    const spinner = document.getElementById('pull-to-refresh-spinner');
-                    if (spinner.classList.contains('active')) {
+                    if (spinner.style.height === '60px') {
                         // Löse den Download aus der Cloud aus
                         if (activeProfileId && loggedInUser !== null) {
                             loadFromJSONBin(false);
                         } else {
-                            if (localStorage.getItem('gastro_finance_premium_db')) {
-                                dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
-                            }
-                            renderAll();
-                            showToast("Daten aktualisiert", "Erfolgreich lokal neu geladen.");
+                            showToast("Daten aktualisiert", "Keine Cloud aktiv. Lokal geladen.");
                         }
-                        setTimeout(() => spinner.classList.remove('active'), 800);
                     }
+                    setTimeout(() => {
+                        spinner.style.height = '0px';
+                        spinner.style.opacity = '0';
+                    }, 500);
                     isPulling = false;
                 }
             }, { passive: true });
@@ -1008,6 +983,7 @@
 
             showToast("Profil gespeichert", `Datenbank-Profil „${name}“ gesichert.`);
             renderProfilesList();
+            loadFromJSONBin(true); // Direkt verbinden
         }
 
         function activateProfile(id) {
@@ -1023,7 +999,7 @@
 
             showToast("Profil aktiviert", `Verbindung zu „${profile.name}“ hergestellt.`);
             renderProfilesList();
-            loadFromJSONBin(true); // Direkt Daten für dieses Profil laden
+            loadFromJSONBin(true);
         }
 
         function deleteProfile(id) {
@@ -1041,6 +1017,7 @@
                             document.getElementById('jsonbin-profile-name').value = newActive.name;
                             document.getElementById('jsonbin-key').value = newActive.apiKey;
                             document.getElementById('jsonbin-id').value = newActive.binId;
+                            loadFromJSONBin(true);
                         } else {
                             document.getElementById('jsonbin-profile-name').value = '';
                             document.getElementById('jsonbin-key').value = '';
@@ -1076,9 +1053,8 @@
                 if(!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 
                 const data = await res.json();
-                let record = data.record;
                 
-                // Formatanpassung falls {"data": []} in Cloud ist
+                let record = data.record;
                 if (Array.isArray(record)) {
                      dbDays = record;
                 } else if (record && Array.isArray(record.data)) {
@@ -1094,7 +1070,7 @@
                 renderAll();
             } catch(e) { 
                 setDbStatus('disconnected');
-                if(!silent) showToast("Netzwerkfehler", "JSONBin blockiert. Prüfe Key/ID.", false); 
+                if(!silent) showToast("Netzwerkfehler", "JSONBin hat blockiert. Key/ID prüfen.", false); 
                 console.error("JSONBin Load Error:", e);
             }
         }
@@ -1132,13 +1108,13 @@
             }
         }
 
-        // --- MANUELLE EINGABE (STRIKTE MATHEMATIK: BAR + KARTE = UMSATZ) ---
+        // --- MANUELLE EINGABE (STRIKTE MATHEMATIK: BAR(Netto) + KARTE = UMSATZ) ---
         function calculateLiveFormula() {
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
-            const actualBar = rawBar - 150; 
-            const totalRevenue = actualBar + cardRev; // Exakte Rechnung: Netto Bar + Karte
+            const actualBar = rawBar - 150; // Zieht 150 fest ab
+            const totalRevenue = actualBar + cardRev; // Umsatz = Netto Bar + Karte
 
             const expSumBar = parseFloat(document.getElementById('entry-exp-sumbar').value) || 0;
             const expSumCard = parseFloat(document.getElementById('entry-exp-sumcard').value) || 0;
@@ -1158,7 +1134,7 @@
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
             if (existingDay) {
-                // Beim Bearbeiten addieren wir wieder 150€ auf, da das Feld den Brutto-Kassen-Wert will
+                // Beim Anzeigen die 150€ wieder dazurechnen (Brutto-Anzeige)
                 document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + 150;
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card;
                 document.getElementById('entry-exp-sumbar').value = existingDay.expensesSum.bar;
@@ -1182,6 +1158,7 @@
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
+            // Feste Rechnung
             const actualBar = rawBar - 150; 
             const totalRevenue = actualBar + cardRev; 
 
@@ -1192,7 +1169,7 @@
             const dayObj = {
                 date: pickedDate,
                 germanDate: formatGermanDate(pickedDate),
-                // WIR SPEICHERN DEN NETTO WERT!
+                // ES WIRD NUR DAS NETTO GESPEICHERT
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesList: [],
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
@@ -1209,14 +1186,13 @@
             
             showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
             
-            // Auto-Sync if Cloud is active
             if(activeProfileId) saveToJSONBin();
 
             renderAll();
             switchTab('dashboard');
         }
 
-        // --- EXCEL PARSER (1:1 VOM FUNKTIONIERENDEN CODE) ---
+        // --- EXCEL PARSER (MIT EXAKTER MATHEMATIK) ---
         function initExcelDropzone() {
             const dropzone = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.add('border-[#C5A85C]', 'bg-[#F6F3EB]/40'); }));
@@ -1246,7 +1222,7 @@
                         const dateParts = trimmedName.split('.');
                         const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
 
-                        let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0, revTotal = 0, profit = 0, tuete = 0;
+                        let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0;
 
                         let wechselgeldRowIdx = -1;
                         for (let r = 0; r < rawJson.length; r++) {
@@ -1293,7 +1269,7 @@
                             }
                         }
 
-                        // REINE STRIKTE MATHEMATIK FÜR DEN IMPORT
+                        // REINE FESTE MATHEMATIK
                         const actualBarRevenue = revBarRaw - 150; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
