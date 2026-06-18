@@ -503,11 +503,12 @@
                         </div>
 
                         <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
-                             class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer">
+                             class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer transition-colors relative">
                             <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
                             <div class="space-y-3">
                                 <i class="fa-solid fa-cloud-arrow-up text-4xl text-[#C5A85C]/70"></i>
                                 <p class="font-bold text-stone-800 text-sm">Tippe hier, um Excel-Mappen hochzuladen.</p>
+                                <p class="text-[10px] text-stone-500 font-semibold mt-2">Filtert automatisch nach dem Jahr deines aktiven Profils!</p>
                             </div>
                         </div>
                     </div>
@@ -527,7 +528,7 @@
                             
                             <div class="space-y-3 w-full mt-4">
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. The 3B)</label>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. Daten 2024)</label>
                                     <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
                                 </div>
                                 <div>
@@ -537,6 +538,18 @@
                                 <div>
                                     <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
                                     <input type="text" id="jsonbin-id" placeholder="6a342a..." class="modern-input text-sm py-2">
+                                </div>
+                                <!-- NEU: JAHRES-FILTER -->
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Zugeordnetes Jahr</label>
+                                    <select id="jsonbin-year" class="modern-input text-sm py-2 bg-stone-50">
+                                        <option value="all">Alle Jahre (Kein Filter)</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                    </select>
                                 </div>
                                 
                                 <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
@@ -582,6 +595,7 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <div>
                             <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
+                            <p class="text-[10px] text-stone-500 mt-1" id="preview-filter-hint">Es wurden nur Daten für das ausgewählte Jahr geladen.</p>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
                             <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
@@ -690,6 +704,7 @@
                 document.getElementById('jsonbin-profile-name').value = activeProfile.name;
                 document.getElementById('jsonbin-key').value = activeProfile.apiKey;
                 document.getElementById('jsonbin-id').value = activeProfile.binId;
+                document.getElementById('jsonbin-year').value = activeProfile.year || 'all';
             }
 
             const yesterday = new Date();
@@ -764,7 +779,7 @@
             }
 
             toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 4000); // 4 Sekunden sichtbar
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
         }
 
         // --- Numpad PIN Login ---
@@ -889,7 +904,7 @@
             renderAll();
         }
 
-        // --- PULL TO REFRESH LOGIK (Im Scroll-Container) ---
+        // --- PULL TO REFRESH LOGIK ---
         function setupPullToRefresh() {
             const scrollable = document.getElementById('scroll-container');
             const spinner = document.getElementById('pull-to-refresh-spinner');
@@ -913,7 +928,6 @@
             scrollable.addEventListener('touchend', () => {
                 if (isPulling) {
                     if (spinner.style.height === '60px') {
-                        // Löse den Download aus der Cloud aus
                         if (activeProfileId && loggedInUser !== null) {
                             loadFromJSONBin(false);
                         } else {
@@ -929,7 +943,7 @@
             }, { passive: true });
         }
 
-        // --- JSONBIN PROFILE MANAGEMENT ---
+        // --- JSONBIN PROFILE MANAGEMENT (MIT JAHRES-FILTER) ---
         function renderProfilesList() {
             const container = document.getElementById('saved-profiles-list');
             container.innerHTML = '';
@@ -949,14 +963,22 @@
                     ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>`
                     : "";
 
+                // NEU: Anzeige des zugewiesenen Jahres
+                const yearBadge = p.year && p.year !== 'all' 
+                    ? `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Jahr: ${p.year}</span>` 
+                    : `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Alle Jahre</span>`;
+
                 const item = `
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border ${activeClass} transition-all gap-3">
-                        <div class="space-y-0.5 w-full">
+                        <div class="space-y-1 w-full">
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-bold text-stone-900">${p.name}</span>
                                 ${badge}
                             </div>
-                            <div class="text-[9px] font-semibold text-stone-400">ID: ${p.binId.substring(0, 10)}...</div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-[9px] font-semibold text-stone-400">ID: ${p.binId.substring(0, 10)}...</div>
+                                ${yearBadge}
+                            </div>
                         </div>
                         <div class="flex items-center gap-1.5 w-full sm:w-auto">
                             <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer">
@@ -976,6 +998,7 @@
             const name = document.getElementById('jsonbin-profile-name').value.trim();
             const key = document.getElementById('jsonbin-key').value.trim();
             const id = document.getElementById('jsonbin-id').value.trim();
+            const year = document.getElementById('jsonbin-year').value; // NEU
 
             if (!name || !key || !id) {
                 showToast("Fehler", "Bitte fülle Profil-Name, API-Key und Bin-ID aus.", false);
@@ -987,13 +1010,15 @@
             if (existingProfile) {
                 existingProfile.apiKey = key;
                 existingProfile.binId = id;
+                existingProfile.year = year;
                 activeProfileId = existingProfile.id;
             } else {
                 const newProfile = {
                     id: 'prof-' + Date.now(),
                     name: name,
                     apiKey: key,
-                    binId: id
+                    binId: id,
+                    year: year
                 };
                 dbProfiles.push(newProfile);
                 activeProfileId = newProfile.id;
@@ -1004,7 +1029,7 @@
 
             showToast("Profil gespeichert", `Datenbank-Profil „${name}“ gesichert.`);
             renderProfilesList();
-            loadFromJSONBin(true); // Direkt verbinden
+            loadFromJSONBin(true); 
         }
 
         function activateProfile(id) {
@@ -1017,6 +1042,7 @@
             document.getElementById('jsonbin-profile-name').value = profile.name;
             document.getElementById('jsonbin-key').value = profile.apiKey;
             document.getElementById('jsonbin-id').value = profile.binId;
+            document.getElementById('jsonbin-year').value = profile.year || 'all';
 
             showToast("Profil aktiviert", `Verbindung zu „${profile.name}“ hergestellt.`);
             renderProfilesList();
@@ -1038,11 +1064,13 @@
                             document.getElementById('jsonbin-profile-name').value = newActive.name;
                             document.getElementById('jsonbin-key').value = newActive.apiKey;
                             document.getElementById('jsonbin-id').value = newActive.binId;
+                            document.getElementById('jsonbin-year').value = newActive.year || 'all';
                             loadFromJSONBin(true);
                         } else {
                             document.getElementById('jsonbin-profile-name').value = '';
                             document.getElementById('jsonbin-key').value = '';
                             document.getElementById('jsonbin-id').value = '';
+                            document.getElementById('jsonbin-year').value = 'all';
                             setDbStatus('disconnected');
                         }
                     }
@@ -1054,7 +1082,7 @@
             );
         }
 
-        // --- JSONBIN NETZWERK LOGIK (KOMPLETT ÜBERARBEITET + STRIKTE FEHLERBEHANDLUNG) ---
+        // --- JSONBIN NETZWERK LOGIK ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (!activeProfile) {
@@ -1066,7 +1094,6 @@
             if(!silent) showToast("Lade...", "Verbindung zur Cloud wird aufgebaut...");
             
             try {
-                // Hinzugefügt: Cache-Control, damit der Browser nicht alte Zwischenspeicher lädt
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}/latest`, {
                     method: 'GET',
                     headers: { 
@@ -1077,12 +1104,8 @@
                 
                 const data = await res.json();
                 
-                if(!res.ok) {
-                    // Zeigt die exakte Fehlermeldung der API an (z.B. "Invalid API Key")
-                    throw new Error(data.message || `HTTP Error: ${res.status}`);
-                }
+                if(!res.ok) { throw new Error(data.message || `HTTP Error: ${res.status}`); }
                 
-                // Flexibles Parsing (Egal ob in "record.data" oder nur "record" gespeichert)
                 let record = data.record || data;
                 
                 if (Array.isArray(record)) {
@@ -1090,7 +1113,6 @@
                 } else if (record && Array.isArray(record.data)) {
                      dbDays = record.data;
                 } else if (typeof record === 'object') {
-                     // Fallback falls es anders gewrappt wurde
                      dbDays = Object.values(record).find(v => Array.isArray(v)) || [];
                 } else {
                      dbDays = [];
@@ -1119,9 +1141,7 @@
             showToast("Sichere...", "Lade in die Cloud hoch...");
             
             try {
-                // Wir erzwingen eine feste, saubere Struktur in der Datenbank
                 const payload = { "data": dbDays };
-                
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}`, {
                     method: 'PUT',
                     headers: { 
@@ -1133,9 +1153,7 @@
                 
                 const data = await res.json();
 
-                if(!res.ok) {
-                    throw new Error(data.message || "Fehler beim Upload auf JSONBin");
-                }
+                if(!res.ok) { throw new Error(data.message || "Fehler beim Upload auf JSONBin"); }
                 
                 setDbStatus('connected');
                 showToast("Gesichert", "Daten erfolgreich in der Cloud aktualisiert.");
@@ -1146,13 +1164,13 @@
             }
         }
 
-        // --- MANUELLE EINGABE (STRIKTE MATHEMATIK: BAR(Netto) + KARTE = UMSATZ) ---
+        // --- MANUELLE EINGABE ---
         function calculateLiveFormula() {
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
-            const actualBar = rawBar - 150; // Zieht 150 fest ab
-            const totalRevenue = actualBar + cardRev; // Umsatz = Netto Bar + Karte
+            const actualBar = rawBar - 150;
+            const totalRevenue = actualBar + cardRev; 
 
             const expSumBar = parseFloat(document.getElementById('entry-exp-sumbar').value) || 0;
             const expSumCard = parseFloat(document.getElementById('entry-exp-sumcard').value) || 0;
@@ -1172,7 +1190,6 @@
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
             if (existingDay) {
-                // Beim Anzeigen die 150€ wieder dazurechnen (Brutto-Anzeige)
                 document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + 150;
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card;
                 document.getElementById('entry-exp-sumbar').value = existingDay.expensesSum.bar;
@@ -1195,8 +1212,6 @@
 
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
-            
-            // Feste Rechnung
             const actualBar = rawBar - 150; 
             const totalRevenue = actualBar + cardRev; 
 
@@ -1207,7 +1222,6 @@
             const dayObj = {
                 date: pickedDate,
                 germanDate: formatGermanDate(pickedDate),
-                // ES WIRD NUR DAS NETTO GESPEICHERT
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesList: [],
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
@@ -1219,18 +1233,17 @@
             const idx = dbDays.findIndex(d => d.date === pickedDate);
             if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
 
-            dbDays.sort((a,b) => b.date.localeCompare(a.date)); // Absteigend (neueste oben)
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
             localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
             
             showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
-            
             if(activeProfileId) saveToJSONBin();
 
             renderAll();
             switchTab('dashboard');
         }
 
-        // --- EXCEL PARSER (MIT EXAKTER MATHEMATIK) ---
+        // --- EXCEL PARSER (MIT SMARTEM FILTER) ---
         function initExcelDropzone() {
             const dropzone = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.add('border-[#C5A85C]', 'bg-[#F6F3EB]/40'); }));
@@ -1243,22 +1256,50 @@
         function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
 
         function parseExcelFile(file) {
+            // Ermittle das gewünschte Jahr aus dem aktiven Profil
+            const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
+            const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     tempImportBuffer = [];
+                    let skippedCount = 0;
+
+                    const dateRegex = /^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/;
 
                     workbook.SheetNames.forEach(sheetName => {
                         const trimmedName = sheetName.trim();
-                        if (!/^\d{2}\.\d{2}\.\d{4}$/.test(trimmedName)) return;
+                        const match = trimmedName.match(dateRegex);
+                        
+                        if (!match) return; 
+
+                        let day = match[1];
+                        let month = match[2];
+                        let sheetYear = match[3];
+
+                        if (!sheetYear) {
+                            const monthInt = parseInt(month, 10);
+                            if (monthInt >= 9) {
+                                sheetYear = "2024";
+                            } else {
+                                sheetYear = "2025";
+                            }
+                        }
+
+                        // ---> DER SMARTE TÜRSTEHER: Filtert Daten nach aktivem Profil <---
+                        if (profileYearFilter !== 'all' && sheetYear !== profileYearFilter) {
+                            skippedCount++;
+                            return; // Überspringt diese Mappe sofort!
+                        }
+
+                        const fullGermanDate = `${day}.${month}.${sheetYear}`;
+                        const isoDate = `${sheetYear}-${month}-${day}`;
 
                         const ws = workbook.Sheets[sheetName];
                         const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-                        const dateParts = trimmedName.split('.');
-                        const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
 
                         let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0;
 
@@ -1307,17 +1348,15 @@
                             }
                         }
 
-                        // REINE FESTE MATHEMATIK
                         const actualBarRevenue = revBarRaw - 150; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
-
                         const totalExpenses = expSumBar + expSumCard;
                         const profit = calculatedTotalRevenue - totalExpenses;
                         const tuete = profit - revCard;
 
                         tempImportBuffer.push({
                             date: isoDate,
-                            germanDate: trimmedName,
+                            germanDate: fullGermanDate,
                             revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
                             expensesList: [],
                             expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
@@ -1327,7 +1366,19 @@
                         });
                     });
 
-                    if (tempImportBuffer.length === 0) { showToast("Keine Daten", "Keine Mappen im Format DD.MM.YYYY", false); return; }
+                    if (tempImportBuffer.length === 0) { 
+                        if (skippedCount > 0) {
+                            showToast("Filter aktiv", `Alle ${skippedCount} erkannten Mappen stammten aus einem anderen Jahr und wurden ignoriert.`, false);
+                        } else {
+                            showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                        }
+                        return; 
+                    }
+                    
+                    if (skippedCount > 0) {
+                        showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren wurden ignoriert.`);
+                    }
+
                     renderImportPreview();
 
                 } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); }
@@ -1369,7 +1420,7 @@
                 const idx = dbDays.findIndex(d => d.date === day.date);
                 if (idx !== -1) { dbDays[idx] = day; upd++; } else { dbDays.push(day); ins++; }
             });
-            dbDays.sort((a,b) => a.date.localeCompare(b.date)); // Absteigend (neueste oben)
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
             localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
             showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
             tempImportBuffer = [];
@@ -1419,8 +1470,7 @@
                 fromInput.value = '';
                 toInput.value = '';
             } else if (val === 'this-week') {
-                // Finde Montag dieser Woche
-                const dayOfWeek = now.getDay() || 7; // Sonntag = 7, Montag = 1
+                const dayOfWeek = now.getDay() || 7; 
                 const firstDate = new Date(now);
                 firstDate.setDate(now.getDate() - dayOfWeek + 1);
                 
@@ -1483,7 +1533,6 @@
 
             let rP = [], eP = [];
             
-            // Aufsteigend sortieren für den Chart-Verlauf (links ältestes, rechts neustes)
             const sortedData = [...data].sort((a,b) => a.date.localeCompare(b.date));
 
             sortedData.forEach((d, i) => {
@@ -1508,7 +1557,6 @@
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
             
-            // Suchbegriff und Filter abgreifen
             const q = document.getElementById('hist-search').value.toLowerCase();
             const from = document.getElementById('hist-filter-from').value;
             const to = document.getElementById('hist-filter-to').value;
@@ -1521,7 +1569,6 @@
                 return matchesSearch && matchesFrom && matchesTo;
             });
             
-            // Absteigend sortieren (neueste oben)
             filtered.sort((a,b) => b.date.localeCompare(a.date));
 
             if(filtered.length === 0) {
