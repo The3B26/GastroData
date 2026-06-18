@@ -427,16 +427,37 @@
             <!-- ===== TAB 3: HISTORIE ===== -->
             <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
                 
-                <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-stone-500"></i>
-                        <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
+                <div class="glass-card p-4 flex flex-col gap-4 w-full">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-stone-500"></i>
+                            <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <input type="text" id="hist-search" placeholder="Datum oder Notiz suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
+                            <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
+                                <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <input type="text" id="hist-search" placeholder="Datum suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
-                        <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
-                            <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
-                        </button>
+
+                    <!-- ERWEITERTER FILTER-BEREICH -->
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full border-t border-stone-200 pt-4 mt-2">
+                        <select id="hist-filter-preset" onchange="applyHistPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm bg-stone-50">
+                            <option value="all" selected>Gesamte Historie anzeigen</option>
+                            <option value="this-week">Diese Woche filtern</option>
+                            <option value="this-month">Diesen Monat filtern</option>
+                            <option value="this-year">Dieses Jahr filtern</option>
+                        </select>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-500 text-xs font-bold w-8">Von:</span>
+                            <input type="date" id="hist-filter-from" onchange="renderHistory()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-500 text-xs font-bold w-8">Bis:</span>
+                            <input type="date" id="hist-filter-to" onchange="renderHistory()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
                     </div>
                 </div>
 
@@ -743,7 +764,7 @@
             }
 
             toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000); // 4 Sekunden sichtbar
         }
 
         // --- Numpad PIN Login ---
@@ -840,7 +861,7 @@
             if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
             const inputs = document.querySelectorAll('input, select');
             inputs.forEach(i => {
-                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-sort'].includes(i.id)) {
+                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to'].includes(i.id)) {
                     i.disabled = true;
                 }
             });
@@ -1033,7 +1054,7 @@
             );
         }
 
-        // --- JSONBIN NETZWERK LOGIK ---
+        // --- JSONBIN NETZWERK LOGIK (KOMPLETT ÜBERARBEITET + STRIKTE FEHLERBEHANDLUNG) ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (!activeProfile) {
@@ -1042,23 +1063,35 @@
             }
             
             setDbStatus('connecting');
-            if(!silent) showToast("Lade...", "Verbindung zur Cloud...");
+            if(!silent) showToast("Lade...", "Verbindung zur Cloud wird aufgebaut...");
             
             try {
+                // Hinzugefügt: Cache-Control, damit der Browser nicht alte Zwischenspeicher lädt
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}/latest`, {
                     method: 'GET',
-                    headers: { 'X-Master-Key': activeProfile.apiKey }
+                    headers: { 
+                        'X-Master-Key': activeProfile.apiKey,
+                        'Cache-Control': 'no-cache' 
+                    }
                 });
-                
-                if(!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 
                 const data = await res.json();
                 
-                let record = data.record;
+                if(!res.ok) {
+                    // Zeigt die exakte Fehlermeldung der API an (z.B. "Invalid API Key")
+                    throw new Error(data.message || `HTTP Error: ${res.status}`);
+                }
+                
+                // Flexibles Parsing (Egal ob in "record.data" oder nur "record" gespeichert)
+                let record = data.record || data;
+                
                 if (Array.isArray(record)) {
                      dbDays = record;
                 } else if (record && Array.isArray(record.data)) {
                      dbDays = record.data;
+                } else if (typeof record === 'object') {
+                     // Fallback falls es anders gewrappt wurde
+                     dbDays = Object.values(record).find(v => Array.isArray(v)) || [];
                 } else {
                      dbDays = [];
                 }
@@ -1066,11 +1099,11 @@
                 localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
                 setDbStatus('connected');
                 
-                if(!silent) showToast("Erfolg", "Daten aus der Cloud geladen.");
+                if(!silent) showToast("Erfolg", "Daten aus der Cloud erfolgreich synchronisiert.");
                 renderAll();
             } catch(e) { 
                 setDbStatus('disconnected');
-                if(!silent) showToast("Netzwerkfehler", "JSONBin hat blockiert. Key/ID prüfen.", false); 
+                if(!silent) showToast("Netzwerkfehler", e.message, false); 
                 console.error("JSONBin Load Error:", e);
             }
         }
@@ -1086,6 +1119,7 @@
             showToast("Sichere...", "Lade in die Cloud hoch...");
             
             try {
+                // Wir erzwingen eine feste, saubere Struktur in der Datenbank
                 const payload = { "data": dbDays };
                 
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}`, {
@@ -1097,13 +1131,17 @@
                     body: JSON.stringify(payload)
                 });
                 
-                if(!res.ok) throw new Error("Fehler beim Upload");
+                const data = await res.json();
+
+                if(!res.ok) {
+                    throw new Error(data.message || "Fehler beim Upload auf JSONBin");
+                }
                 
                 setDbStatus('connected');
-                showToast("Gesichert", "Daten erfolgreich in der Cloud archiviert.");
+                showToast("Gesichert", "Daten erfolgreich in der Cloud aktualisiert.");
             } catch(e) { 
                 setDbStatus('disconnected');
-                showToast("Netzwerkfehler", "Speichern fehlgeschlagen.", false); 
+                showToast("Speicherfehler", e.message, false); 
                 console.error("JSONBin Save Error:", e);
             }
         }
@@ -1181,7 +1219,7 @@
             const idx = dbDays.findIndex(d => d.date === pickedDate);
             if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
 
-            dbDays.sort((a,b) => a.date.localeCompare(b.date));
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); // Absteigend (neueste oben)
             localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
             
             showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
@@ -1331,7 +1369,7 @@
                 const idx = dbDays.findIndex(d => d.date === day.date);
                 if (idx !== -1) { dbDays[idx] = day; upd++; } else { dbDays.push(day); ins++; }
             });
-            dbDays.sort((a,b) => a.date.localeCompare(b.date));
+            dbDays.sort((a,b) => a.date.localeCompare(b.date)); // Absteigend (neueste oben)
             localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
             showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
             tempImportBuffer = [];
@@ -1358,8 +1396,47 @@
             else if (val === 'this-month') {
                 document.getElementById('filter-from').value = `${y}-${m}-01`;
                 document.getElementById('filter-to').value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+            } else if (val === 'last-30') {
+                const pastDate = new Date();
+                pastDate.setDate(now.getDate() - 30);
+                document.getElementById('filter-from').value = pastDate.toISOString().split('T')[0];
+                document.getElementById('filter-to').value = now.toISOString().split('T')[0];
             }
             renderAll();
+        }
+
+        // --- HISTORIE FILTER ---
+        function applyHistPresetDates() {
+            const val = document.getElementById('hist-filter-preset').value;
+            const fromInput = document.getElementById('hist-filter-from');
+            const toInput = document.getElementById('hist-filter-to');
+
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+
+            if (val === 'all') {
+                fromInput.value = '';
+                toInput.value = '';
+            } else if (val === 'this-week') {
+                // Finde Montag dieser Woche
+                const dayOfWeek = now.getDay() || 7; // Sonntag = 7, Montag = 1
+                const firstDate = new Date(now);
+                firstDate.setDate(now.getDate() - dayOfWeek + 1);
+                
+                const lastDate = new Date(now);
+                lastDate.setDate(now.getDate() - dayOfWeek + 7);
+
+                fromInput.value = firstDate.toISOString().split('T')[0];
+                toInput.value = lastDate.toISOString().split('T')[0];
+            } else if (val === 'this-month') {
+                fromInput.value = `${y}-${m}-01`;
+                toInput.value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+            } else if (val === 'this-year') {
+                fromInput.value = `${y}-01-01`;
+                toInput.value = `${y}-12-31`;
+            }
+            renderHistory();
         }
 
         function getFilteredDays() {
@@ -1369,13 +1446,11 @@
 
         function renderAll() {
             if (!loggedInUser) return;
-            document.getElementById('db-status-badge').textContent = `${dbDays.length} Mappen`;
             const filtered = getFilteredDays();
 
             if (dbDays.length === 0) {
                 document.getElementById('dashboard-empty').classList.remove('hidden');
                 document.getElementById('dashboard-active').classList.add('hidden');
-                return;
             } else {
                 document.getElementById('dashboard-empty').classList.add('hidden');
                 document.getElementById('dashboard-active').classList.remove('hidden');
@@ -1386,9 +1461,7 @@
                 filtered.forEach(d => { r+=d.revenue.total; c+=d.revenue.card; e+=d.expensesSum.total; eb+=d.expensesSum.bar; p+=d.profit; t+=d.tuete; });
                 
                 document.getElementById('kpi-revenue').textContent = formatCurrency(r);
-                document.getElementById('kpi-sub-card').textContent = formatCurrency(c);
                 document.getElementById('kpi-expenses').textContent = formatCurrency(e);
-                document.getElementById('kpi-sub-expbar').textContent = formatCurrency(eb);
                 document.getElementById('kpi-profit').textContent = formatCurrency(p);
                 document.getElementById('kpi-tuete').textContent = formatCurrency(t);
                 
@@ -1409,7 +1482,11 @@
             const step = (w - pad*2) / Math.max(data.length - 1, 1);
 
             let rP = [], eP = [];
-            data.forEach((d, i) => {
+            
+            // Aufsteigend sortieren für den Chart-Verlauf (links ältestes, rechts neustes)
+            const sortedData = [...data].sort((a,b) => a.date.localeCompare(b.date));
+
+            sortedData.forEach((d, i) => {
                 rP.push(`${pad + i*step},${h - pad - (d.revenue.total/mx)*(h - pad*2)}`);
                 eP.push(`${pad + i*step},${h - pad - (d.expensesSum.total/mx)*(h - pad*2)}`);
             });
@@ -1431,9 +1508,27 @@
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
             
+            // Suchbegriff und Filter abgreifen
             const q = document.getElementById('hist-search').value.toLowerCase();
-            let filtered = dbDays.filter(d => d.germanDate.includes(q));
+            const from = document.getElementById('hist-filter-from').value;
+            const to = document.getElementById('hist-filter-to').value;
             
+            let filtered = dbDays.filter(d => {
+                const matchesSearch = d.germanDate.includes(q) || (d.note && d.note.toLowerCase().includes(q));
+                const matchesFrom = !from || d.date >= from;
+                const matchesTo = !to || d.date <= to;
+                
+                return matchesSearch && matchesFrom && matchesTo;
+            });
+            
+            // Absteigend sortieren (neueste oben)
+            filtered.sort((a,b) => b.date.localeCompare(a.date));
+
+            if(filtered.length === 0) {
+                 tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="8" class="p-6 text-center text-stone-400 font-semibold text-sm">Keine Einträge für diesen Zeitraum gefunden.</td></tr>`);
+                 return;
+            }
+
             filtered.forEach(d => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="hover:bg-stone-50 border-b border-stone-100">
@@ -1481,7 +1576,6 @@
             });
         }
 
-        function exportStatisticsReport() { showToast("Hinweis", "Bericht-Export wird im Browser geöffnet."); }
         function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
         function formatCurrency(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
     </script>
