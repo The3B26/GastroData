@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GastroFinance - Premium Buchhaltung</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS für intelligenten Import im Browser -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --gold: #C5A85C;
+            --gold-dark: #A3853F;
+            --gold-light: #F6F3EB;
+            --emerald: #10B981;
+            --emerald-dark: #065F46;
+            --emerald-light: #ECFDF5;
+            --charcoal: #1C1917;
+            --stone-light: #FAF9F6;
+            --glass: rgba(255, 255, 255, 0.88);
+            --border-color: rgba(197, 168, 92, 0.2);
+        }
+
+        /* Absolute Unterbindung von leerem Scrolling und Viewport-Bouncing */
+        html, body {
+            overflow: hidden;
+            overscroll-behavior: none;
+            max-width: 100vw;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            touch-action: none; /* Verhindert das elastische Ziehen des Bodys */
+            background-color: #FAF9F6;
+            color: var(--charcoal);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Interner, isolierter Scroll-Bereich */
+        .scrollable-content {
+            overflow-y: auto;
+            height: calc(100vh - 120px);
+            padding-bottom: 100px;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y; /* Erlaubt nur vertikales Scrollen im Content */
+        }
+
+        .gold-title {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.06em;
+        }
+
+        /* Apple Style Frosted Glass */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            box-shadow: 
+                0 4px 30px rgba(28, 25, 23, 0.02),
+                0 1px 2px rgba(255, 255, 255, 0.9) inset;
+            border-radius: 20px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        /* Responsive Form Inputs */
+        .modern-input {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1.5px solid rgba(28, 25, 23, 0.12);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: var(--charcoal);
+            font-weight: 500;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            transition: all 0.2s ease;
+        }
+
+        .modern-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(197, 168, 92, 0.15);
+            background: #FFFFFF;
+        }
+
+        /* UI Buttons */
+        .btn-gold {
+            background: linear-gradient(135deg, #C5A85C 0%, #A3853F 100%);
+            color: #FFFFFF;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(197, 168, 92, 0.15);
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(197, 168, 92, 0.25);
+            filter: brightness(1.02);
+        }
+
+        .btn-dark {
+            background: #1C1917;
+            color: #FFFFFF;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-dark:hover {
+            background: #2D2A27;
+            transform: translateY(-1px);
+        }
+
+        .tab-active {
+            background: #1C1917 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 6px 15px rgba(28, 25, 23, 0.15);
+        }
+
+        .pulse-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--emerald);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+            animation: pulseState 2s infinite;
+        }
+
+        @keyframes pulseState {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Pull-to-Refresh Animation & Styling */
+        #pull-to-refresh-spinner {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.2s ease, opacity 0.2s ease;
+            opacity: 0;
+            background: linear-gradient(180deg, rgba(197, 168, 92, 0.05) 0%, transparent 100%);
+        }
+        #pull-to-refresh-spinner.active {
+            height: 60px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- PULL TO REFRESH INDIKATOR -->
+    <div id="pull-to-refresh-spinner" class="flex items-center justify-center gap-2 text-stone-600 font-bold text-xs flex-shrink-0">
+        <i class="fa-solid fa-arrows-rotate animate-spin text-[#C5A85C] text-sm"></i>
+        <span>Aktualisiere GastroFinance Daten...</span>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="main-app-container" class="w-full flex-grow overflow-hidden flex flex-col justify-start">
+
+        <!-- SECURITY LOG IN GATE (Kein Passwort-Hinweis mehr sichtbar) -->
+        <div id="login-screen" class="h-full flex items-center justify-center w-full px-4">
+            <div class="glass-card p-6 sm:p-10 w-full max-w-md text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                        <i class="fa-solid fa-calculator text-2xl text-[#C5A85C]"></i>
+                    </div>
+                </div>
+                <h1 class="gold-title text-2xl sm:text-3xl font-extrabold text-stone-900 mb-1">GastroFinance</h1>
+                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-6">Sicheres Finanzportal</p>
+                
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1">Benutzerrolle</label>
+                        <select id="login-role" class="modern-input text-sm">
+                            <option value="buchhaltung">Finanzbuchhaltung (Vollzugriff)</option>
+                            <option value="inhaber">Restaurantleitung / Inhaber (Lesezugriff)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1">Sicherheitsschlüssel</label>
+                        <input id="login-password" type="password" placeholder="Sicherheitsschlüssel eingeben" required class="modern-input text-sm">
+                    </div>
+                    <div id="login-error" class="hidden text-xs text-red-600 text-center font-bold bg-red-50 border border-red-200 py-3 rounded-xl">
+                        Schlüssel ungültig! Bitte überprüfe deine Eingabe.
+                    </div>
+                    <button type="submit" class="w-full py-3.5 btn-gold uppercase tracking-wider text-xs font-extrabold mt-2">
+                        System freischalten <i class="fa-solid fa-lock-open ml-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- APP PORTAL -->
+        <div id="app-portal" class="hidden h-full flex flex-col w-full px-4 sm:px-6 lg:px-8 pt-4 overflow-hidden">
+            
+            <!-- HEADER -->
+            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full flex-shrink-0 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                        <i class="fa-solid fa-building-columns text-base text-[#C5A85C]"></i>
+                    </div>
+                    <div>
+                        <h1 class="gold-title text-base sm:text-lg font-bold text-stone-900 leading-tight">GastroFinance</h1>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="pulse-indicator"></span>
+                            <span class="text-[10px] text-stone-500 font-bold" id="user-role-display">Rolle: Buchhaltung</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-stone-100">
+                    <div class="text-left sm:text-right">
+                        <span class="block text-[8px] text-stone-400 uppercase tracking-wider font-extrabold">Datenbestand</span>
+                        <span class="text-xs font-extrabold text-stone-800" id="db-status-badge">0 Mappen</span>
+                    </div>
+                    <button onclick="logout()" class="p-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-600 transition-all text-xs border border-stone-200" title="Abmelden">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- INNER SCROLLABLE WINDOW (OVERSCROLL PREVENTER) -->
+            <div class="scrollable-content w-full flex-grow">
+
+                <!-- ================= TAB 1: DASHBOARD ================= -->
+                <section id="tab-dashboard" class="tab-content space-y-6 w-full">
+                    
+                    <!-- Filter und Export-Toolbar -->
+                    <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-[#C5A85C] text-sm"></i>
+                            <span class="font-bold text-xs text-stone-700 uppercase tracking-wider">Zeitfenster</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                            <select id="filter-preset" onchange="applyPresetDates()" class="p-2 rounded-xl modern-input text-xs font-bold py-1.5 w-full sm:w-auto">
+                                <option value="all">Gesamte Historie</option>
+                                <option value="this-month" selected>Dieser Monat</option>
+                                <option value="last-30">Letzte 30 Tage</option>
+                            </select>
+                            <div class="flex items-center gap-1 text-xs font-bold w-full sm:w-auto">
+                                <span class="text-stone-400">Von:</span>
+                                <input type="date" id="filter-from" onchange="renderAll()" class="p-1.5 rounded-lg modern-input text-xs">
+                            </div>
+                            <div class="flex items-center gap-1 text-xs font-bold w-full sm:w-auto">
+                                <span class="text-stone-400">Bis:</span>
+                                <input type="date" id="filter-to" onchange="renderAll()" class="p-1.5 rounded-lg modern-input text-xs">
+                            </div>
+                            
+                            <!-- Bericht Export-Button -->
+                            <button onclick="exportStatisticsReport()" class="btn-gold py-1.5 px-4 text-xs font-bold flex items-center gap-1.5 w-full sm:w-auto justify-center">
+                                <i class="fa-solid fa-file-pdf"></i> Bericht exportieren
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Onboarding empty warning -->
+                    <div id="dashboard-empty" class="hidden text-center py-12 px-4 glass-card max-w-lg mx-auto space-y-4">
+                        <div class="w-14 h-14 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
+                            <i class="fa-solid fa-folder-open text-[#C5A85C] text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-stone-900 text-base">Keine Buchungen vorhanden</h3>
+                            <p class="text-stone-500 text-xs mt-1">Erfasse Tageswerte manuell oder nutze den Excel-Importeur für deine Tagesmappen.</p>
+                        </div>
+                        <div class="flex justify-center gap-2 pt-1.5">
+                            <button onclick="switchTab('eingabe')" class="btn-dark px-4 py-2 text-xs">Werte eintragen</button>
+                            <button onclick="switchTab('daten')" class="btn-gold px-4 py-2 text-xs">Excel Import</button>
+                        </div>
+                    </div>
+
+                    <!-- Active Dashboard -->
+                    <div id="dashboard-active" class="space-y-6 w-full">
+                        
+                        <!-- KPIs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                            <div class="glass-card p-5 relative overflow-hidden bg-white">
+                                <span class="text-[9px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Einnahmen (E17)</span>
+                                <div class="text-xl font-black text-stone-950" id="kpi-revenue">0,00 €</div>
+                                <div class="flex justify-between items-center mt-2 text-[10px] text-stone-500 font-bold border-t border-stone-50 pt-2">
+                                    <span>Karten-Anteil:</span>
+                                    <span class="text-stone-800" id="kpi-sub-card">0,00 €</span>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-5 relative overflow-hidden bg-white">
+                                <span class="text-[9px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben (Bar+Karte)</span>
+                                <div class="text-xl font-black text-red-500" id="kpi-expenses">0,00 €</div>
+                                <div class="flex justify-between items-center mt-2 text-[10px] text-stone-500 font-bold border-t border-stone-50 pt-2">
+                                    <span>Bar-Ausgaben:</span>
+                                    <span class="text-stone-800" id="kpi-sub-expbar">0,00 €</span>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-5 relative overflow-hidden bg-white">
+                                <span class="text-[9px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn / Verlust (E36)</span>
+                                <div class="text-xl font-black text-emerald-600" id="kpi-profit">0,00 €</div>
+                                <div class="flex justify-between items-center mt-2 text-[10px] text-stone-500 font-bold border-t border-stone-50 pt-2">
+                                    <span>Marge:</span>
+                                    <span class="text-stone-800 font-extrabold" id="kpi-sub-margin">0%</span>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-5 relative overflow-hidden bg-white">
+                                <span class="text-[9px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Tüte (Bareinnahmen E38)</span>
+                                <div class="text-xl font-black text-[#C5A85C]" id="kpi-tuete">0,00 €</div>
+                                <div class="flex justify-between items-center mt-2 text-[10px] text-stone-500 font-bold border-t border-stone-50 pt-2">
+                                    <span>Wechselgeldbestand:</span>
+                                    <span class="text-stone-800">150,00 €</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts row -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                            <div class="glass-card p-5 lg:col-span-2 w-full">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h3 class="font-extrabold text-stone-900 text-xs uppercase tracking-wider">Entwicklungstrend</h3>
+                                        <p class="text-[9px] text-stone-400 font-bold">Umsatz & Ausgaben des Restaurants im zeitlichen Verlauf</p>
+                                    </div>
+                                    <div class="flex gap-3 text-[10px] font-bold">
+                                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span> Umsatz</span>
+                                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-red-400"></span> Ausgaben</span>
+                                    </div>
+                                </div>
+                                <!-- Responsive chart container -->
+                                <div class="relative h-56 w-full overflow-hidden" id="trend-chart-parent">
+                                    <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-5 w-full">
+                                <h3 class="font-extrabold text-stone-900 text-xs uppercase tracking-wider mb-0.5">Einnahmeverteilung</h3>
+                                <p class="text-[9px] text-stone-400 font-bold mb-4">Aufteilung Bareinnahmen (Tüte) vs. Kartenzahlung</p>
+                                
+                                <div class="relative flex flex-col items-center justify-center w-full">
+                                    <div class="h-40 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
+                                    <div class="w-full mt-4 space-y-1.5 text-xs font-bold" id="pie-chart-legend"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Splits -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                            <div class="glass-card p-5 w-full">
+                                <h3 class="font-extrabold text-stone-900 text-xs uppercase tracking-wider mb-2"><i class="fa-solid fa-tags text-red-400 mr-2"></i> Ausgabenanalyse (D5-D8)</h3>
+                                <p class="text-[9px] text-stone-400 font-bold mb-4">Zusammenfassung der detaillierten Ausgabenkategorien</p>
+                                <div class="space-y-3.5" id="expenses-categories-list"></div>
+                            </div>
+
+                            <div class="glass-card p-5 w-full">
+                                <h3 class="font-extrabold text-stone-900 text-xs uppercase tracking-wider mb-2"><i class="fa-solid fa-calendar-week text-[#C5A85C] mr-2"></i> Performance nach Wochentag</h3>
+                                <p class="text-[9px] text-stone-400 font-bold mb-4">Durchschnittlicher Tagesumsatz (E17) gesplittet nach Wochentag</p>
+                                <div class="space-y-3" id="weekday-performance-list"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- ================= TAB 2: MANUELLE ERFASSUNG ================= -->
+                <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full">
+                    
+                    <div class="glass-card p-6 w-full">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                                <i class="fa-solid fa-pen-nib text-[#C5A85C]"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm sm:text-base">Tagesbericht manuell pflegen</h3>
+                                <p class="text-xs text-stone-500">Trage hier die Werte für einen Tag ein. Die Berechnungen erfolgen exakt nach deiner Excel-Formel.</p>
+                            </div>
+                        </div>
+
+                        <form id="form-manual-entry" onsubmit="saveManualEntry(event)" class="space-y-6 w-full">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                                
+                                <!-- Umsatzerfassung -->
+                                <div class="space-y-3 p-4 rounded-xl bg-stone-50/50 border border-stone-200/40 w-full overflow-hidden">
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-1.5 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-cash-register text-emerald-600"></i> Einnahmen (Umsatz)
+                                    </h4>
+                                    <div class="w-full min-w-0">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Mappenname / Datum</label>
+                                        <input type="date" id="entry-date" required onchange="handleEntryDateChange()" class="modern-input text-xs w-full block">
+                                    </div>
+                                    <div class="w-full min-w-0">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Einnahmen Bar (E14)</label>
+                                        <div class="relative w-full">
+                                            <input type="number" step="0.01" min="0" id="entry-rev-bar" required oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input text-xs pr-8 w-full block">
+                                            <span class="absolute right-3 top-2.5 text-xs text-stone-400">€</span>
+                                        </div>
+                                        <span class="text-[8px] text-stone-400 font-bold block mt-1">Hinweis: Wechselgeld (150 €) + Bareinnahmen</span>
+                                    </div>
+                                    <div class="w-full min-w-0">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Einnahmen Karte (E15)</label>
+                                        <div class="relative w-full">
+                                            <input type="number" step="0.01" min="0" id="entry-rev-card" required oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input text-xs pr-8 w-full block">
+                                            <span class="absolute right-3 top-2.5 text-xs text-stone-400">€</span>
+                                        </div>
+                                    </div>
+                                    <div class="w-full min-w-0">
+                                        <label class="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Wechselgeld (E16)</label>
+                                        <input type="text" readonly value="150.00 € (Wechselgeldbestand)" class="modern-input text-xs bg-stone-100 text-stone-400 cursor-not-allowed w-full block">
+                                    </div>
+                                </div>
+
+                                <!-- Ausgabenerfassung -->
+                                <div class="space-y-3 p-4 rounded-xl bg-stone-50/50 border border-stone-200/40 w-full overflow-hidden">
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-1.5 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-receipt text-red-500"></i> Ausgaben (D5:E8)
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-stone-400 uppercase tracking-wider w-full">
+                                        <span>Bezeichnung</span>
+                                        <span class="text-right">Betrag</span>
+                                    </div>
+                                    <div class="space-y-2 w-full">
+                                        <div class="grid grid-cols-2 gap-2 w-full">
+                                            <input type="text" id="entry-exp-name-1" placeholder="z.B. Fleischwaren" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                            <input type="number" step="0.01" min="0" id="entry-exp-val-1" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs text-right w-full block">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 w-full">
+                                            <input type="text" id="entry-exp-name-2" placeholder="z.B. Getränke" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                            <input type="number" step="0.01" min="0" id="entry-exp-val-2" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs text-right w-full block">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 w-full">
+                                            <input type="text" id="entry-exp-name-3" placeholder="z.B. Lohn" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                            <input type="number" step="0.01" min="0" id="entry-exp-val-3" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs text-right w-full block">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 w-full">
+                                            <input type="text" id="entry-exp-name-4" placeholder="z.B. Sonstiges" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                            <input type="number" step="0.01" min="0" id="entry-exp-val-4" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs text-right w-full block">
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-stone-200 pt-2 grid grid-cols-2 gap-2 w-full">
+                                        <div class="min-w-0">
+                                            <label class="block text-[9px] font-bold text-stone-500 uppercase tracking-wider mb-1">Ausgaben Bar (E9)</label>
+                                            <input type="number" step="0.01" min="0" id="entry-exp-sumbar" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                        </div>
+                                        <div class="min-w-0">
+                                            <label class="block text-[9px] font-bold text-stone-500 uppercase tracking-wider mb-1">Ausgaben Karte (E10)</label>
+                                            <input type="number" step="0.01" min="0" id="entry-exp-sumcard" oninput="calculateLiveFormula()" placeholder="0.00" class="p-2 rounded-lg modern-input text-xs w-full block">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live-Vorschau der Formeln -->
+                                <div class="space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between w-full overflow-hidden">
+                                    <div class="space-y-4 w-full">
+                                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-1.5 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-code-branch"></i> Live-Berechnungen
+                                        </h4>
+                                        <div class="space-y-2.5 w-full">
+                                            <div class="flex justify-between items-center bg-stone-950 p-2.5 rounded-lg border border-stone-850 w-full">
+                                                <div>
+                                                    <span class="text-[9px] uppercase tracking-wider text-stone-400 block font-bold">Umsatz Summe (E17)</span>
+                                                    <span class="text-[8px] text-stone-500 block font-bold">Bar (E14) + Karte (E15) - 150</span>
+                                                </div>
+                                                <span class="text-sm font-extrabold" id="calc-preview-total">0,00 €</span>
+                                            </div>
+                                            <div class="flex justify-between items-center bg-stone-950 p-2.5 rounded-lg border border-stone-850 w-full">
+                                                <div>
+                                                    <span class="text-[9px] uppercase tracking-wider text-stone-400 block font-bold">Gewinn (E36)</span>
+                                                    <span class="text-[8px] text-stone-500 block font-bold">Umsatz (E17) - Ausgaben</span>
+                                                </div>
+                                                <span class="text-emerald-400 text-sm font-extrabold" id="calc-preview-profit">0,00 €</span>
+                                            </div>
+                                            <div class="flex justify-between items-center bg-stone-950 p-2.5 rounded-lg border border-stone-850 w-full">
+                                                <div>
+                                                    <span class="text-[9px] uppercase tracking-wider text-stone-400 block font-bold">Tüte (Bareinnahmen E38)</span>
+                                                    <span class="text-[8px] text-stone-500 block font-bold">Gewinn (E36) - Karte (E37)</span>
+                                                </div>
+                                                <span class="text-[#C5A85C] text-sm font-extrabold" id="calc-preview-tuete">0,00 €</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-4 border-t border-stone-800 space-y-2.5 w-full">
+                                        <div class="w-full">
+                                            <label class="block text-[9px] uppercase font-bold text-stone-400 mb-1">Mappen-Notiz</label>
+                                            <input type="text" id="entry-note" placeholder="z.B. Regentag, Terrasse zu" class="w-full p-2.5 rounded-lg bg-stone-950 border border-stone-800 text-xs text-white focus:outline-none focus:border-[#C5A85C]">
+                                        </div>
+                                        <button type="submit" class="w-full py-3 btn-gold text-xs font-bold uppercase tracking-wider">
+                                            Tag abspeichern <i class="fa-solid fa-save ml-1.5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                </section>
+
+                <!-- ================= TAB 3: HISTORIE / TAGESMAPPEN ================= -->
+                <section id="tab-historie" class="tab-content hidden space-y-6 w-full">
+                    
+                    <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-stone-500"></i>
+                            <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Tagesberichte im System</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full md:w-auto">
+                            <input type="text" id="hist-search" placeholder="Suche..." oninput="renderHistory()" class="p-2 rounded-xl modern-input text-xs">
+                            <select id="hist-sort" onchange="renderHistory()" class="p-2 rounded-xl modern-input text-xs font-bold py-1.5">
+                                <option value="date-desc">Neueste Mappe</option>
+                                <option value="date-asc">Älteste Mappe</option>
+                                <option value="rev-desc">Umsatz absteigend</option>
+                            </select>
+                            <button onclick="clearDatabase()" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold transition-all">
+                                <i class="fa-solid fa-trash-can mr-1.5"></i> Alles leeren
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container with safe responsive layout scrolling -->
+                    <div class="glass-card overflow-hidden w-full">
+                        <div class="overflow-x-auto w-full block">
+                            <table class="w-full text-left border-collapse table-auto min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-stone-50 border-b border-stone-100 text-[9px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                        <th class="p-4">Tagesmappe</th>
+                                        <th class="p-4 text-right">Einnahmen Bar (E14)</th>
+                                        <th class="p-4 text-right">Einnahmen Karte (E15)</th>
+                                        <th class="p-4 text-right">Umsatz Summe (E17)</th>
+                                        <th class="p-4 text-right">Ausgaben</th>
+                                        <th class="p-4 text-right">Gewinn (E36)</th>
+                                        <th class="p-4 text-right">Tüte (E38)</th>
+                                        <th class="p-4 text-center">Aktionen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body" class="divide-y divide-stone-100 text-xs font-semibold">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ================= TAB 4: IMPORT / SETTINGS ================= -->
+                <section id="tab-daten" class="tab-content hidden space-y-6 w-full">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                        
+                        <div class="glass-card p-6 lg:col-span-2 space-y-4 w-full">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
+                                    <i class="fa-solid fa-file-excel text-[#C5A85C]"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm sm:text-base">Mappen-Importer</h3>
+                                    <p class="text-xs text-stone-400 font-bold uppercase tracking-wider">Umsätze & Ausgaben begriffsgenau einlesen</p>
+                                </div>
+                            </div>
+
+                            <!-- Drag and Drop area -->
+                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                                 class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 transition-all cursor-pointer">
+                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                                <div class="space-y-4">
+                                    <div class="text-4xl text-[#C5A85C]/70">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="font-bold text-stone-800 text-xs sm:text-sm">Excel per Drag & Drop hier ablegen oder durchsuchen</p>
+                                        <p class="text-[10px] text-stone-500">Das System liest jede Mappe (wie z.B. „01.01.2025“) einzeln aus</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Keyword instructions based on Legend -->
+                            <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                                <h5 class="text-xs font-bold text-stone-800"><i class="fa-solid fa-info-circle text-[#C5A85C] mr-1.5"></i> Zuordnung nach deiner Legende:</h5>
+                                <p class="text-[11px] text-stone-500 leading-relaxed font-semibold">
+                                    Der Parser liest die Werte direkt rechts neben den folgenden Schlüsselwörtern aus deiner Excel-Tabelle aus:
+                                </p>
+                                <ul class="list-disc list-inside text-[11px] text-stone-600 space-y-1 font-semibold">
+                                    <li><b>Summe (Bar):</b> Summe Bar Ausgaben (E9)</li>
+                                    <li><b>Summe (Karte):</b> Summe Karte Ausgaben (E10)</li>
+                                    <li><b>Bar:</b> Einnahmen Bar + Wechselgeld (E14)</li>
+                                    <li><b>Karte:</b> Einnahmen Karte (E15)</li>
+                                    <li><b>Wechselgeld:</b> Abzuziehendes Wechselgeld (E16)</li>
+                                    <li><b>Summe:</b> Gesamteinnahmen (E17)</li>
+                                    <li><b>Gewinn:</b> Reingewinn (E36)</li>
+                                    <li><b>Tüte:</b> Bareinnahmen (E38)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- JSONBIN.IO CLOUD CONFIGURATION PANEL -->
+                        <div class="glass-card p-6 space-y-4 w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid fa-cloud text-[#C5A85C]"></i>
+                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-xs">JSONBin.io Cloud-Sync</h4>
+                            </div>
+                            <p class="text-[10px] text-stone-500 leading-relaxed font-semibold">Speichere und lade deine Restaurantdaten über ein externes Cloud-Backup von JSONBin.io:</p>
+                            
+                            <div class="space-y-3 text-xs font-semibold">
+                                <div>
+                                    <label class="block text-[9px] uppercase font-bold text-stone-400 mb-1">JSONBin API-Key</label>
+                                    <input type="password" id="jsonbin-key" placeholder="z. B. $2b$10$..." class="p-2 rounded-lg modern-input font-bold text-xs w-full">
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
+                                    <input type="text" id="jsonbin-id" placeholder="z. B. 64b3ef..." class="p-2 rounded-lg modern-input font-bold text-xs w-full">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2 pt-2">
+                                    <button onclick="loadFromJSONBin()" class="p-2.5 rounded-lg btn-dark text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-cloud-arrow-down"></i> Laden
+                                    </button>
+                                    <button onclick="saveToJSONBin()" class="p-2.5 rounded-lg btn-gold text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Sichern
+                                    </button>
+                                </div>
+                                <button onclick="saveJSONBinSettings()" class="w-full py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[9px] uppercase font-bold tracking-widest rounded-lg">
+                                    Zugangsdaten Speichern
+                                </button>
+                            </div>
+
+                            <div class="border-t border-stone-200 pt-3">
+                                <h5 class="text-[9px] uppercase font-bold text-stone-400 mb-1">Ausgaben (D5:E8)</h5>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <input type="text" id="map-exp-names" value="D5:D8" class="p-1.5 rounded-lg modern-input text-center text-[10px] font-bold">
+                                    <input type="text" id="map-exp-vals" value="E5:E8" class="p-1.5 rounded-lg modern-input text-center text-[10px] font-bold">
+                                </div>
+                                <button onclick="saveMappingConfig()" class="w-full py-1.5 btn-gold text-[9px] uppercase font-extrabold mt-1.5">Ausgabenbereich Speichern</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Live dry-run importer result table -->
+                    <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-300 w-full overflow-hidden animate-fade-in">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 w-full">
+                            <div>
+                                <h4 class="font-extrabold text-stone-900"><i class="fa-solid fa-clipboard-check text-emerald-600 mr-1.5"></i> Excel-Auslese Vorschau (Begriffs-Modus)</h4>
+                                <p class="text-xs text-stone-500">Folgende Mappen wurden gelesen. Bestätige, um sie fest in das Portal zu übernehmen.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="discardBuffer()" class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-bold transition-all">Verwerfen</button>
+                                <button onclick="commitBuffer()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all">
+                                    <i class="fa-solid fa-check mr-1.5"></i> (<span id="preview-count-text">0</span> Tage) Importieren
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto w-full block">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-stone-50 border-b border-stone-100 text-[9px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                        <th class="p-3">Mappe (Datum)</th>
+                                        <th class="p-3 text-right">Einnahmen Bar (E14)</th>
+                                        <th class="p-3 text-right">Einnahmen Karte (E15)</th>
+                                        <th class="p-3 text-right">Umsatz Summe (E17)</th>
+                                        <th class="p-3 text-right">Ausgaben Bar (E9)</th>
+                                        <th class="p-3 text-right">Ausgaben Karte (E10)</th>
+                                        <th class="p-3 text-right">Gewinn (E36)</th>
+                                        <th class="p-3 text-right">Tüte (E38)</th>
+                                        <th class="p-3">Gefundene Ausgaben-Posten (D5:E8)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold">
+                                    <!-- Previews of days -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= RESPONSIVE NAVIGATION BAR ================= -->
+    <nav id="bottom-tab-bar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
+        <div class="bg-white/95 backdrop-blur-md rounded-full px-3 py-2 flex justify-between items-center gap-1 shadow-[0_12px_40px_rgba(28,25,23,0.12)] border border-stone-200/60">
+            <!-- TAB: Dashboard -->
+            <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="flex-1 py-2 px-1 rounded-full flex flex-col items-center gap-0.5 text-stone-400 hover:text-stone-800 transition-all duration-300">
+                <i class="fa-solid fa-chart-pie text-base"></i>
+                <span class="text-[8px] font-extrabold uppercase tracking-widest">Dashboard</span>
+            </button>
+            
+            <!-- TAB: Manuelle Erfassung -->
+            <button onclick="switchTab('eingabe')" id="btn-tab-eingabe" class="flex-1 py-2 px-1 rounded-full flex flex-col items-center gap-0.5 text-stone-400 hover:text-stone-800 transition-all duration-300">
+                <i class="fa-solid fa-keyboard text-base"></i>
+                <span class="text-[8px] font-extrabold uppercase tracking-widest">Erfassung</span>
+            </button>
+            
+            <!-- TAB: Historie -->
+            <button onclick="switchTab('historie')" id="btn-tab-historie" class="flex-1 py-2 px-1 rounded-full flex flex-col items-center gap-0.5 text-stone-400 hover:text-stone-800 transition-all duration-300">
+                <i class="fa-solid fa-database text-base"></i>
+                <span class="text-[8px] font-extrabold uppercase tracking-widest">Historie</span>
+            </button>
+            
+            <!-- TAB: Excel Import / Settings -->
+            <button onclick="switchTab('daten')" id="btn-tab-daten" class="flex-1 py-2 px-1 rounded-full flex flex-col items-center gap-0.5 text-stone-400 hover:text-stone-800 transition-all duration-300">
+                <i class="fa-solid fa-file-excel text-base"></i>
+                <span class="text-[8px] font-extrabold uppercase tracking-widest">Import</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- PREMIUM NOTIFICATION TOAST -->
+    <div id="system-toast" class="hidden fixed top-6 right-6 z-[120] max-w-xs p-4 rounded-xl bg-white/95 border border-stone-200/80 shadow-2xl backdrop-blur-md">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-stone-50 border border-stone-200/80 flex items-center justify-center flex-shrink-0" id="toast-icon-wrapper">
+                <i class="fa-solid fa-bell text-[#C5A85C]" id="toast-icon"></i>
+            </div>
+            <div>
+                <h5 class="font-bold text-stone-850 text-xs" id="toast-title">Benachrichtigung</h5>
+                <p class="text-[10px] text-stone-500 mt-0.5 font-medium leading-relaxed" id="toast-message">Erfolgreich geladen.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRECISE DIALOG POPUP (Modal) -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card max-w-sm w-full p-6 rounded-2xl text-center bg-white border border-stone-200/80">
+            <h5 class="font-bold text-stone-900 mb-2 text-sm uppercase tracking-wider" id="modal-title">Aktion ausführen?</h5>
+            <p class="text-xs text-stone-500 mb-6 font-medium leading-relaxed" id="modal-desc">Bist du sicher, dass du fortfahren möchtest?</p>
+            <div class="flex justify-center gap-3">
+                <button id="modal-cancel-btn" class="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-bold transition-all">Abbrechen</button>
+                <button id="modal-confirm-btn" class="px-5 py-2 rounded-lg btn-gold text-xs font-bold">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT SYSTEM ENGINE ================= -->
+    <script>
+        let dbDays = [];
+        let loggedInUser = null;
+        let activeTab = 'dashboard';
+        let tempImportBuffer = [];
+
+        // Coordinates fallbacks
+        let cellMapping = {
+            expNames: "D5:D8",
+            expVals: "E5:E8"
+        };
+
+        let resizeObserver = null;
+
+        // Pull to refresh states
+        let startY = 0;
+        let isPulling = false;
+
+        window.onload = function() {
+            if (localStorage.getItem('gastro_finance_premium_db')) {
+                dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
+            }
+            if (localStorage.getItem('gastro_premium_mapping')) {
+                cellMapping = JSON.parse(localStorage.getItem('gastro_premium_mapping'));
+                document.getElementById('map-exp-names').value = cellMapping.expNames;
+                document.getElementById('map-exp-vals').value = cellMapping.expVals;
+            }
+
+            // Sync and load JSONBin values if saved in browser storage
+            if (localStorage.getItem('jsonbin_key')) {
+                document.getElementById('jsonbin-key').value = localStorage.getItem('jsonbin_key');
+            }
+            if (localStorage.getItem('jsonbin_id')) {
+                document.getElementById('jsonbin-id').value = localStorage.getItem('jsonbin_id');
+            }
+
+            // Sync date manual picker to yesterday
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            document.getElementById('entry-date').value = yesterday.toISOString().split('T')[0];
+
+            setupFilterDefaultDates();
+            initExcelDropzone();
+
+            // Set up ResizeObserver to handle graph resizing and solve overflows instantly
+            setupResizeListeners();
+
+            // Set up Pull-To-Refresh listeners
+            setupPullToRefresh();
+        };
+
+        // Pull to refresh implementation
+        function setupPullToRefresh() {
+            const scrollable = document.querySelector('.scrollable-content');
+            
+            scrollable.addEventListener('touchstart', function(e) {
+                if (scrollable.scrollTop === 0) {
+                    startY = e.touches[0].pageY;
+                    isPulling = true;
+                }
+            }, { passive: true });
+
+            scrollable.addEventListener('touchmove', function(e) {
+                if (!isPulling) return;
+                const currentY = e.touches[0].pageY;
+                const pullDistance = currentY - startY;
+
+                if (pullDistance > 60 && scrollable.scrollTop === 0) {
+                    document.getElementById('pull-to-refresh-spinner').classList.add('active');
+                }
+            }, { passive: true });
+
+            scrollable.addEventListener('touchend', function() {
+                if (isPulling) {
+                    const spinner = document.getElementById('pull-to-refresh-spinner');
+                    if (spinner.classList.contains('active')) {
+                        setTimeout(() => {
+                            spinner.classList.remove('active');
+                            if (localStorage.getItem('gastro_finance_premium_db')) {
+                                dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
+                            }
+                            renderAll();
+                            showToast("Daten aktualisiert", "Datenbestand wurde neu geladen.");
+                        }, 800);
+                    }
+                    isPulling = false;
+                }
+            }, { passive: true });
+        }
+
+        function setupResizeListeners() {
+            const chartParent = document.getElementById('trend-chart-parent');
+            if (chartParent) {
+                resizeObserver = new ResizeObserver(() => {
+                    if (loggedInUser && activeTab === 'dashboard') {
+                        const filtered = getFilteredDays();
+                        drawTrendChart(filtered);
+                        drawDistributionChart(filtered);
+                    }
+                });
+                resizeObserver.observe(chartParent);
+            }
+        }
+
+        // JSONBin Settings Saving
+        function saveJSONBinSettings() {
+            const key = document.getElementById('jsonbin-key').value.trim();
+            const id = document.getElementById('jsonbin-id').value.trim();
+
+            if (!key || !id) {
+                showToast("Fehler", "Bitte fülle beide Felder aus.", false);
+                return;
+            }
+
+            localStorage.setItem('jsonbin_key', key);
+            localStorage.setItem('jsonbin_id', id);
+            showToast("Einstellungen gespeichert", "Deine JSONBin-Anmeldedaten wurden gesichert.");
+        }
+
+        // Read Data from JSONBin Cloud Bin
+        async function loadFromJSONBin() {
+            const key = document.getElementById('jsonbin-key').value.trim();
+            const id = document.getElementById('jsonbin-id').value.trim();
+
+            if (!key || !id) {
+                showToast("Fehler", "API-Key und Bin-ID werden benötigt.", false);
+                return;
+            }
+
+            showToast("Lade...", "Verbindung zur Cloud wird aufgebaut...");
+
+            try {
+                const response = await fetch(`https://api.jsonbin.v3/b/${id}/latest`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Master-Key': key
+                    }
+                });
+
+                if (!response.ok) throw new Error("Netzwerkantwort war nicht ok");
+
+                const result = await response.json();
+                const record = result.record;
+
+                if (Array.isArray(record)) {
+                    dbDays = record;
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Synchronisiert!", `${dbDays.length} Mappen erfolgreich aus der Cloud geladen.`);
+                    renderAll();
+                } else {
+                    showToast("Fehler", "Ungültiges Datenbankschema in der Cloud.", false);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Cloud-Fehler", "Daten konnten nicht geladen werden.", false);
+            }
+        }
+
+        // Save Data to JSONBin Cloud Bin
+        async function saveToJSONBin() {
+            const key = document.getElementById('jsonbin-key').value.trim();
+            const id = document.getElementById('jsonbin-id').value.trim();
+
+            if (!key || !id) {
+                showToast("Fehler", "API-Key und Bin-ID werden benötigt.", false);
+                return;
+            }
+
+            showToast("Sichere...", "Daten werden hochgeladen...");
+
+            try {
+                const response = await fetch(`https://api.jsonbin.v3/b/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': key
+                    },
+                    body: JSON.stringify(dbDays)
+                });
+
+                if (!response.ok) throw new Error("Fehler beim Hochladen");
+
+                showToast("Erfolgreich gesichert", "Deine lokalen Tagesmappen wurden in der Cloud gesichert.");
+            } catch (err) {
+                console.error(err);
+                showToast("Cloud-Fehler", "Verbindung zur Cloud fehlgeschlagen.", false);
+            }
+        }
+
+        // Default Date Preset to current month range
+        function setupFilterDefaultDates() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+
+            document.getElementById('filter-from').value = `${year}-${month}-01`;
+            const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+            document.getElementById('filter-to').value = `${year}-${month}-${lastDay}`;
+        }
+
+        function applyPresetDates() {
+            const val = document.getElementById('filter-preset').value;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+
+            if (val === 'all') {
+                document.getElementById('filter-from').value = '';
+                document.getElementById('filter-to').value = '';
+            } else if (val === 'this-month') {
+                document.getElementById('filter-from').value = `${year}-${month}-01`;
+                const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+                document.getElementById('filter-to').value = `${year}-${month}-${lastDay}`;
+            } else if (val === 'last-30') {
+                const prev = new Date();
+                prev.setDate(now.getDate() - 30);
+                document.getElementById('filter-from').value = prev.toISOString().split('T')[0];
+                document.getElementById('filter-to').value = now.toISOString().split('T')[0];
+            }
+            renderAll();
+        }
+
+        function getFilteredDays() {
+            const from = document.getElementById('filter-from').value;
+            const to = document.getElementById('filter-to').value;
+
+            return dbDays.filter(d => {
+                if (from && d.date < from) return false;
+                if (to && d.date > to) return false;
+                return true;
+            });
+        }
+
+        // Authentication logic (Passwort geändert und Verrätertexte entfernt)
+        function handleLogin(e) {
+            e.preventDefault();
+            const role = document.getElementById('login-role').value;
+            const pass = document.getElementById('login-password').value;
+            const errorBox = document.getElementById('login-error');
+
+            if (pass === "Sabraoui13+") {
+                loggedInUser = role;
+                errorBox.classList.add('hidden');
+                
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-portal').classList.remove('hidden');
+                document.getElementById('bottom-tab-bar').classList.remove('hidden');
+
+                if (role === 'inhaber') {
+                    document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
+                    disableWritePermissions();
+                } else {
+                    document.getElementById('user-role-display').textContent = `Rolle: Buchhaltungsabteilung`;
+                }
+
+                showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
+                switchTab('dashboard');
+                renderAll();
+            } else {
+                errorBox.classList.remove('hidden');
+                showToast("Fehler", "Falsches Kennwort.", false);
+            }
+        }
+
+        function logout() {
+            loggedInUser = null;
+            document.getElementById('app-portal').classList.add('hidden');
+            document.getElementById('bottom-tab-bar').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-password').value = '';
+            showToast("Abgemeldet", "Datenbank erfolgreich gesichert.");
+        }
+
+        function disableWritePermissions() {
+            const dropzone = document.getElementById('drop-zone');
+            if (dropzone) {
+                dropzone.style.pointerEvents = "none";
+                dropzone.style.opacity = "0.5";
+            }
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(i => {
+                if (i.id !== 'filter-preset' && i.id !== 'filter-from' && i.id !== 'filter-to' && i.id !== 'hist-search' && i.id !== 'hist-sort') {
+                    i.setAttribute('disabled', 'true');
+                }
+            });
+            const buttons = document.querySelectorAll('form button');
+            buttons.forEach(b => b.setAttribute('disabled', 'true'));
+        }
+
+        // Navigation Tab switcher
+        function switchTab(tabId) {
+            activeTab = tabId;
+
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(t => t.classList.add('hidden'));
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            const buttons = document.querySelectorAll('#bottom-tab-bar button');
+            buttons.forEach(b => {
+                b.classList.remove('tab-active', 'scale-105');
+                b.classList.add('text-stone-400');
+            });
+
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('tab-active', 'scale-105');
+                activeBtn.classList.remove('text-stone-400');
+            }
+
+            renderAll();
+        }
+
+        // ================= MANUELLE PFLEGE & RECHNER LOGIK =================
+
+        function calculateLiveFormula() {
+            const barRev = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
+            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            const totalRevenue = barRev + cardRev - 150;
+
+            const exp1 = parseFloat(document.getElementById('entry-exp-val-1').value) || 0;
+            const exp2 = parseFloat(document.getElementById('entry-exp-val-2').value) || 0;
+            const exp3 = parseFloat(document.getElementById('entry-exp-val-3').value) || 0;
+            const exp4 = parseFloat(document.getElementById('entry-exp-val-4').value) || 0;
+            const totalExpenses = exp1 + exp2 + exp3 + exp4;
+
+            const profit = totalRevenue - totalExpenses;
+            const tuete = profit - cardRev;
+
+            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
+            
+            const profitLabel = document.getElementById('calc-preview-profit');
+            profitLabel.textContent = formatCurrency(profit);
+            profitLabel.style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
+
+            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
+        }
+
+        function handleEntryDateChange() {
+            const pickedDate = document.getElementById('entry-date').value;
+            const existingDay = dbDays.find(d => d.date === pickedDate);
+
+            if (existingDay) {
+                document.getElementById('entry-rev-bar').value = existingDay.revenue.bar;
+                document.getElementById('entry-rev-card').value = existingDay.revenue.card;
+
+                for (let i = 1; i <= 4; i++) {
+                    const nameInput = document.getElementById(`entry-exp-name-${i}`);
+                    const valInput = document.getElementById(`entry-exp-val-${i}`);
+                    if (existingDay.expensesList && existingDay.expensesList[i - 1]) {
+                        nameInput.value = existingDay.expensesList[i - 1].name;
+                        valInput.value = existingDay.expensesList[i - 1].amount;
+                    } else {
+                        nameInput.value = '';
+                        valInput.value = '';
+                    }
+                }
+
+                document.getElementById('entry-exp-sumbar').value = existingDay.expensesSum.bar;
+                document.getElementById('entry-exp-sumcard').value = existingDay.expensesSum.card;
+                document.getElementById('entry-note').value = existingDay.note || '';
+                
+                showToast("Mappe geladen", `Daten für den ${formatGermanDate(pickedDate)} geladen.`);
+            } else {
+                document.getElementById('entry-rev-bar').value = '';
+                document.getElementById('entry-rev-card').value = '';
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`entry-exp-name-${i}`).value = '';
+                    document.getElementById(`entry-exp-val-${i}`).value = '';
+                }
+                document.getElementById('entry-exp-sumbar').value = '';
+                document.getElementById('entry-exp-sumcard').value = '';
+                document.getElementById('entry-note').value = '';
+            }
+            calculateLiveFormula();
+        }
+
+        function saveManualEntry(e) {
+            e.preventDefault();
+            if (loggedInUser === 'inhaber') {
+                showToast("Fehler", "Schreibrechte fehlen.", false);
+                return;
+            }
+
+            const pickedDate = document.getElementById('entry-date').value;
+            const barRev = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
+            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            const totalRevenue = barRev + cardRev - 150;
+
+            let expensesList = [];
+            for (let i = 1; i <= 4; i++) {
+                const name = document.getElementById(`entry-exp-name-${i}`).value.trim();
+                const amount = parseFloat(document.getElementById(`entry-exp-val-${i}`).value) || 0;
+                if (name && amount > 0) {
+                    expensesList.push({ name, amount });
+                }
+            }
+
+            const expSumBar = parseFloat(document.getElementById('entry-exp-sumbar').value) || 0;
+            const expSumCard = parseFloat(document.getElementById('entry-exp-sumcard').value) || 0;
+            const totalExpenses = expSumBar + expSumCard;
+
+            const profit = totalRevenue - totalExpenses;
+            const tuete = profit - cardRev;
+            const note = document.getElementById('entry-note').value.trim();
+
+            const dayObj = {
+                date: pickedDate,
+                germanDate: formatGermanDate(pickedDate),
+                revenue: {
+                    total: totalRevenue,
+                    bar: barRev,
+                    card: cardRev
+                },
+                expensesList: expensesList,
+                expensesSum: {
+                    bar: expSumBar,
+                    card: expSumCard,
+                    total: totalExpenses
+                },
+                profit: profit,
+                tuete: tuete,
+                note: note || "Manuelle Buchung"
+            };
+
+            const existingIndex = dbDays.findIndex(d => d.date === pickedDate);
+            if (existingIndex !== -1) {
+                dbDays[existingIndex] = dayObj;
+                showToast("Mappe überschrieben", `Tag ${formatGermanDate(pickedDate)} aktualisiert!`);
+            } else {
+                dbDays.push(dayObj);
+                showToast("Mappe angelegt", `Tag ${formatGermanDate(pickedDate)} erfolgreich verbucht!`);
+            }
+
+            dbDays.sort((a,b) => a.date.localeCompare(b.date));
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+
+            renderAll();
+            switchTab('dashboard');
+        }
+
+        // ================= RESILIENT KEYWORD-TO-VALUE EXCEL PARSER =================
+
+        function initExcelDropzone() {
+            const dropzone = document.getElementById('drop-zone');
+
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('border-[#C5A85C]', 'bg-[#F6F3EB]/40');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('border-[#C5A85C]', 'bg-[#F6F3EB]/40');
+                });
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt.files.length > 0) {
+                    parseExcelFile(dt.files[0]);
+                }
+            });
+        }
+
+        function handleExcelUpload(e) {
+            if (e.target.files.length > 0) {
+                parseExcelFile(e.target.files[0]);
+            }
+        }
+
+        function saveMappingConfig() {
+            cellMapping.expNames = document.getElementById('map-exp-names').value.trim();
+            cellMapping.expVals = document.getElementById('map-exp-vals').value.trim();
+
+            localStorage.setItem('gastro_premium_mapping', JSON.stringify(cellMapping));
+            showToast("Konfiguration gespeichert", "Ausgabenbereich wurde aktualisiert.");
+        }
+
+        function expandCoordinates(rangeStr) {
+            const parts = rangeStr.split(':');
+            if (parts.length !== 2) return [rangeStr];
+            
+            const start = parts[0];
+            const end = parts[1];
+
+            const col = start.match(/[A-Z]+/)[0];
+            const startRow = parseInt(start.match(/\d+/)[0]);
+            const endRow = parseInt(end.match(/\d+/)[0]);
+
+            const coords = [];
+            for (let r = startRow; r <= endRow; r++) {
+                coords.push(`${col}${r}`);
+            }
+            return coords;
+        }
+
+        function readNumericValue(ws, coord) {
+            if (!ws || !ws[coord]) return 0;
+            const cell = ws[coord];
+            if (typeof cell.v === 'number') return cell.v;
+            return parseFloat(String(cell.v).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+        }
+
+        function readStringValue(ws, coord) {
+            if (!ws || !ws[coord]) return "";
+            return String(ws[coord].v).trim();
+        }
+
+        // Resilient Sheet Reader searching for keywords and reading adjacent values
+        function parseExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    tempImportBuffer = [];
+
+                    workbook.SheetNames.forEach(sheetName => {
+                        const trimmedName = sheetName.trim();
+                        if (!/^\d{2}\.\d{2}\.\d{4}$/.test(trimmedName)) return;
+
+                        const ws = workbook.Sheets[sheetName];
+                        const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                        const dateParts = trimmedName.split('.');
+                        const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+
+                        let expSumBar = 0;
+                        let expSumCard = 0;
+                        let revBar = 0;
+                        let revCard = 0;
+                        let revTotal = 0;
+                        let profit = 0;
+                        let tuete = 0;
+                        let expensesList = [];
+
+                        let inEinnahmenArea = false;
+
+                        for (let r = 0; r < rawJson.length; r++) {
+                            const row = rawJson[r];
+                            if (!row || row.length === 0) continue;
+
+                            let rowTextCombined = row.join(" ").toLowerCase();
+                            // Sobald "Einnahmen" oder "Umsatz" in einer Zeile steht, beginnt der Einnahmenblock
+                            if (rowTextCombined.includes("einnahmen") || rowTextCombined.includes("umsatz")) {
+                                inEinnahmenArea = true;
+                            }
+
+                            for (let c = 0; c < row.length; c++) {
+                                const rawCellVal = row[c];
+                                if (rawCellVal === undefined || rawCellVal === null) continue;
+                                const cellVal = String(rawCellVal).trim().toLowerCase();
+                                if (!cellVal) continue;
+
+                                // Funktion, um den direkt rechts danebenliegenden numerischen Wert zu finden
+                                const getValueDirectlyToRight = (startCol) => {
+                                    for (let nextCol = startCol + 1; nextCol < row.length; nextCol++) {
+                                        const rawVal = String(row[nextCol] || "").trim();
+                                        if (rawVal === "") continue;
+                                        const parsed = parseFloat(rawVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                                        if (!isNaN(parsed)) return parsed;
+                                    }
+                                    return 0;
+                                };
+
+                                // Begriffsabfrage nach Legende
+                                if (cellVal === "summe (bar)") {
+                                    expSumBar = getValueDirectlyToRight(c);
+                                } else if (cellVal === "summe (karte)") {
+                                    expSumCard = getValueDirectlyToRight(c);
+                                } else if (cellVal === "gewinn") {
+                                    profit = getValueDirectlyToRight(c);
+                                } else if (cellVal === "tüte") {
+                                    tuete = getValueDirectlyToRight(c);
+                                } else if (cellVal === "bar") {
+                                    if (inEinnahmenArea) {
+                                        revBar = getValueDirectlyToRight(c);
+                                    }
+                                } else if (cellVal === "karte") {
+                                    if (inEinnahmenArea) {
+                                        revCard = getValueDirectlyToRight(c);
+                                    }
+                                } else if (cellVal === "summe") {
+                                    if (inEinnahmenArea) {
+                                        revTotal = getValueDirectlyToRight(c);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Einzelne detaillierte Ausgaben (D5:D8 & E5:E8) importieren
+                        const nameCoords = expandCoordinates(cellMapping.expNames);
+                        const valCoords = expandCoordinates(cellMapping.expVals);
+                        nameCoords.forEach((coord, index) => {
+                            const name = readStringValue(ws, coord);
+                            const amount = readNumericValue(ws, valCoords[index]);
+                            if (name && amount > 0 && !name.toLowerCase().includes("summe")) {
+                                expensesList.push({ name, amount });
+                            }
+                        });
+
+                        tempImportBuffer.push({
+                            date: isoDate,
+                            germanDate: trimmedName,
+                            revenue: {
+                                total: revTotal || (revBar + revCard - 150),
+                                bar: revBar,
+                                card: revCard
+                            },
+                            expensesList: expensesList,
+                            expensesSum: {
+                                bar: expSumBar,
+                                card: expSumCard,
+                                total: expSumBar + expSumCard
+                            },
+                            profit: profit,
+                            tuete: tuete,
+                            note: "Musterkonformer Legenden-Import"
+                        });
+                    });
+
+                    if (tempImportBuffer.length === 0) {
+                        showToast("Keine Daten", "Keine Mappen im Format DD.MM.YYYY gefunden.", false);
+                        return;
+                    }
+
+                    renderImportPreview();
+
+                } catch (err) {
+                    console.error(err);
+                    showToast("Fehler", "Auslesen der Excel-Tabelle fehlgeschlagen.", false);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderImportPreview() {
+            const container = document.getElementById('import-preview-container');
+            const tbody = document.getElementById('import-preview-tbody');
+            const countText = document.getElementById('preview-count-text');
+
+            tbody.innerHTML = '';
+            countText.textContent = tempImportBuffer.length;
+
+            tempImportBuffer.forEach(day => {
+                let expLabels = day.expensesList.map(e => `<span class="inline-block bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded mr-1 text-[9px] font-bold">${e.name}: ${e.amount.toFixed(2)} €</span>`).join('');
+                if (expLabels === "") expLabels = `<span class="text-stone-400 italic text-[10px]">Keine Ausgaben</span>`;
+
+                const row = `
+                    <tr class="hover:bg-stone-50 transition-all">
+                        <td class="p-3 font-bold text-stone-900">${day.germanDate}</td>
+                        <td class="p-3 text-right">${day.revenue.bar.toFixed(2)} €</td>
+                        <td class="p-3 text-right">${day.revenue.card.toFixed(2)} €</td>
+                        <td class="p-3 text-right text-emerald-600 font-bold">${day.revenue.total.toFixed(2)} €</td>
+                        <td class="p-3 text-right text-red-500 font-bold">${day.expensesSum.bar.toFixed(2)} €</td>
+                        <td class="p-3 text-right text-red-500 font-bold">${day.expensesSum.card.toFixed(2)} €</td>
+                        <td class="p-3 text-right font-black text-emerald-600">${day.profit.toFixed(2)} €</td>
+                        <td class="p-3 text-right font-black text-[#C5A85C]">${day.tuete.toFixed(2)} €</td>
+                        <td class="p-3">${expLabels}</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function discardBuffer() {
+            tempImportBuffer = [];
+            document.getElementById('import-preview-container').classList.add('hidden');
+            showToast("Import abgebrochen", "Temporäre Daten gelöscht.");
+        }
+
+        function commitBuffer() {
+            if (loggedInUser === 'inhaber') {
+                showToast("Berechtigungsfehler", "Inhaber dürfen keine Daten importieren.", false);
+                return;
+            }
+
+            let insCount = 0;
+            let updCount = 0;
+
+            tempImportBuffer.forEach(day => {
+                const existingIndex = dbDays.findIndex(d => d.date === day.date);
+                if (existingIndex !== -1) {
+                    dbDays[existingIndex] = day;
+                    updCount++;
+                } else {
+                    dbDays.push(day);
+                    insCount++;
+                }
+            });
+
+            dbDays.sort((a,b) => a.date.localeCompare(b.date));
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+
+            showToast("Erfolgreich importiert", `${insCount} Tage importiert, ${updCount} überschrieben.`);
+            
+            tempImportBuffer = [];
+            document.getElementById('import-preview-container').classList.add('hidden');
+            renderAll();
+            switchTab('dashboard');
+        }
+
+        // ================= STATISTIK EXPORT SYSTEM (PDF / PRINT READY) =================
+
+        function exportStatisticsReport() {
+            const filtered = getFilteredDays();
+            if (filtered.length === 0) {
+                showToast("Fehler", "Keine Daten im ausgewählten Zeitraum zum Exportieren vorhanden.", false);
+                return;
+            }
+
+            let totalRevenue = 0;
+            let barRevenue = 0;
+            let cardRevenue = 0;
+            let totalExpenses = 0;
+            let expBar = 0;
+            let expCard = 0;
+            let profit = 0;
+            let tuete = 0;
+
+            let detailsRows = "";
+            let categorySums = {};
+
+            filtered.forEach(d => {
+                totalRevenue += d.revenue.total;
+                barRevenue += d.revenue.bar;
+                cardRevenue += d.revenue.card;
+                totalExpenses += d.expensesSum.total;
+                expBar += d.expensesSum.bar;
+                expCard += d.expensesSum.card;
+                profit += d.profit;
+                tuete += d.tuete;
+
+                d.expensesList.forEach(e => {
+                    if (!categorySums[e.name]) categorySums[e.name] = 0;
+                    categorySums[e.name] += e.amount;
+                });
+
+                detailsRows += `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">${d.germanDate} (${getWeekdayName(d.date)})</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; color: #10B981; font-weight: bold;">${formatCurrency(d.revenue.total)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; color: #c5a85c;">${formatCurrency(d.revenue.bar)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; color: #10b981;">${formatCurrency(d.revenue.card)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; color: #f59e0b;">${formatCurrency(d.expensesSum.total)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: ${d.profit >= 0 ? '#10B981' : '#ef4444'}">${formatCurrency(d.profit)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #A3853F;">${formatCurrency(d.tuete)}</td>
+                    </tr>
+                `;
+            });
+
+            let expCategoriesHtml = "";
+            Object.keys(categorySums).forEach(name => {
+                const amt = categorySums[name];
+                const pct = totalExpenses > 0 ? (amt / totalExpenses) * 100 : 0;
+                expCategoriesHtml += `
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #333; margin-bottom: 4px;">
+                            <span>${name}</span>
+                            <span>${formatCurrency(amt)} (${pct.toFixed(0)}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${pct}%; height: 100%; background: #C5A85C; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const fromStr = document.getElementById('filter-from').value || "Beginn";
+            const toStr = document.getElementById('filter-to').value || "Heute";
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>GastroFinance Statistik Bericht</title>
+                    <style>
+                        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fff; color: #111; margin: 0; padding: 40px; }
+                        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #C5A85C; padding-bottom: 20px; margin-bottom: 30px; }
+                        .title { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 900; color: #111; letter-spacing: 1px; }
+                        .meta { text-align: right; font-size: 11px; color: #555; }
+                        .kpis { display: grid; grid-template-cols: repeat(4, 1fr); gap: 20px; margin-bottom: 35px; }
+                        .kpi-card { background: #fdfdfb; border: 1px solid rgba(197, 168, 92, 0.3); padding: 15px; border-radius: 12px; }
+                        .kpi-title { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+                        .kpi-val { font-size: 18px; font-weight: 900; color: #111; margin-top: 5px; }
+                        .row-splits { display: grid; grid-template-cols: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
+                        .chart-sim { border: 1px solid #eee; padding: 20px; border-radius: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th { background: #f9f9f9; padding: 12px; border-bottom: 2px solid #ddd; font-weight: bold; text-align: left; }
+                        .total-row { background: #FAF9F6; font-weight: bold; }
+                        .total-row td { padding: 12px; border-top: 2px solid #C5A85C; font-size: 12px; }
+                        @media print {
+                            body { padding: 0; }
+                            .btn-print { display: none; }
+                        }
+                        .btn-print { background: #1C1917; color: #fff; border: none; padding: 10px 20px; font-weight: bold; font-size: 12px; border-radius: 6px; cursor: pointer; float: right; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <button class="btn-print" onclick="window.print()">Bericht Drucken / PDF speichern</button>
+                    
+                    <div class="header">
+                        <div>
+                            <div class="title">GastroFinance</div>
+                            <div style="font-size: 11px; color: #C5A85C; font-weight: bold; text-transform: uppercase; margin-top: 3px;">Statistik & Kassenberichte Export</div>
+                        </div>
+                        <div class="meta">
+                            <div>Zeitraum: <b>${formatGermanDate(fromStr)}</b> bis <b>${formatGermanDate(toStr)}</b></div>
+                            <div>Generiert am: ${new Date().toLocaleDateString('de-DE')} • ${new Date().toLocaleTimeString('de-DE')}</div>
+                            <div>Mappen insgesamt: <b>${filtered.length} Tage</b></div>
+                        </div>
+                    </div>
+
+                    <div class="kpis">
+                        <div class="kpi-card">
+                            <div class="kpi-title">Umsatz Summe (E17)</div>
+                            <div class="kpi-val">${formatCurrency(totalRevenue)}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-title">Ausgaben Summe</div>
+                            <div class="kpi-val" style="color: #ef4444;">${formatCurrency(totalExpenses)}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-title">Gesamtgewinn (E36)</div>
+                            <div class="kpi-val" style="color: #10B981;">${formatCurrency(profit)}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-title">Tüte Bareinnahmen (E38)</div>
+                            <div class="kpi-val" style="color: #C5A85C;">${formatCurrency(tuete)}</div>
+                        </div>
+                    </div>
+
+                    <div class="row-splits">
+                        <div class="chart-sim">
+                            <h3 style="margin-top: 0; font-size: 13px; text-transform: uppercase; color: #111; border-bottom: 1px solid #eee; padding-bottom: 8px;">Umsatzaufteilung</h3>
+                            <div style="margin-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; font-weight: bold;">
+                                    <span>Bar-Anteil (E14)</span>
+                                    <span>${formatCurrency(barRevenue)} (${(totalRevenue > 0 ? (barRevenue / totalRevenue) * 100 : 0).toFixed(0)}%)</span>
+                                </div>
+                                <div style="width: 100%; height: 12px; background: #eee; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                                    <div style="width: ${(totalRevenue > 0 ? (barRevenue / totalRevenue) * 100 : 0)}%; height: 100%; background: #C5A85C;"></div>
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; font-weight: bold;">
+                                    <span>Karten-Anteil (E15)</span>
+                                    <span>${formatCurrency(cardRevenue)} (${(totalRevenue > 0 ? (cardRevenue / totalRevenue) * 100 : 0).toFixed(0)}%)</span>
+                                </div>
+                                <div style="width: 100%; height: 12px; background: #eee; border-radius: 6px; overflow: hidden;">
+                                    <div style="width: ${(totalRevenue > 0 ? (cardRevenue / totalRevenue) * 100 : 0)}%; height: 100%; background: #10B981;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-sim">
+                            <h3 style="margin-top: 0; font-size: 13px; text-transform: uppercase; color: #111; border-bottom: 1px solid #eee; padding-bottom: 8px;">Ausgabenstruktur</h3>
+                            <div style="margin-top: 15px;">
+                                ${expCategoriesHtml || '<span style="color:#888; font-style:italic; font-size:11px;">Keine Ausgabendetails erfasst</span>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Detaillierte Kassenberichte</h3>
+                    <table>
+                        <thead>
+                            <tr style="background:#f5f5f5;">
+                                <th style="padding:10px; text-align:left;">Datum</th>
+                                <th style="padding:10px; text-align:right;">Umsatz (E17)</th>
+                                <th style="padding:10px; text-align:right;">Umsatz Bar</th>
+                                <th style="padding:10px; text-align:right;">Umsatz Karte</th>
+                                <th style="padding:10px; text-align:right;">Ausgaben</th>
+                                <th style="padding:10px; text-align:right;">Gewinn (E36)</th>
+                                <th style="padding:10px; text-align:right;">Tüte (E38)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${detailsRows}
+                            <tr class="total-row">
+                                <td style="padding:12px;">GESAMTSUMME</td>
+                                <td style="text-align: right; color: #10B981;">${formatCurrency(totalRevenue)}</td>
+                                <td style="text-align: right;">${formatCurrency(barRevenue)}</td>
+                                <td style="text-align: right;">${formatCurrency(cardRevenue)}</td>
+                                <td style="text-align: right; color: #ef4444;">${formatCurrency(totalExpenses)}</td>
+                                <td style="text-align: right; color: #10B981;">${formatCurrency(profit)}</td>
+                                <td style="text-align: right; color: #A3853F;">${formatCurrency(tuete)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // ================= RENDERING & STATS ENGINE =================
+
+        function renderAll() {
+            if (!loggedInUser) return;
+
+            document.getElementById('db-status-badge').textContent = `${dbDays.length} Mappen`;
+
+            const filtered = getFilteredDays();
+
+            if (dbDays.length === 0) {
+                document.getElementById('dashboard-empty').classList.remove('hidden');
+                document.getElementById('dashboard-active').classList.add('hidden');
+                return;
+            } else {
+                document.getElementById('dashboard-empty').classList.add('hidden');
+                document.getElementById('dashboard-active').classList.remove('hidden');
+            }
+
+            if (activeTab === 'dashboard') {
+                renderKPIs(filtered);
+                drawTrendChart(filtered);
+                drawDistributionChart(filtered);
+                drawExpensesBreakdown(filtered);
+                drawWeekdayPerformance(filtered);
+            } else if (activeTab === 'historie') {
+                renderHistory();
+            }
+        }
+
+        function renderKPIs(data) {
+            let totalRevenue = 0;
+            let subCard = 0;
+            let totalExpenses = 0;
+            let subExpBar = 0;
+            let totalProfit = 0;
+            let totalTuete = 0;
+
+            data.forEach(d => {
+                totalRevenue += d.revenue.total;
+                subCard += d.revenue.card;
+                totalExpenses += d.expensesSum.total;
+                subExpBar += d.expensesSum.bar;
+                totalProfit += d.profit;
+                totalTuete += d.tuete;
+            });
+
+            const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+            document.getElementById('kpi-revenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('kpi-sub-card').textContent = formatCurrency(subCard);
+
+            document.getElementById('kpi-expenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('kpi-sub-expbar').textContent = formatCurrency(subExpBar);
+
+            const profitKpi = document.getElementById('kpi-profit');
+            profitKpi.textContent = formatCurrency(totalProfit);
+            profitKpi.style.color = totalProfit >= 0 ? "var(--emerald)" : "#EF4444";
+
+            const marginSub = document.getElementById('kpi-sub-margin');
+            marginSub.textContent = `${margin.toFixed(1)} % Rentabilität`;
+            marginSub.style.color = margin >= 0 ? "var(--emerald)" : "#EF4444";
+
+            document.getElementById('kpi-tuete').textContent = formatCurrency(totalTuete);
+        }
+
+        function drawTrendChart(data) {
+            const container = document.getElementById('trend-chart-container');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-xs text-stone-400 italic">Keine Werte erfasst</div>`;
+                return;
+            }
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const padding = 30;
+
+            const revenues = data.map(d => d.revenue.total);
+            const expenses = data.map(d => d.expensesSum.total);
+            const maxVal = Math.max(...revenues, ...expenses, 500);
+
+            let revPoints = [];
+            let expPoints = [];
+            const stepX = (width - padding * 2) / Math.max(data.length - 1, 1);
+
+            data.forEach((d, idx) => {
+                const x = padding + (idx * stepX);
+                const yRev = height - padding - ((d.revenue.total / maxVal) * (height - padding * 2));
+                const yExp = height - padding - ((d.expensesSum.total / maxVal) * (height - padding * 2));
+
+                revPoints.push(`${x},${yRev}`);
+                expPoints.push(`${x},${yExp}`);
+            });
+
+            let svg = `
+                <svg width="${width}" height="${height}" class="overflow-visible">
+                    <defs>
+                        <linearGradient id="trend-g-rev" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#10B981" stop-opacity="0.1"/>
+                            <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+                        </linearGradient>
+                        <linearGradient id="trend-g-exp" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#EF4444" stop-opacity="0.06"/>
+                            <stop offset="100%" stop-color="#EF4444" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+
+                    <line x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" stroke="#EFEFEA" stroke-width="1"/>
+                    <line x1="${padding}" y1="${height/2}" x2="${width - padding}" y2="${height/2}" stroke="#EFEFEA" stroke-width="1"/>
+                    <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#EFEFEA" stroke-width="1.5"/>
+
+                    <path d="M ${revPoints[0]} L ${revPoints.join(' L ')} L ${padding + (data.length - 1) * stepX},${height-padding} L ${padding},${height-padding} Z" fill="url(#trend-g-rev)"/>
+                    <path d="M ${expPoints[0]} L ${expPoints.join(' L ')} L ${padding + (data.length - 1) * stepX},${height-padding} L ${padding},${height-padding} Z" fill="url(#trend-g-exp)"/>
+
+                    <path d="M ${revPoints.join(' L ')}" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M ${expPoints.join(' L ')}" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="3,3"/>
+            `;
+
+            data.forEach((d, idx) => {
+                const x = padding + (idx * stepX);
+                const yRev = height - padding - ((d.revenue.total / maxVal) * (height - padding * 2));
+                svg += `<circle cx="${x}" cy="${yRev}" r="4.5" fill="#10B981" stroke="#FFF" stroke-width="2"/>`;
+
+                if (data.length < 10 || idx % Math.ceil(data.length/6) === 0) {
+                    const label = d.germanDate.substring(0, 5);
+                    svg += `<text x="${x}" y="${height - 10}" fill="#78716C" font-size="8" text-anchor="middle" font-weight="700">${label}</text>`;
+                }
+            });
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
+        function drawDistributionChart(data) {
+            const container = document.getElementById('pie-chart-container');
+            const legend = document.getElementById('pie-chart-legend');
+            container.innerHTML = '';
+            legend.innerHTML = '';
+
+            let totalBar = 0;
+            let totalCard = 0;
+
+            data.forEach(d => {
+                totalBar += d.revenue.bar;
+                totalCard += d.revenue.card;
+            });
+
+            const total = totalBar + totalCard;
+
+            if (total === 0) {
+                container.innerHTML = `<span class="text-stone-400 text-xs italic">Keine Umsatzwerte</span>`;
+                return;
+            }
+
+            const barPercent = (totalBar / total) * 100;
+            const cardPercent = (totalCard / total) * 100;
+
+            const radius = 55;
+            const circumference = 2 * Math.PI * radius;
+            const size = 150;
+            const center = size / 2;
+
+            const barDash = `${(barPercent / 100) * circumference} ${circumference}`;
+            const cardDash = `${(cardPercent / 100) * circumference} ${circumference}`;
+
+            container.innerHTML = `
+                <svg width="${size}" height="${size}">
+                    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#10B981" stroke-width="12" stroke-dasharray="${cardDash}" stroke-dashoffset="0" transform="rotate(-90 ${center} ${center})"/>
+                    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#C5A85C" stroke-width="12" stroke-dasharray="${barDash}" stroke-dashoffset="-${(cardPercent / 100) * circumference}" transform="rotate(-90 ${center} ${center})"/>
+                    <circle cx="${center}" cy="${center}" r="45" fill="#FFF"/>
+                    <text x="${center}" y="${center - 2}" fill="#888" font-size="8" text-anchor="middle" font-weight="extrabold">GESAMT</text>
+                    <text x="${center}" y="${center + 10}" fill="#111111" font-size="11" font-weight="800" text-anchor="middle">${total.toFixed(0)} €</text>
+                </svg>
+            `;
+
+            legend.innerHTML = `
+                <div class="flex items-center justify-between border-b border-stone-100 pb-1 w-full">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#C5A85C]"></span> Bar-Anteil</span>
+                    <span>${formatCurrency(totalBar)} <span class="text-stone-400 text-[10px]">(${barPercent.toFixed(0)}%)</span></span>
+                </div>
+                <div class="flex items-center justify-between border-b border-stone-100 pb-1 w-full">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> Karten-Anteil</span>
+                    <span>${formatCurrency(totalCard)} <span class="text-stone-400 text-[10px]">(${cardPercent.toFixed(0)}%)</span></span>
+                </div>
+            `;
+        }
+
+        function drawExpensesBreakdown(data) {
+            const container = document.getElementById('expenses-categories-list');
+            container.innerHTML = '';
+
+            let sums = {};
+            let totalExpenses = 0;
+
+            data.forEach(d => {
+                d.expensesList.forEach(e => {
+                    if (!sums[e.name]) sums[e.name] = 0;
+                    sums[e.name] += e.amount;
+                    totalExpenses += e.amount;
+                });
+            });
+
+            if (totalExpenses === 0) {
+                container.innerHTML = `<span class="text-stone-400 text-xs italic p-4 block text-center">Keine Ausgabenbezeichnungen in D5:D8 erfasst</span>`;
+                return;
+            }
+
+            Object.keys(sums).forEach(name => {
+                const val = sums[name];
+                const percent = (val / totalExpenses) * 100;
+
+                const bar = `
+                    <div class="space-y-1 text-xs font-semibold w-full">
+                        <div class="flex justify-between w-full">
+                            <span class="text-stone-700">${name}</span>
+                            <span class="text-stone-900 font-extrabold">${val.toFixed(2)} € <span class="text-[9px] text-stone-400 font-bold">(${percent.toFixed(0)}%)</span></span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-red-400 to-amber-500" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', bar);
+            });
+        }
+
+        function drawWeekdayPerformance(data) {
+            const container = document.getElementById('weekday-performance-list');
+            container.innerHTML = '';
+
+            const daySums = {
+                "Montag": { sum: 0, count: 0 },
+                "Dienstag": { sum: 0, count: 0 },
+                "Mittwoch": { sum: 0, count: 0 },
+                "Donnerstag": { sum: 0, count: 0 },
+                "Freitag": { sum: 0, count: 0 },
+                "Samstag": { sum: 0, count: 0 },
+                "Sonntag": { sum: 0, count: 0 }
+            };
+
+            data.forEach(d => {
+                const dayName = getWeekdayName(d.date);
+                if (daySums[dayName]) {
+                    daySums[dayName].sum += d.revenue.total;
+                    daySums[dayName].count++;
+                }
+            });
+
+            const maxAvg = Math.max(...Object.values(daySums).map(x => x.count > 0 ? x.sum / x.count : 0), 100);
+
+            Object.keys(daySums).forEach(day => {
+                const info = daySums[day];
+                const avg = info.count > 0 ? info.sum / info.count : 0;
+                const widthPct = (avg / maxAvg) * 100;
+
+                const bar = `
+                    <div class="space-y-1 w-full">
+                        <div class="flex justify-between text-[11px] font-bold text-stone-600 w-full">
+                            <span>${day} <span class="text-[9px] text-stone-400">(${info.count} Tage erfasst)</span></span>
+                            <span class="text-stone-900">${avg.toFixed(2)} € Schnitt</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-[#C5A85C] to-emerald-500" style="width: ${widthPct}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', bar);
+            });
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+
+            const searchVal = document.getElementById('hist-search').value.toLowerCase();
+            const sortVal = document.getElementById('hist-sort').value;
+
+            let filtered = [...dbDays];
+
+            if (searchVal) {
+                filtered = filtered.filter(d => d.germanDate.includes(searchVal) || d.note && d.note.toLowerCase().includes(searchVal));
+            }
+
+            if (sortVal === 'date-desc') {
+                filtered.sort((a,b) => b.date.localeCompare(a.date));
+            } else if (sortVal === 'date-asc') {
+                filtered.sort((a,b) => a.date.localeCompare(b.date));
+            } else if (sortVal === 'rev-desc') {
+                filtered.sort((a,b) => b.revenue.total - a.revenue.total);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="p-8 text-center text-stone-400 italic">Keine Einträge gefunden.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtered.forEach(d => {
+                const tr = `
+                    <tr class="hover:bg-stone-50 transition-all">
+                        <td class="p-4 font-bold text-stone-950">
+                            <span>${d.germanDate}</span>
+                            <span class="block text-[10px] text-stone-400 font-bold">${getWeekdayName(d.date)}</span>
+                        </td>
+                        <td class="p-4 text-right">${d.revenue.bar.toFixed(2)} €</td>
+                        <td class="p-4 text-right">${d.revenue.card.toFixed(2)} €</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${d.revenue.total.toFixed(2)} €</td>
+                        <td class="p-4 text-right text-red-500 font-semibold">${d.expensesSum.total.toFixed(2)} €</td>
+                        <td class="p-4 text-right font-black" style="color: ${d.profit >= 0 ? 'var(--emerald)' : '#EF4444'}">${d.profit.toFixed(2)} €</td>
+                        <td class="p-4 text-right font-black text-[#C5A85C]">${d.tuete.toFixed(2)} €</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="quickEditDay('${d.date}')" class="p-2 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200 transition-all text-stone-600" title="Bearbeiten">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                ${loggedInUser !== 'inhaber' ? `
+                                <button onclick="deleteSingleDay('${d.date}')" class="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-250 transition-all" title="Löschen">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+        }
+
+        function quickEditDay(dateStr) {
+            switchTab('eingabe');
+            document.getElementById('entry-date').value = dateStr;
+            handleEntryDateChange();
+        }
+
+        function deleteSingleDay(dateStr) {
+            if (loggedInUser === 'inhaber') {
+                showToast("Fehler", "Keine Schreibrechte.", false);
+                return;
+            }
+
+            showConfirmModal(
+                "Mappe löschen?",
+                `Möchtest du die Werte des Tages ${formatGermanDate(dateStr)} wirklich aus dem System löschen?`,
+                () => {
+                    dbDays = dbDays.filter(d => d.date !== dateStr);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Tag gelöscht", "Eintrag wurde entfernt.");
+                    renderAll();
+                }
+            );
+        }
+
+        function clearDatabase() {
+            if (loggedInUser === 'inhaber') {
+                showToast("Fehler", "Schreibrechte fehlen.", false);
+                return;
+            }
+
+            showConfirmModal(
+                "Datenbank komplett leeren?",
+                "Sämtliche importierten Tagesmappen und Statistiken werden gelöscht. Fortfahren?",
+                () => {
+                    dbDays = [];
+                    localStorage.removeItem('gastro_finance_premium_db');
+                    showToast("Zurückgesetzt", "Datenbank wurde geleert.");
+                    renderAll();
+                }
+            );
+        }
+
+        function getWeekdayName(dateStr) {
+            const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+            const d = new Date(dateStr);
+            return days[d.getDay()];
+        }
+
+        function formatGermanDate(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            return dateStr;
+        }
+
+        function formatCurrency(val) {
+            return val.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+        }
+    </script>
+</body>
+</html>
