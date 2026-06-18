@@ -29,32 +29,15 @@
             --border-color: rgba(197, 168, 92, 0.25);
         }
 
-        /* Overscroll-Sperre für absolute Stabilität auf dem Handy */
-        html, body {
-            overflow: hidden;
-            overscroll-behavior: none;
-            max-width: 100vw;
-            width: 100%;
-            height: 100%;
-            position: relative;
+        /* Normale Scroll-Freigabe für Pull-to-Refresh */
+        body {
             background-color: #FAF9F6;
             color: var(--charcoal);
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
             padding: 0;
-            touch-action: none;
-        }
-
-        /* Isolierter Scroll-Bereich für den Content (Erlaubt Pull-to-Refresh JS) */
-        .scrollable-content {
-            overflow-y: auto;
-            height: calc(100vh - 140px);
-            padding-bottom: 120px;
-            -webkit-overflow-scrolling: touch;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            touch-action: pan-y;
+            padding-bottom: 120px; 
+            -webkit-font-smoothing: antialiased;
         }
 
         .gold-title { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
@@ -163,19 +146,18 @@
 </head>
 <body class="flex flex-col h-screen">
 
-    <!-- PULL TO REFRESH -->
+    <!-- PULL TO REFRESH INDIKATOR -->
     <div id="pull-to-refresh-spinner" class="flex items-center justify-center gap-2.5 text-stone-600 font-bold text-sm bg-stone-50/80 w-full shadow-inner z-10">
         <i class="fa-solid fa-arrows-rotate animate-spin text-[#C5A85C]"></i>
-        <span>Cloud Sync (Wird aktualisiert)...</span>
+        <span>Daten werden geladen...</span>
     </div>
 
     <!-- MAIN WRAPPER -->
     <div id="main-app-container" class="w-full flex-grow overflow-hidden flex flex-col justify-start">
 
         <!-- ================= LOGIN SCREEN ================= -->
-        <div id="login-screen" class="h-full flex items-center justify-center w-full px-4 relative">
+        <div id="login-screen" class="min-h-screen flex items-center justify-center w-full px-4 relative">
             
-            <!-- DATENBANK STATUS AMPEL (Login) -->
             <div class="absolute top-6 right-6 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-stone-200 shadow-sm">
                 <div id="db-status-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
                 <span id="db-status-text" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
@@ -222,9 +204,9 @@
         </div>
 
         <!-- ================= APP PORTAL ================= -->
-        <div id="app-portal" class="hidden h-full flex flex-col w-full px-4 sm:px-6 lg:px-8 pt-4 overflow-hidden">
+        <div id="app-portal" class="hidden w-full px-4 sm:px-6 lg:px-8 pt-4">
             
-            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full flex-shrink-0 mb-4 z-20 relative">
+            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full mb-6 relative z-20">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full overflow-hidden border border-[#C5A85C]/35 bg-white p-0.5 flex-shrink-0">
                         <img src="image.png" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
@@ -248,358 +230,364 @@
                 </div>
             </header>
 
-            <div class="scrollable-content w-full flex-grow">
-
-                <!-- ===== TAB 1: DASHBOARD ===== -->
-                <section id="tab-dashboard" class="tab-content space-y-6 w-full max-w-full">
-                    <div class="glass-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-sliders text-[#C5A85C] text-base"></i>
-                            <span class="font-bold text-sm text-stone-700 uppercase tracking-wider">Zeitfenster</span>
+            <!-- ===== TAB 1: DASHBOARD ===== -->
+            <section id="tab-dashboard" class="tab-content space-y-6 w-full max-w-full">
+                <div class="glass-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-[#C5A85C] text-base"></i>
+                        <span class="font-bold text-sm text-stone-700 uppercase tracking-wider">Zeitfenster</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
+                        <select id="filter-preset" onchange="applyPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm">
+                            <option value="all">Gesamte Historie</option>
+                            <option value="this-month" selected>Dieser Monat</option>
+                            <option value="last-30">Letzte 30 Tage</option>
+                        </select>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Von:</span>
+                            <input type="date" id="filter-from" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
                         </div>
-                        <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
-                            <select id="filter-preset" onchange="applyPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm">
-                                <option value="all">Gesamte Historie</option>
-                                <option value="this-month" selected>Dieser Monat</option>
-                                <option value="last-30">Letzte 30 Tage</option>
-                            </select>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <span class="text-stone-400 text-xs font-bold w-8">Von:</span>
-                                <input type="date" id="filter-from" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
+                            <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <button type="button" onclick="exportStatisticsReport()" class="btn-gold w-full sm:w-auto py-3 px-6 text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> Bericht
+                        </button>
+                    </div>
+                </div>
+
+                <div id="dashboard-empty" class="hidden text-center py-16 px-4 glass-card max-w-lg mx-auto space-y-4">
+                    <div class="w-16 h-16 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
+                        <i class="fa-solid fa-folder-open text-[#C5A85C] text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-stone-900 text-lg">Keine Buchungen vorhanden</h3>
+                        <p class="text-stone-500 text-sm mt-1">Erfasse Tageswerte manuell oder lade Excel-Mappen hoch.</p>
+                    </div>
+                </div>
+
+                <div id="dashboard-active" class="space-y-6 w-full max-w-full">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
+                            <div class="text-2xl sm:text-3xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Davon Karte:</span>
+                                <span class="text-stone-800" id="kpi-sub-card">0,00 €</span>
                             </div>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
-                                <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
+                            <div class="text-2xl sm:text-3xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Davon Bar:</span>
+                                <span class="text-stone-800" id="kpi-sub-expbar">0,00 €</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn (E36)</span>
+                            <div class="text-2xl sm:text-3xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Marge:</span>
+                                <span class="text-stone-850 font-extrabold" id="kpi-sub-margin">0%</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Tüte (E38)</span>
+                            <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Wechselgeld:</span>
+                                <span class="text-stone-800">150,00 €</span>
                             </div>
                         </div>
                     </div>
 
-                    <div id="dashboard-empty" class="hidden text-center py-16 px-4 glass-card max-w-lg mx-auto space-y-4">
-                        <div class="w-16 h-16 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
-                            <i class="fa-solid fa-folder-open text-[#C5A85C] text-xl"></i>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                        <div class="glass-card p-6 lg:col-span-2 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Entwicklungstrend</h3>
+                            <div class="relative h-64 w-full overflow-hidden" id="trend-chart-parent">
+                                <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Einnahmeverteilung</h3>
+                            <div class="relative flex flex-col items-center justify-center w-full">
+                                <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
+                                <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== TAB 2: MANUELLE ERFASSUNG ===== -->
+            <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 sm:p-6 w-full max-w-full">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                            <i class="fa-solid fa-pen-nib text-xl text-[#C5A85C]"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-stone-900 text-lg">Keine Buchungen vorhanden</h3>
-                            <p class="text-stone-500 text-sm mt-1">Erfasse Tageswerte manuell oder lade Excel-Mappen hoch.</p>
+                            <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Tagesbericht pflegen</h3>
+                            <p class="text-xs text-stone-500 font-medium">Berechnung der Werte (Bar + Karte = Umsatz)</p>
                         </div>
                     </div>
 
-                    <div id="dashboard-active" class="space-y-6 w-full max-w-full">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe (E17)</span>
-                                <div class="text-2xl sm:text-3xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Davon Karte:</span>
-                                    <span class="text-stone-800" id="kpi-sub-card">0,00 €</span>
+                    <form id="form-manual-entry" class="space-y-6 w-full">
+                        <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
+                            
+                            <!-- Einnahmen Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
+                                <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
+                                    <i class="fa-solid fa-cash-register text-emerald-600 mr-1"></i> Einnahmen
+                                </h4>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Datum der Mappe</label>
+                                    <input type="date" id="entry-date" onchange="handleEntryDateChange()" class="modern-input w-full block">
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Bar (Zahl aus Excel eintragen)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
+                                    <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: 150€ Wechselgeld werden hiervon intern abgezogen.</span>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-card" oninput="calculateLiveFormula()" placeholder="z.B. 570.00" class="modern-input pr-8 w-full block">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
-                                <div class="text-2xl sm:text-3xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Davon Bar:</span>
-                                    <span class="text-stone-800" id="kpi-sub-expbar">0,00 €</span>
-                                </div>
-                            </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn (E36)</span>
-                                <div class="text-2xl sm:text-3xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Marge:</span>
-                                    <span class="text-stone-850 font-extrabold" id="kpi-sub-margin">0%</span>
-                                </div>
-                            </div>
-                            <div class="glass-card p-6 bg-white">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Tüte (E38)</span>
-                                <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
-                                <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                    <span>Wechselgeld:</span>
-                                    <span class="text-stone-800">150,00 €</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                            <div class="glass-card p-6 lg:col-span-2 w-full">
-                                <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Entwicklungstrend</h3>
-                                <div class="relative h-64 w-full overflow-hidden" id="trend-chart-parent">
-                                    <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                            <!-- Ausgaben Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
+                                <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
+                                    <i class="fa-solid fa-receipt text-red-500 mr-1"></i> Ausgaben
+                                </h4>
+                                <div class="border-t border-stone-200 pt-3 flex flex-col sm:flex-row gap-3 w-full">
+                                    <div class="w-full">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Bar (E9)</label>
+                                        <input type="number" step="0.01" min="0" id="entry-exp-sumbar" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
+                                    </div>
+                                    <div class="w-full">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Karte (E10)</label>
+                                        <input type="number" step="0.01" min="0" id="entry-exp-sumcard" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-card p-6 w-full">
-                                <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Einnahmeverteilung</h3>
-                                <div class="relative flex flex-col items-center justify-center w-full">
-                                    <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
-                                    <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
+
+                            <!-- Formel & Speichern Block -->
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
+                                <div class="space-y-4 w-full">
+                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
+                                        <i class="fa-solid fa-code-branch mr-1"></i> Live-Berechnung
+                                    </h4>
+                                    <div class="space-y-3 w-full">
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Umsatz Summe</span>
+                                                <span class="text-[8px] text-stone-500">Bar (Netto) + Karte</span>
+                                            </div>
+                                            <span class="text-base font-black truncate max-w-[100px] text-right" id="calc-preview-total">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Gewinn</span>
+                                                <span class="text-[8px] text-stone-500">Umsatz - Ausgaben</span>
+                                            </div>
+                                            <span class="text-emerald-400 text-base font-black truncate max-w-[100px] text-right" id="calc-preview-profit">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Tüte</span>
+                                                <span class="text-[8px] text-stone-500">Gewinn - Karte</span>
+                                            </div>
+                                            <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-4 w-full">
+                                    <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest">
+                                        Speichern <i class="fa-solid fa-save ml-2"></i>
+                                    </button>
                                 </div>
                             </div>
+
                         </div>
+                    </form>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 3: HISTORIE ===== -->
+            <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-stone-500"></i>
+                        <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
                     </div>
-                </section>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <input type="text" id="hist-search" placeholder="Datum suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
+                        <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
+                            <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
+                        </button>
+                    </div>
+                </div>
 
-                <!-- ===== TAB 2: MANUELLE ERFASSUNG ===== -->
-                <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full max-w-full">
+                <div class="glass-card overflow-hidden w-full relative">
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse table-auto min-w-[750px]">
+                            <!-- STICKY HEADER FÜR KLARE SICHT BEIM SCROLLEN -->
+                            <thead class="sticky top-0 bg-stone-50 shadow-sm z-10">
+                                <tr class="text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-4 whitespace-nowrap border-b border-stone-200">Datum</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar (Netto)</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Karte</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200 text-stone-800">Umsatz Summe</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Ausgaben</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Gewinn</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Tüte</th>
+                                    <th class="p-4 text-center whitespace-nowrap border-b border-stone-200">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-stone-100 text-sm font-semibold">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
+            <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     
-                    <div class="glass-card p-4 sm:p-6 w-full max-w-full">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
-                                <i class="fa-solid fa-pen-nib text-xl text-[#C5A85C]"></i>
+                    <!-- EXCEL UPLOAD -->
+                    <div class="glass-card p-6 space-y-4 w-full">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
+                                <i class="fa-solid fa-file-excel text-[#C5A85C] text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Tagesbericht pflegen</h3>
-                                <p class="text-xs text-stone-500 font-medium">Berechnung der Werte (Bar + Karte = Umsatz)</p>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Excel-Import</h3>
+                                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Liest Werte nach Bild-Vorlage aus</p>
                             </div>
                         </div>
 
-                        <form id="form-manual-entry" class="space-y-6 w-full">
-                            <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
-                                
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
-                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
-                                        <i class="fa-solid fa-cash-register text-emerald-600 mr-1"></i> Einnahmen
-                                    </h4>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Datum der Mappe</label>
-                                        <input type="date" id="entry-date" onchange="handleEntryDateChange()" class="modern-input w-full block">
-                                    </div>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Bar (Zahl aus Excel eintragen)</label>
-                                        <div class="relative w-full">
-                                            <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block">
-                                            <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
-                                        </div>
-                                        <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: 150€ Wechselgeld werden hiervon intern abgezogen.</span>
-                                    </div>
-                                    <div class="w-full">
-                                        <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
-                                        <div class="relative w-full">
-                                            <input type="number" step="0.01" min="0" id="entry-rev-card" oninput="calculateLiveFormula()" placeholder="z.B. 570.00" class="modern-input pr-8 w-full block">
-                                            <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-50/50 border border-stone-200/40">
-                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-stone-800 border-b border-stone-200/60 pb-2">
-                                        <i class="fa-solid fa-receipt text-red-500 mr-1"></i> Ausgaben
-                                    </h4>
-                                    <div class="border-t border-stone-200 pt-3 flex flex-col sm:flex-row gap-3 w-full">
-                                        <div class="w-full">
-                                            <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Bar</label>
-                                            <input type="number" step="0.01" min="0" id="entry-exp-sumbar" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
-                                        </div>
-                                        <div class="w-full">
-                                            <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Summe Karte</label>
-                                            <input type="number" step="0.01" min="0" id="entry-exp-sumcard" oninput="calculateLiveFormula()" placeholder="0.00" class="modern-input py-3 w-full">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
-                                    <div class="space-y-4 w-full">
-                                        <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
-                                            <i class="fa-solid fa-code-branch mr-1"></i> Live-Berechnung
-                                        </h4>
-                                        <div class="space-y-3 w-full">
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Umsatz Summe</span>
-                                                    <span class="text-[8px] text-stone-500">Bar (Netto) + Karte</span>
-                                                </div>
-                                                <span class="text-base font-black truncate max-w-[100px] text-right" id="calc-preview-total">0,00 €</span>
-                                            </div>
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Gewinn</span>
-                                                    <span class="text-[8px] text-stone-500">Umsatz - Ausgaben</span>
-                                                </div>
-                                                <span class="text-emerald-400 text-base font-black truncate max-w-[100px] text-right" id="calc-preview-profit">0,00 €</span>
-                                            </div>
-                                            <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
-                                                <div>
-                                                    <span class="text-[10px] uppercase text-stone-400 font-bold block">Tüte</span>
-                                                    <span class="text-[8px] text-stone-500">Gewinn - Karte</span>
-                                                </div>
-                                                <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="pt-4 w-full">
-                                        <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest">
-                                            Speichern <i class="fa-solid fa-save ml-2"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
+                        <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                             class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer">
+                            <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                            <div class="space-y-3">
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-[#C5A85C]/70"></i>
+                                <p class="font-bold text-stone-800 text-sm">Tippe hier, um Excel-Mappen hochzuladen.</p>
                             </div>
-                        </form>
+                        </div>
                     </div>
 
-                </section>
+                    <!-- JSON BIN & ADMIN SETTINGS -->
+                    <div class="flex flex-col gap-6 w-full">
+                        
+                        <!-- DATENBANK PROFILE -->
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
+                                    <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
+                                </div>
+                                <p class="text-xs text-stone-500 font-medium">Füge neue Cloud-Verbindungen (JSONBin) hinzu.</p>
+                            </div>
+                            
+                            <div class="space-y-3 w-full mt-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. Hauptfiliale)</label>
+                                    <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin API-Key</label>
+                                    <input type="password" id="jsonbin-key" placeholder="$2a$10$..." class="modern-input text-sm py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
+                                    <input type="text" id="jsonbin-id" placeholder="64b3ef..." class="modern-input text-sm py-2">
+                                </div>
+                                
+                                <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk"></i> Profil Speichern
+                                </button>
+                            </div>
 
-                <!-- ===== TAB 3: HISTORIE ===== -->
-                <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
-                    
-                    <div class="glass-card p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-layer-group text-stone-500"></i>
-                            <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
+                            <!-- Gespeicherte Profile Liste -->
+                            <div class="border-t border-stone-200 pt-4 w-full mt-4">
+                                <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Datenbanken</h5>
+                                <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
+                            </div>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <input type="text" id="hist-search" placeholder="Datum suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
-                            <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
-                                <i class="fa-solid fa-trash-can mr-2"></i> Alle löschen
+
+                        <!-- BENUTZERVERWALTUNG (Nur Admin) -->
+                        <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
+                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Benutzerverwaltung</h4>
+                            </div>
+                            <p class="text-xs text-stone-500 font-medium">Verwalte hier die Sicherheits-PINs (4-stellig).</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN (Vollzugriff)</label>
+                                    <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="Aktuell: 1991" class="modern-input text-center font-bold tracking-widest text-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN (Inhaber)</label>
+                                    <input type="password" id="cfg-read-pin" maxlength="4" placeholder="Aktuell: 2024" class="modern-input text-center font-bold tracking-widest text-lg">
+                                </div>
+                            </div>
+                            <button type="button" onclick="saveNewPins()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
+                                PINs speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="glass-card overflow-hidden w-full relative">
-                        <div class="overflow-x-auto w-full block">
-                            <table class="w-full text-left border-collapse table-auto min-w-[750px]">
-                                <thead class="sticky top-0 bg-stone-50 shadow-sm z-10">
-                                    <tr class="text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
-                                        <th class="p-4 whitespace-nowrap border-b border-stone-200">Datum</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar (Netto)</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Karte</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200 text-stone-800">Umsatz Summe</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Ausgaben</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Gewinn</th>
-                                        <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Tüte</th>
-                                        <th class="p-4 text-center whitespace-nowrap border-b border-stone-200">Aktion</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-table-body" class="divide-y divide-stone-100 text-sm font-semibold">
-                                    <!-- Loaded dynamically -->
-                                </tbody>
-                            </table>
+                </div>
+
+                <!-- PREVIEW TABLE -->
+                <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <div>
+                            <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
+                            <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center">
+                                <i class="fa-solid fa-check mr-2"></i> (<span id="preview-count-text">0</span>) Übernehmen
+                            </button>
                         </div>
                     </div>
-
-                </section>
-
-                <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
-                <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                        
-                        <!-- EXCEL UPLOAD -->
-                        <div class="glass-card p-6 space-y-4 w-full">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
-                                    <i class="fa-solid fa-file-excel text-[#C5A85C] text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Excel-Import</h3>
-                                    <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Liest Werte nach Bild-Vorlage aus</p>
-                                </div>
-                            </div>
-
-                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
-                                 class="border-2 border-dashed border-[#C5A85C]/30 hover:border-[#C5A85C]/80 rounded-2xl p-8 sm:p-12 text-center bg-stone-50/50 cursor-pointer">
-                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
-                                <div class="space-y-3">
-                                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-[#C5A85C]/70"></i>
-                                    <p class="font-bold text-stone-800 text-sm">Tippe hier, um Excel-Mappen hochzuladen.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- JSON BIN MANAGER -->
-                        <div class="flex flex-col gap-6 w-full">
-                            <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-4">
-                                        <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
-                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
-                                    </div>
-                                    <p class="text-xs text-stone-500 font-medium">Füge neue Datenbanken (JSONBin) hinzu oder wechsle zwischen ihnen.</p>
-                                </div>
-                                
-                                <div class="space-y-3 w-full mt-4">
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. Filiale 1)</label>
-                                        <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin API-Key</label>
-                                        <input type="password" id="jsonbin-key" placeholder="$2a$10$..." class="modern-input text-sm py-2">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
-                                        <input type="text" id="jsonbin-id" placeholder="64b3ef..." class="modern-input text-sm py-2">
-                                    </div>
-                                    
-                                    <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-floppy-disk"></i> Profil Speichern
-                                    </button>
-                                </div>
-
-                                <!-- Gespeicherte Profile Liste -->
-                                <div class="border-t border-stone-200 pt-4 w-full mt-4">
-                                    <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Datenbanken</h5>
-                                    <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
-                                </div>
-                            </div>
-
-                            <!-- BENUTZERVERWALTUNG (Nur Admin) -->
-                            <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
-                                    <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Benutzerverwaltung</h4>
-                                </div>
-                                <p class="text-xs text-stone-500 font-medium">Verwalte hier die Sicherheits-PINs (4-stellig).</p>
-                                
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN (Vollzugriff)</label>
-                                        <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="Aktuell: 1991" class="modern-input text-center font-bold tracking-widest text-lg">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN (Inhaber)</label>
-                                        <input type="password" id="cfg-read-pin" maxlength="4" placeholder="Aktuell: 2024" class="modern-input text-center font-bold tracking-widest text-lg">
-                                    </div>
-                                </div>
-                                <button type="button" onclick="saveNewPins()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
-                                    PINs speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
-                                </button>
-                            </div>
-                        </div>
-
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-stone-50 border-b border-stone-100 text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-3">Mappe</th>
+                                    <th class="p-3 text-right">Bar (Netto)</th>
+                                    <th class="p-3 text-right">Karte</th>
+                                    <th class="p-3 text-right">Umsatz Summe</th>
+                                    <th class="p-3 text-right">Gewinn</th>
+                                    <th class="p-3 text-right">Tüte</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold"></tbody>
+                        </table>
                     </div>
+                </div>
+            </section>
 
-                    <!-- PREVIEW TABLE -->
-                    <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                            <div>
-                                <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
-                            </div>
-                            <div class="flex items-center gap-3 w-full sm:w-auto">
-                                <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
-                                <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center">
-                                    <i class="fa-solid fa-check mr-2"></i> (<span id="preview-count-text">0</span>) Übernehmen
-                                </button>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto w-full block">
-                            <table class="w-full text-left border-collapse min-w-[700px]">
-                                <thead>
-                                    <tr class="bg-stone-50 border-b border-stone-100 text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
-                                        <th class="p-3">Mappe</th>
-                                        <th class="p-3 text-right">Bar (Netto)</th>
-                                        <th class="p-3 text-right">Karte</th>
-                                        <th class="p-3 text-right">Umsatz Summe</th>
-                                        <th class="p-3 text-right">Gewinn</th>
-                                        <th class="p-3 text-right">Tüte</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-            </div>
         </div>
     </div>
 
@@ -658,7 +646,7 @@
         let tempImportBuffer = [];
         let enteredPin = ""; 
 
-        // JSONBin Profiles
+        // Profile Manager
         let dbProfiles = [];
         let activeProfileId = null;
 
@@ -670,11 +658,12 @@
         let isPulling = false;
 
         window.onload = function() {
+            // Lokale Daten laden als Fallback
             if (localStorage.getItem('gastro_finance_premium_db')) {
                 dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
             }
 
-            // Lade Profile
+            // Profile laden
             if (localStorage.getItem('gastro_db_profiles')) {
                 dbProfiles = JSON.parse(localStorage.getItem('gastro_db_profiles'));
             }
@@ -816,9 +805,9 @@
             switchTab('dashboard');
             renderAll();
             
-            // Auto Load falls Profil aktiv
+            // Lade sofort Daten, falls ein Profil aktiv ist
             if(activeProfileId) {
-                loadFromJSONBin(true); 
+                loadFromJSONBin(true); // silent
             }
         }
 
@@ -860,7 +849,9 @@
                 }
             });
             const buttons = document.querySelectorAll('form button');
-            buttons.forEach(b => { if(!b.id.includes('btn-tab')) b.disabled = true; });
+            buttons.forEach(b => {
+                if(!b.id.includes('btn-tab')) b.disabled = true;
+            });
         }
 
         function switchTab(tabId) {
@@ -904,7 +895,7 @@
                 if (isPulling) {
                     const spinner = document.getElementById('pull-to-refresh-spinner');
                     if (spinner.classList.contains('active')) {
-                        // Löse den Download manuell aus
+                        // Löse den Download aus der Cloud aus
                         if (activeProfileId && loggedInUser !== null) {
                             loadFromJSONBin(false);
                         } else {
@@ -933,8 +924,13 @@
 
             dbProfiles.forEach(p => {
                 const isActive = p.id === activeProfileId;
-                const activeClass = isActive ? "border-[#C5A85C] bg-[#F6F3EB]" : "border-stone-200 bg-white";
-                const badge = isActive ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>` : "";
+                const activeClass = isActive 
+                    ? "border-[#C5A85C] bg-[#F6F3EB]" 
+                    : "border-stone-200 bg-white";
+
+                const badge = isActive
+                    ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>`
+                    : "";
 
                 const item = `
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border ${activeClass} transition-all gap-3">
@@ -946,11 +942,11 @@
                             <div class="text-[9px] font-semibold text-stone-400">ID: ${p.binId.substring(0, 10)}...</div>
                         </div>
                         <div class="flex items-center gap-1.5 w-full sm:w-auto">
-                            <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-xs font-bold rounded-lg transition-all cursor-pointer">
+                            <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer">
                                 Aktivieren
                             </button>
                             <button type="button" onclick="deleteProfile('${p.id}')" class="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer" title="Profil löschen">
-                                <i class="fa-solid fa-trash-can"></i>
+                                <i class="fa-solid fa-trash-can text-sm"></i>
                             </button>
                         </div>
                     </div>
@@ -976,7 +972,12 @@
                 existingProfile.binId = id;
                 activeProfileId = existingProfile.id;
             } else {
-                const newProfile = { id: 'prof-' + Date.now(), name: name, apiKey: key, binId: id };
+                const newProfile = {
+                    id: 'prof-' + Date.now(),
+                    name: name,
+                    apiKey: key,
+                    binId: id
+                };
                 dbProfiles.push(newProfile);
                 activeProfileId = newProfile.id;
             }
@@ -1005,31 +1006,36 @@
         }
 
         function deleteProfile(id) {
-            showConfirmModal("Profil löschen?", "Möchtest du diese Datenbank-Verbindung wirklich aus dem System löschen?", () => {
-                dbProfiles = dbProfiles.filter(p => p.id !== id);
-                if (activeProfileId === id) {
-                    activeProfileId = dbProfiles.length > 0 ? dbProfiles[0].id : null;
-                    localStorage.setItem('gastro_active_profile_id', activeProfileId || '');
-                    
-                    if (activeProfileId) {
-                        const newActive = dbProfiles.find(p => p.id === activeProfileId);
-                        document.getElementById('jsonbin-profile-name').value = newActive.name;
-                        document.getElementById('jsonbin-key').value = newActive.apiKey;
-                        document.getElementById('jsonbin-id').value = newActive.binId;
-                    } else {
-                        document.getElementById('jsonbin-profile-name').value = '';
-                        document.getElementById('jsonbin-key').value = '';
-                        document.getElementById('jsonbin-id').value = '';
-                        setDbStatus('disconnected');
+            showConfirmModal(
+                "Profil löschen?",
+                `Möchtest du diese Datenbank-Verbindung wirklich aus dem System löschen?`,
+                () => {
+                    dbProfiles = dbProfiles.filter(p => p.id !== id);
+                    if (activeProfileId === id) {
+                        activeProfileId = dbProfiles.length > 0 ? dbProfiles[0].id : null;
+                        localStorage.setItem('gastro_active_profile_id', activeProfileId || '');
+                        
+                        if (activeProfileId) {
+                            const newActive = dbProfiles.find(p => p.id === activeProfileId);
+                            document.getElementById('jsonbin-profile-name').value = newActive.name;
+                            document.getElementById('jsonbin-key').value = newActive.apiKey;
+                            document.getElementById('jsonbin-id').value = newActive.binId;
+                        } else {
+                            document.getElementById('jsonbin-profile-name').value = '';
+                            document.getElementById('jsonbin-key').value = '';
+                            document.getElementById('jsonbin-id').value = '';
+                            setDbStatus('disconnected');
+                        }
                     }
+
+                    localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
+                    showToast("Profil gelöscht", "Profil wurde erfolgreich entfernt.");
+                    renderProfilesList();
                 }
-                localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
-                showToast("Profil gelöscht", "Profil wurde erfolgreich entfernt.");
-                renderProfilesList();
-            });
+            );
         }
 
-        // --- JSONBIN NETZWERK LOGIK ---
+        // --- JSONBIN NETZWERK LOGIK (PRÄZISE MIT {"DATA": []}) ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (!activeProfile) {
@@ -1049,11 +1055,14 @@
                 if(!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 
                 const data = await res.json();
+                
+                // Exakt den Umschlag analysieren
                 let record = data.record;
                 
                 if (Array.isArray(record)) {
                      dbDays = record;
                 } else if (record && Array.isArray(record.data)) {
+                     // Das ist genau dein Format! {"data": [ ... 200 Einträge ... ]}
                      dbDays = record.data;
                 } else {
                      dbDays = [];
@@ -1066,7 +1075,7 @@
                 renderAll();
             } catch(e) { 
                 setDbStatus('disconnected');
-                if(!silent) showToast("Netzwerkfehler", "JSONBin blockiert. Prüfe Key/ID.", false); 
+                if(!silent) showToast("Netzwerkfehler", "Die Verbindung wurde abgelehnt.", false); 
                 console.error("JSONBin Load Error:", e);
             }
         }
@@ -1082,6 +1091,7 @@
             showToast("Sichere...", "Lade in die Cloud hoch...");
             
             try {
+                // Wir speichern es wieder exakt in den {"data": ...} Umschlag
                 const payload = { "data": dbDays };
                 
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}`, {
@@ -1110,7 +1120,7 @@
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
             const actualBar = rawBar - 150; 
-            const totalRevenue = actualBar + cardRev; 
+            const totalRevenue = actualBar + cardRev; // Exakte Rechnung: Netto Bar + Karte
 
             const expSumBar = parseFloat(document.getElementById('entry-exp-sumbar').value) || 0;
             const expSumCard = parseFloat(document.getElementById('entry-exp-sumcard').value) || 0;
@@ -1130,6 +1140,7 @@
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
             if (existingDay) {
+                // Beim Bearbeiten addieren wir wieder 150€ auf, da das Feld den Brutto-Kassen-Wert will
                 document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + 150;
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card;
                 document.getElementById('entry-exp-sumbar').value = existingDay.expensesSum.bar;
@@ -1163,6 +1174,7 @@
             const dayObj = {
                 date: pickedDate,
                 germanDate: formatGermanDate(pickedDate),
+                // WIR SPEICHERN DEN NETTO WERT!
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesList: [],
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
@@ -1179,14 +1191,14 @@
             
             showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
             
-            // Auto-Sync if Cloud is active
+            // Auto-Sync in die Cloud
             if(activeProfileId) saveToJSONBin();
 
             renderAll();
             switchTab('dashboard');
         }
 
-        // --- EXCEL PARSER (1:1 VOM FUNKTIONIERENDEN CODE) ---
+        // --- EXCEL PARSER (1:1 VOM FUNKTIONIERENDEN CODE, ABER MIT STRIKTER MATHEMATIK) ---
         function initExcelDropzone() {
             const dropzone = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.add('border-[#C5A85C]', 'bg-[#F6F3EB]/40'); }));
@@ -1216,7 +1228,7 @@
                         const dateParts = trimmedName.split('.');
                         const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
 
-                        let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0, revTotal = 0, profit = 0, tuete = 0;
+                        let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0;
 
                         let wechselgeldRowIdx = -1;
                         for (let r = 0; r < rawJson.length; r++) {
@@ -1263,12 +1275,13 @@
                             }
                         }
 
+                        // REINE STRIKTE MATHEMATIK FÜR DEN IMPORT
                         const actualBarRevenue = revBarRaw - 150; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
                         const totalExpenses = expSumBar + expSumCard;
-                        const finalProfit = calculatedTotalRevenue - totalExpenses;
-                        const finalTuete = finalProfit - revCard;
+                        const profit = calculatedTotalRevenue - totalExpenses;
+                        const tuete = profit - revCard;
 
                         tempImportBuffer.push({
                             date: isoDate,
@@ -1276,8 +1289,8 @@
                             revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
                             expensesList: [],
                             expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
-                            profit: finalProfit,
-                            tuete: finalTuete,
+                            profit: profit,
+                            tuete: tuete,
                             note: "Excel-Import"
                         });
                     });
