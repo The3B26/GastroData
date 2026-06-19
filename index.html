@@ -37,14 +37,13 @@
             padding: 0;
             width: 100vw;
             height: 100dvh;
-            overflow: hidden; /* Hauptfenster scrollt NICHT */
+            overflow: hidden;
             background-color: #FAF9F6;
             color: var(--charcoal);
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Der Scroll-Container innerhalb der App */
         #scroll-container {
             height: 100%;
             overflow-y: auto;
@@ -110,7 +109,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- iOS Numpad Styling --- */
         .numpad-btn {
             width: 75px;
             height: 75px;
@@ -143,7 +141,6 @@
             40%, 80% { transform: translateX(10px); }
         }
 
-        /* Pull-to-refresh */
         #pull-to-refresh-spinner {
             height: 0;
             overflow: hidden;
@@ -151,7 +148,6 @@
             opacity: 0;
         }
 
-        /* --- PDF Spezifische Styles --- */
         #pdf-export-container {
             display: none; 
             position: absolute;
@@ -299,7 +295,6 @@
 
                 <div id="dashboard-active" class="space-y-6 w-full max-w-full">
                     
-                    <!-- KPI Cards -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                         <div class="glass-card p-6 bg-white">
                             <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
@@ -331,7 +326,6 @@
                         </div>
                     </div>
 
-                    <!-- NEU: GEHÄLTER ÜBERSICHT -->
                     <div class="glass-card p-6 w-full">
                         <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4 border-b border-stone-100 pb-2">
                             <i class="fa-solid fa-users text-[#C5A85C] mr-2"></i> Mitarbeiter Gehälter im Zeitraum
@@ -390,10 +384,7 @@
 
                     <form id="form-manual-entry" class="space-y-6 w-full">
                         
-                        <!-- EINNAHMEN & BERECHNUNG (OBEN) -->
                         <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
-                            
-                            <!-- Einnahmen Block -->
                             <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-emerald-50/50 border border-emerald-200/40">
                                 <h4 class="text-sm font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200/60 pb-2">
                                     <i class="fa-solid fa-cash-register mr-1"></i> Einnahmen
@@ -419,7 +410,6 @@
                                 </div>
                             </div>
 
-                            <!-- Formel Block -->
                             <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
                                 <div class="space-y-4 w-full">
                                     <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
@@ -457,7 +447,7 @@
                             </div>
                         </div>
 
-                        <!-- NEU: AUSGABEN (GEHÄLTER & SONSTIGES GESPLITTET) -->
+                        <!-- AUSGABEN -->
                         <div class="w-full bg-red-50/30 border border-red-200/50 rounded-xl p-5">
                             <h4 class="text-base font-extrabold uppercase tracking-wider text-red-600 border-b border-red-200 pb-3 mb-5 flex justify-between items-center">
                                 <span><i class="fa-solid fa-receipt mr-2"></i> Ausgaben (Detail)</span>
@@ -466,11 +456,9 @@
 
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
                                 
-                                <!-- Mitarbeiter Gehälter -->
                                 <div class="space-y-4">
                                     <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest mb-3"><i class="fa-solid fa-users text-stone-400 mr-1"></i> Mitarbeiter Gehälter</h5>
                                     
-                                    <!-- Adam -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Adam</label>
                                         <div class="flex gap-2">
@@ -484,7 +472,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Mohammed -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Mohammed</label>
                                         <div class="flex gap-2">
@@ -498,7 +485,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Karam -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Karam</label>
                                         <div class="flex gap-2">
@@ -512,7 +498,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Nourddin -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Nourddin</label>
                                         <div class="flex gap-2">
@@ -526,14 +511,11 @@
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
 
-                                <!-- Sonstige Ausgaben (4 Felder) -->
                                 <div class="space-y-4">
                                     <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest mb-3"><i class="fa-solid fa-box-open text-stone-400 mr-1"></i> Sonstige Ausgaben</h5>
                                     
-                                    <!-- Ausgabe 1 -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Ausgabe 1 (z.B. Excel Summe)</label>
                                         <div class="flex gap-2">
@@ -541,11 +523,10 @@
                                                 <input type="number" step="0.01" min="0" id="gen-1-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
                                             </div>
                                             <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="gen-1-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm">
+                                                <input type="number" step="0.01" min="0" id="gen-1-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Ausgabe 2 -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Ausgabe 2</label>
                                         <div class="flex gap-2">
@@ -553,11 +534,10 @@
                                                 <input type="number" step="0.01" min="0" id="gen-2-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
                                             </div>
                                             <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="gen-2-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm">
+                                                <input type="number" step="0.01" min="0" id="gen-2-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Ausgabe 3 -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Ausgabe 3</label>
                                         <div class="flex gap-2">
@@ -565,11 +545,10 @@
                                                 <input type="number" step="0.01" min="0" id="gen-3-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
                                             </div>
                                             <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="gen-3-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm">
+                                                <input type="number" step="0.01" min="0" id="gen-3-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Ausgabe 4 -->
                                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
                                         <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Ausgabe 4</label>
                                         <div class="flex gap-2">
@@ -577,12 +556,15 @@
                                                 <input type="number" step="0.01" min="0" id="gen-4-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
                                             </div>
                                             <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="gen-4-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm">
+                                                <input type="number" step="0.01" min="0" id="gen-4-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
+                                
+                                <!-- Versteckte Speicherfelder für alte Logik, werden im Hintergrund berechnet -->
+                                <input type="hidden" id="entry-exp-sumbar">
+                                <input type="hidden" id="entry-exp-sumcard">
                             </div>
                         </div>
 
@@ -609,7 +591,6 @@
                         </div>
                     </div>
 
-                    <!-- ERWEITERTER FILTER-BEREICH -->
                     <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full border-t border-stone-200 pt-4 mt-2">
                         <select id="hist-filter-preset" onchange="applyHistPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm bg-stone-50">
                             <option value="all" selected>Gesamte Historie anzeigen</option>
@@ -657,7 +638,6 @@
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     
-                    <!-- EXCEL UPLOAD -->
                     <div class="glass-card p-6 space-y-4 w-full">
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30">
@@ -680,10 +660,7 @@
                         </div>
                     </div>
 
-                    <!-- JSON BIN & ADMIN SETTINGS -->
                     <div class="flex flex-col gap-6 w-full">
-                        
-                        <!-- DATENBANK PROFILE -->
                         <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center gap-2 mb-4">
@@ -706,7 +683,6 @@
                                     <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">JSONBin Bin-ID</label>
                                     <input type="text" id="jsonbin-id" placeholder="6a342a..." class="modern-input text-sm py-2">
                                 </div>
-                                <!-- JAHRES-FILTER -->
                                 <div>
                                     <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Zugeordnetes Jahr</label>
                                     <select id="jsonbin-year" class="modern-input text-sm py-2 bg-stone-50">
@@ -724,14 +700,12 @@
                                 </button>
                             </div>
 
-                            <!-- Gespeicherte Profile Liste -->
                             <div class="border-t border-stone-200 pt-4 w-full mt-4">
                                 <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Datenbanken</h5>
                                 <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
                             </div>
                         </div>
 
-                        <!-- BENUTZERVERWALTUNG (Nur Admin) -->
                         <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
@@ -757,7 +731,6 @@
 
                 </div>
 
-                <!-- PREVIEW TABLE -->
                 <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <div>
@@ -834,8 +807,8 @@
             <h5 class="font-black text-stone-900 mb-3 text-lg" id="modal-title">Aktion</h5>
             <p class="text-sm text-stone-500 mb-8 font-medium leading-relaxed" id="modal-desc">Bist du sicher?</p>
             <div class="flex justify-center gap-4">
-                <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-bold">Abbrechen</button>
-                <button type="button" id="modal-confirm-btn" class="flex-1 py-3 rounded-xl btn-gold text-sm font-bold">Bestätigen</button>
+                <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-bold cursor-pointer">Abbrechen</button>
+                <button type="button" id="modal-confirm-btn" class="flex-1 py-3 rounded-xl btn-gold text-sm font-bold cursor-pointer">Bestätigen</button>
             </div>
         </div>
     </div>
@@ -859,14 +832,12 @@
             </div>
         </div>
 
-        <!-- BERICHTS-ZEITRAUM -->
         <div style="background-color: #FAFAFA; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 25px;">
             <p style="font-size: 9px; font-weight: bold; color: #A8A29E; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 4px 0;">Ausgewerteter Zeitraum</p>
             <h2 style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-date-range">--</h2>
             <p style="font-size: 10px; font-weight: bold; color: #78716C; margin: 4px 0 0 0;">Filter: <span style="color: #C5A85C;" id="pdf-filter-name">--</span></p>
         </div>
 
-        <!-- KPI ZUSAMMENFASSUNG -->
         <div style="display: flex; gap: 15px; margin-bottom: 20px;">
             <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
                 <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Umsatz Summe</p>
@@ -886,7 +857,6 @@
             </div>
         </div>
 
-        <!-- NEU: GEHÄLTER IM PDF -->
         <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
             <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter im Zeitraum</h3>
             <div style="display: flex; gap: 10px;">
@@ -909,7 +879,6 @@
             </div>
         </div>
 
-        <!-- LINIENDIAGRAMM IM PDF -->
         <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Entwicklungstrend</h3>
@@ -921,7 +890,6 @@
             <div id="pdf-trend-chart-container" style="height: 100px; width: 100%; position: relative;"></div>
         </div>
 
-        <!-- TABELLE -->
         <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px 0;">Detaillierte Auflistung</h3>
         <table class="pdf-table">
             <thead>
@@ -940,7 +908,6 @@
             </tbody>
         </table>
 
-        <!-- FOOTER -->
         <div style="margin-top: 30px; border-top: 1px solid #E7E5E4; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #A8A29E;">
             <span>GastroFinance Report Tool</span>
             <span>Automatisch generiert aus gesicherten Datenbank-Werten.</span>
@@ -1070,9 +1037,14 @@
 
         function checkPin() {
             const dotsContainer = document.getElementById('pin-dots-container');
-            if (enteredPin === adminPin) { loggedInUser = "buchhaltung"; completeLogin(); } 
-            else if (enteredPin === readPin) { loggedInUser = "inhaber"; completeLogin(); } 
-            else {
+
+            if (enteredPin === adminPin) {
+                loggedInUser = "buchhaltung";
+                completeLogin();
+            } else if (enteredPin === readPin) {
+                loggedInUser = "inhaber";
+                completeLogin();
+            } else {
                 dotsContainer.classList.add('shake-animation');
                 showToast("Falsche PIN", "Zugriff verweigert.", false);
                 setTimeout(() => { dotsContainer.classList.remove('shake-animation'); clearPin(); }, 400);
@@ -1097,7 +1069,10 @@
             showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
             switchTab('dashboard');
             renderAll();
-            if(activeProfileId) { loadFromJSONBin(true); }
+            
+            if(activeProfileId) {
+                loadFromJSONBin(true); 
+            }
         }
 
         function saveNewPins() {
@@ -1139,7 +1114,9 @@
                 }
             });
             const buttons = document.querySelectorAll('form button');
-            buttons.forEach(b => { if(!b.id.includes('btn-tab')) b.disabled = true; });
+            buttons.forEach(b => {
+                if(!b.id.includes('btn-tab')) b.disabled = true;
+            });
         }
 
         function switchTab(tabId) {
@@ -1166,24 +1143,34 @@
             const spinner = document.getElementById('pull-to-refresh-spinner');
             
             scrollable.addEventListener('touchstart', e => {
-                if (scrollable.scrollTop <= 0) { startY = e.touches[0].pageY; isPulling = true; }
+                if (scrollable.scrollTop <= 0) { 
+                    startY = e.touches[0].pageY; 
+                    isPulling = true; 
+                }
             }, { passive: true });
 
             scrollable.addEventListener('touchmove', e => {
                 if (!isPulling) return;
                 const pullDistance = e.touches[0].pageY - startY;
                 if (pullDistance > 60 && scrollable.scrollTop <= 0) {
-                    spinner.style.height = '60px'; spinner.style.opacity = '1';
+                    spinner.style.height = '60px';
+                    spinner.style.opacity = '1';
                 }
             }, { passive: true });
 
             scrollable.addEventListener('touchend', () => {
                 if (isPulling) {
                     if (spinner.style.height === '60px') {
-                        if (activeProfileId && loggedInUser !== null) { loadFromJSONBin(false); } 
-                        else { showToast("Daten aktualisiert", "Keine Cloud aktiv. Lokal geladen."); }
+                        if (activeProfileId && loggedInUser !== null) {
+                            loadFromJSONBin(false);
+                        } else {
+                            showToast("Daten aktualisiert", "Keine Cloud aktiv. Lokal geladen.");
+                        }
                     }
-                    setTimeout(() => { spinner.style.height = '0px'; spinner.style.opacity = '0'; }, 500);
+                    setTimeout(() => {
+                        spinner.style.height = '0px';
+                        spinner.style.opacity = '0';
+                    }, 500);
                     isPulling = false;
                 }
             }, { passive: true });
@@ -1201,19 +1188,37 @@
 
             dbProfiles.forEach(p => {
                 const isActive = p.id === activeProfileId;
-                const activeClass = isActive ? "border-[#C5A85C] bg-[#F6F3EB]" : "border-stone-200 bg-white";
-                const badge = isActive ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>` : "";
-                const yearBadge = p.year && p.year !== 'all' ? `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Jahr: ${p.year}</span>` : `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Alle Jahre</span>`;
+                const activeClass = isActive 
+                    ? "border-[#C5A85C] bg-[#F6F3EB]" 
+                    : "border-stone-200 bg-white";
+
+                const badge = isActive
+                    ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>`
+                    : "";
+
+                const yearBadge = p.year && p.year !== 'all' 
+                    ? `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Jahr: ${p.year}</span>` 
+                    : `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Alle Jahre</span>`;
 
                 const item = `
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border ${activeClass} transition-all gap-3">
                         <div class="space-y-1 w-full">
-                            <div class="flex items-center gap-2"><span class="text-xs font-bold text-stone-900">${p.name}</span>${badge}</div>
-                            <div class="flex items-center gap-2"><div class="text-[9px] font-semibold text-stone-400">ID: ${p.binId.substring(0, 10)}...</div>${yearBadge}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-stone-900">${p.name}</span>
+                                ${badge}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-[9px] font-semibold text-stone-400">ID: ${p.binId.substring(0, 10)}...</div>
+                                ${yearBadge}
+                            </div>
                         </div>
                         <div class="flex items-center gap-1.5 w-full sm:w-auto">
-                            <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer">Aktivieren</button>
-                            <button type="button" onclick="deleteProfile('${p.id}')" class="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer" title="Profil löschen"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer">
+                                Aktivieren
+                            </button>
+                            <button type="button" onclick="deleteProfile('${p.id}')" class="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer" title="Profil löschen">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -1227,7 +1232,10 @@
             const id = document.getElementById('jsonbin-id').value.trim();
             const year = document.getElementById('jsonbin-year').value;
 
-            if (!name || !key || !id) { showToast("Fehler", "Bitte fülle Profil-Name, API-Key und Bin-ID aus.", false); return; }
+            if (!name || !key || !id) {
+                showToast("Fehler", "Bitte fülle Profil-Name, API-Key und Bin-ID aus.", false);
+                return;
+            }
 
             let existingProfile = dbProfiles.find(p => p.name.toLowerCase() === name.toLowerCase());
 
@@ -1237,13 +1245,20 @@
                 existingProfile.year = year;
                 activeProfileId = existingProfile.id;
             } else {
-                const newProfile = { id: 'prof-' + Date.now(), name: name, apiKey: key, binId: id, year: year };
+                const newProfile = {
+                    id: 'prof-' + Date.now(),
+                    name: name,
+                    apiKey: key,
+                    binId: id,
+                    year: year
+                };
                 dbProfiles.push(newProfile);
                 activeProfileId = newProfile.id;
             }
 
             localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
             localStorage.setItem('gastro_active_profile_id', activeProfileId);
+
             showToast("Profil gespeichert", `Datenbank-Profil „${name}“ gesichert.`);
             renderProfilesList();
             loadFromJSONBin(true); 
@@ -1252,48 +1267,60 @@
         function activateProfile(id) {
             const profile = dbProfiles.find(p => p.id === id);
             if (!profile) return;
+
             activeProfileId = id;
             localStorage.setItem('gastro_active_profile_id', activeProfileId);
+
             document.getElementById('jsonbin-profile-name').value = profile.name;
             document.getElementById('jsonbin-key').value = profile.apiKey;
             document.getElementById('jsonbin-id').value = profile.binId;
             document.getElementById('jsonbin-year').value = profile.year || 'all';
+
             showToast("Profil aktiviert", `Verbindung zu „${profile.name}“ hergestellt.`);
             renderProfilesList();
             loadFromJSONBin(true);
         }
 
         function deleteProfile(id) {
-            showConfirmModal("Profil löschen?", `Möchtest du diese Datenbank-Verbindung wirklich löschen?`, () => {
-                dbProfiles = dbProfiles.filter(p => p.id !== id);
-                if (activeProfileId === id) {
-                    activeProfileId = dbProfiles.length > 0 ? dbProfiles[0].id : null;
-                    localStorage.setItem('gastro_active_profile_id', activeProfileId || '');
-                    if (activeProfileId) {
-                        const newActive = dbProfiles.find(p => p.id === activeProfileId);
-                        document.getElementById('jsonbin-profile-name').value = newActive.name;
-                        document.getElementById('jsonbin-key').value = newActive.apiKey;
-                        document.getElementById('jsonbin-id').value = newActive.binId;
-                        document.getElementById('jsonbin-year').value = newActive.year || 'all';
-                        loadFromJSONBin(true);
-                    } else {
-                        document.getElementById('jsonbin-profile-name').value = '';
-                        document.getElementById('jsonbin-key').value = '';
-                        document.getElementById('jsonbin-id').value = '';
-                        document.getElementById('jsonbin-year').value = 'all';
-                        setDbStatus('disconnected');
+            showConfirmModal(
+                "Profil löschen?",
+                `Möchtest du diese Datenbank-Verbindung wirklich aus dem System löschen?`,
+                () => {
+                    dbProfiles = dbProfiles.filter(p => p.id !== id);
+                    if (activeProfileId === id) {
+                        activeProfileId = dbProfiles.length > 0 ? dbProfiles[0].id : null;
+                        localStorage.setItem('gastro_active_profile_id', activeProfileId || '');
+                        
+                        if (activeProfileId) {
+                            const newActive = dbProfiles.find(p => p.id === activeProfileId);
+                            document.getElementById('jsonbin-profile-name').value = newActive.name;
+                            document.getElementById('jsonbin-key').value = newActive.apiKey;
+                            document.getElementById('jsonbin-id').value = newActive.binId;
+                            document.getElementById('jsonbin-year').value = newActive.year || 'all';
+                            loadFromJSONBin(true);
+                        } else {
+                            document.getElementById('jsonbin-profile-name').value = '';
+                            document.getElementById('jsonbin-key').value = '';
+                            document.getElementById('jsonbin-id').value = '';
+                            document.getElementById('jsonbin-year').value = 'all';
+                            setDbStatus('disconnected');
+                        }
                     }
+
+                    localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
+                    showToast("Profil gelöscht", "Profil wurde erfolgreich entfernt.");
+                    renderProfilesList();
                 }
-                localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
-                showToast("Profil gelöscht", "Profil wurde erfolgreich entfernt.");
-                renderProfilesList();
-            });
+            );
         }
 
         // --- JSONBIN NETZWERK LOGIK ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (!activeProfile) { if(!silent) showToast("Fehler", "Es ist kein Profil aktiv.", false); return; }
+            if (!activeProfile) {
+                if(!silent) showToast("Fehler", "Es ist kein Profil aktiv.", false); 
+                return; 
+            }
             
             setDbStatus('connecting');
             if(!silent) showToast("Lade...", "Verbindung zur Cloud wird aufgebaut...");
@@ -1301,30 +1328,47 @@
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}/latest`, {
                     method: 'GET',
-                    headers: { 'X-Master-Key': activeProfile.apiKey, 'Cache-Control': 'no-cache' }
+                    headers: { 
+                        'X-Master-Key': activeProfile.apiKey,
+                        'Cache-Control': 'no-cache' 
+                    }
                 });
+                
                 const data = await res.json();
+                
                 if(!res.ok) { throw new Error(data.message || `HTTP Error: ${res.status}`); }
                 
                 let record = data.record || data;
-                if (Array.isArray(record)) { dbDays = record; } 
-                else if (record && Array.isArray(record.data)) { dbDays = record.data; } 
-                else if (typeof record === 'object') { dbDays = Object.values(record).find(v => Array.isArray(v)) || []; } 
-                else { dbDays = []; }
+                
+                if (Array.isArray(record)) {
+                     dbDays = record;
+                } else if (record && Array.isArray(record.data)) {
+                     dbDays = record.data;
+                } else if (typeof record === 'object') {
+                     dbDays = Object.values(record).find(v => Array.isArray(v)) || [];
+                } else {
+                     dbDays = [];
+                }
 
                 localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
                 setDbStatus('connected');
+                
                 if(!silent) showToast("Erfolg", "Daten aus der Cloud erfolgreich synchronisiert.");
                 renderAll();
             } catch(e) { 
                 setDbStatus('disconnected');
                 if(!silent) showToast("Netzwerkfehler", e.message, false); 
+                console.error("JSONBin Load Error:", e);
             }
         }
 
         async function saveToJSONBin() {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (!activeProfile) { showToast("Fehler", "Kein aktives Profil zum Speichern gewählt.", false); return; }
+            if (!activeProfile) {
+                showToast("Fehler", "Kein aktives Profil zum Speichern gewählt.", false); 
+                return; 
+            }
+            
             setDbStatus('connecting');
             showToast("Sichere...", "Lade in die Cloud hoch...");
             
@@ -1332,28 +1376,34 @@
                 const payload = { "data": dbDays };
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': activeProfile.apiKey },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-Master-Key': activeProfile.apiKey 
+                    },
                     body: JSON.stringify(payload)
                 });
+                
                 const data = await res.json();
+
                 if(!res.ok) { throw new Error(data.message || "Fehler beim Upload auf JSONBin"); }
+                
                 setDbStatus('connected');
                 showToast("Gesichert", "Daten erfolgreich in der Cloud aktualisiert.");
             } catch(e) { 
                 setDbStatus('disconnected');
                 showToast("Speicherfehler", e.message, false); 
+                console.error("JSONBin Save Error:", e);
             }
         }
 
-        // --- MANUELLE EINGABE (NEU: GEHÄLTER UND SONSTIGE AUSGABEN) ---
+        // --- MANUELLE EINGABE ---
         function calculateLiveFormula() {
-            // Einnahmen
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            
             const actualBar = rawBar - 150;
             const totalRevenue = actualBar + cardRev; 
 
-            // Ausgaben Lesen (Gehälter)
             const adamBar = parseFloat(document.getElementById('sal-adam-bar').value) || 0;
             const adamCard = parseFloat(document.getElementById('sal-adam-card').value) || 0;
             const mohBar = parseFloat(document.getElementById('sal-moh-bar').value) || 0;
@@ -1363,7 +1413,6 @@
             const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
             const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
 
-            // Ausgaben Lesen (Sonstige)
             const gen1Bar = parseFloat(document.getElementById('gen-1-bar').value) || 0;
             const gen1Card = parseFloat(document.getElementById('gen-1-card').value) || 0;
             const gen2Bar = parseFloat(document.getElementById('gen-2-bar').value) || 0;
@@ -1373,16 +1422,13 @@
             const gen4Bar = parseFloat(document.getElementById('gen-4-bar').value) || 0;
             const gen4Card = parseFloat(document.getElementById('gen-4-card').value) || 0;
 
-            // Summen berechnen
             const expSumBar = adamBar + mohBar + karBar + nourBar + gen1Bar + gen2Bar + gen3Bar + gen4Bar;
             const expSumCard = adamCard + mohCard + karCard + nourCard + gen1Card + gen2Card + gen3Card + gen4Card;
             const combinedExpenses = expSumBar + expSumCard;
 
-            // Ergebnisse
             const profit = totalRevenue - combinedExpenses;
             const tuete = profit - cardRev;
 
-            // Felder aktualisieren
             document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
             document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
             
@@ -1398,7 +1444,6 @@
             const pickedDate = document.getElementById('entry-date').value;
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
-            // Alle Felder leeren
             const fieldsToClear = [
                 'entry-rev-bar', 'entry-rev-card', 'entry-exp-sumbar', 'entry-exp-sumcard',
                 'sal-adam-bar', 'sal-adam-card', 'sal-moh-bar', 'sal-moh-card',
@@ -1409,35 +1454,35 @@
             fieldsToClear.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
 
             if (existingDay) {
-                // Einnahmen setzen
                 document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + 150;
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card;
 
-                // Detailierte Ausgabenstruktur prüfen (Neues System)
+                // Sicheres Laden mit Optional Chaining, verhindert Abstürze bei leeren Feldern!
                 if (existingDay.expensesDetail) {
-                    const sal = existingDay.expensesDetail.salaries;
-                    const gen = existingDay.expensesDetail.general;
+                    const sal = existingDay.expensesDetail.salaries || {};
+                    const gen = existingDay.expensesDetail.general || [];
+                    
+                    const setVal = (id, val) => { document.getElementById(id).value = val ? val : ''; };
 
-                    if(sal.adam.bar) document.getElementById('sal-adam-bar').value = sal.adam.bar;
-                    if(sal.adam.card) document.getElementById('sal-adam-card').value = sal.adam.card;
-                    if(sal.moh.bar) document.getElementById('sal-moh-bar').value = sal.moh.bar;
-                    if(sal.moh.card) document.getElementById('sal-moh-card').value = sal.moh.card;
-                    if(sal.kar.bar) document.getElementById('sal-kar-bar').value = sal.kar.bar;
-                    if(sal.kar.card) document.getElementById('sal-kar-card').value = sal.kar.card;
-                    if(sal.nour.bar) document.getElementById('sal-nour-bar').value = sal.nour.bar;
-                    if(sal.nour.card) document.getElementById('sal-nour-card').value = sal.nour.card;
+                    setVal('sal-adam-bar', sal.adam?.bar);
+                    setVal('sal-adam-card', sal.adam?.card);
+                    setVal('sal-moh-bar', sal.moh?.bar);
+                    setVal('sal-moh-card', sal.moh?.card);
+                    setVal('sal-kar-bar', sal.kar?.bar);
+                    setVal('sal-kar-card', sal.kar?.card);
+                    setVal('sal-nour-bar', sal.nour?.bar);
+                    setVal('sal-nour-card', sal.nour?.card);
 
-                    if(gen[0].bar) document.getElementById('gen-1-bar').value = gen[0].bar;
-                    if(gen[0].card) document.getElementById('gen-1-card').value = gen[0].card;
-                    if(gen[1].bar) document.getElementById('gen-2-bar').value = gen[1].bar;
-                    if(gen[1].card) document.getElementById('gen-2-card').value = gen[1].card;
-                    if(gen[2].bar) document.getElementById('gen-3-bar').value = gen[2].bar;
-                    if(gen[2].card) document.getElementById('gen-3-card').value = gen[2].card;
-                    if(gen[3].bar) document.getElementById('gen-4-bar').value = gen[3].bar;
-                    if(gen[3].card) document.getElementById('gen-4-card').value = gen[3].card;
+                    setVal('gen-1-bar', gen[0]?.bar);
+                    setVal('gen-1-card', gen[0]?.card);
+                    setVal('gen-2-bar', gen[1]?.bar);
+                    setVal('gen-2-card', gen[1]?.card);
+                    setVal('gen-3-bar', gen[2]?.bar);
+                    setVal('gen-3-card', gen[2]?.card);
+                    setVal('gen-4-bar', gen[3]?.bar);
+                    setVal('gen-4-card', gen[3]?.card);
                 } 
                 else {
-                    // Fallback Altes System: Lege Summen in General 1
                     if(existingDay.expensesSum.bar) document.getElementById('gen-1-bar').value = existingDay.expensesSum.bar;
                     if(existingDay.expensesSum.card) document.getElementById('gen-1-card').value = existingDay.expensesSum.card;
                 }
@@ -1458,7 +1503,6 @@
             const actualBar = rawBar - 150; 
             const totalRevenue = actualBar + cardRev; 
 
-            // Gehälter
             const adamBar = parseFloat(document.getElementById('sal-adam-bar').value) || 0;
             const adamCard = parseFloat(document.getElementById('sal-adam-card').value) || 0;
             const mohBar = parseFloat(document.getElementById('sal-moh-bar').value) || 0;
@@ -1468,7 +1512,6 @@
             const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
             const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
 
-            // Sonstige Ausgaben
             const gen1Bar = parseFloat(document.getElementById('gen-1-bar').value) || 0;
             const gen1Card = parseFloat(document.getElementById('gen-1-card').value) || 0;
             const gen2Bar = parseFloat(document.getElementById('gen-2-bar').value) || 0;
@@ -1486,7 +1529,6 @@
                 date: pickedDate,
                 germanDate: formatGermanDate(pickedDate),
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
-                // Neue Struktur für Detail-Ansicht
                 expensesDetail: {
                     salaries: {
                         adam: { bar: adamBar, card: adamCard },
@@ -1501,7 +1543,6 @@
                         { bar: gen4Bar, card: gen4Card }
                     ]
                 },
-                // Behalten für die Tabellen/Berechnungen (Rückwärtskompatibilität)
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
                 profit: totalRevenue - totalExpenses,
                 tuete: (totalRevenue - totalExpenses) - cardRev,
@@ -1550,6 +1591,7 @@
                     workbook.SheetNames.forEach(sheetName => {
                         const trimmedName = sheetName.trim();
                         const match = trimmedName.match(dateRegex);
+                        
                         if (!match) return; 
 
                         let day = match[1];
@@ -1589,6 +1631,7 @@
                         for (let r = 0; r < rawJson.length; r++) {
                             const row = rawJson[r];
                             if (!row || row.length === 0) continue;
+
                             for (let c = 0; c < row.length; c++) {
                                 const rawCellVal = row[c];
                                 if (rawCellVal === undefined || rawCellVal === null) continue;
@@ -1628,7 +1671,6 @@
                             date: isoDate,
                             germanDate: fullGermanDate,
                             revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
-                            // Wir mappen die Excel-Summe direkt auf "Sonstige Ausgabe 1", so ist es editierbar
                             expensesDetail: {
                                 salaries: {
                                     adam: { bar: 0, card: 0 },
@@ -1651,11 +1693,18 @@
                     });
 
                     if (tempImportBuffer.length === 0) { 
-                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert.`, false);
-                        else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                        if (skippedCount > 0) {
+                            showToast("Filter aktiv", `Alle ${skippedCount} erkannten Mappen stammten aus einem anderen Jahr und wurden ignoriert.`, false);
+                        } else {
+                            showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                        }
                         return; 
                     }
-                    if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
+                    
+                    if (skippedCount > 0) {
+                        showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren wurden ignoriert.`);
+                    }
+
                     renderImportPreview();
 
                 } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); }
@@ -1670,7 +1719,7 @@
 
             tempImportBuffer.forEach(day => {
                 tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="hover:bg-stone-50 border-b border-stone-100">
+                    <tr class="border-b border-stone-100">
                         <td class="p-3 font-bold text-stone-900">${day.germanDate}</td>
                         <td class="p-3 text-right">${formatCurrency(day.revenue.bar)}</td>
                         <td class="p-3 text-right">${formatCurrency(day.revenue.card)}</td>
@@ -1702,7 +1751,9 @@
             showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
             tempImportBuffer = [];
             document.getElementById('import-preview-container').classList.add('hidden');
+            
             if(activeProfileId) saveToJSONBin();
+            
             renderAll();
             switchTab('dashboard');
         }
@@ -1781,13 +1832,12 @@
                 filtered.forEach(d => { 
                     r+=d.revenue.total; c+=d.revenue.card; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; 
                     
-                    // Gehälter im gefilterten Zeitraum aufsummieren (falls vorhanden)
                     if(d.expensesDetail && d.expensesDetail.salaries) {
                         const sal = d.expensesDetail.salaries;
-                        salAdam += (sal.adam.bar + sal.adam.card);
-                        salMoh += (sal.moh.bar + sal.moh.card);
-                        salKar += (sal.kar.bar + sal.kar.card);
-                        salNour += (sal.nour.bar + sal.nour.card);
+                        salAdam += ((sal.adam?.bar||0) + (sal.adam?.card||0));
+                        salMoh += ((sal.moh?.bar||0) + (sal.moh?.card||0));
+                        salKar += ((sal.kar?.bar||0) + (sal.kar?.card||0));
+                        salNour += ((sal.nour?.bar||0) + (sal.nour?.card||0));
                     }
                 });
                 
@@ -1796,13 +1846,11 @@
                 document.getElementById('kpi-profit').textContent = formatCurrency(p);
                 document.getElementById('kpi-tuete').textContent = formatCurrency(t);
                 
-                // Gehälter im Dashboard aktualisieren
                 document.getElementById('dash-sal-adam').textContent = formatCurrency(salAdam);
                 document.getElementById('dash-sal-moh').textContent = formatCurrency(salMoh);
                 document.getElementById('dash-sal-kar').textContent = formatCurrency(salKar);
                 document.getElementById('dash-sal-nour').textContent = formatCurrency(salNour);
 
-                // Gehälter auch im versteckten PDF aktualisieren
                 document.getElementById('pdf-sal-adam').textContent = formatCurrency(salAdam);
                 document.getElementById('pdf-sal-moh').textContent = formatCurrency(salMoh);
                 document.getElementById('pdf-sal-kar').textContent = formatCurrency(salKar);
@@ -1851,6 +1899,7 @@
             document.getElementById('pie-chart-container').innerHTML = `<div class="text-center font-black text-2xl text-stone-900">${formatCurrency(total)}</div>`;
         }
 
+        // --- HISTORIE: FIX FÜR KLICKBARE BUTTONS ---
         function renderHistory() {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
@@ -1873,9 +1922,11 @@
                  return;
             }
 
+            const isReadOnly = loggedInUser === 'inhaber';
+
             filtered.forEach(d => {
                 tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="hover:bg-stone-50 border-b border-stone-100">
+                    <tr class="border-b border-stone-100">
                         <td class="p-4 font-bold">${d.germanDate}</td>
                         <td class="p-4 text-right">${formatCurrency(d.revenue.bar)}</td>
                         <td class="p-4 text-right">${formatCurrency(d.revenue.card)}</td>
@@ -1884,13 +1935,44 @@
                         <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.profit)}</td>
                         <td class="p-4 text-right text-[#C5A85C] font-black">${formatCurrency(d.tuete)}</td>
                         <td class="p-4 text-center">
+                            ${isReadOnly ? '<span class="text-[10px] text-stone-400 font-bold uppercase">Gesperrt</span>' : `
                             <div class="flex items-center justify-center gap-2">
-                                <button type="button" onclick="quickEditDay('${d.date}')" class="p-2 bg-stone-100 rounded-lg text-stone-600"><i class="fa-solid fa-edit"></i></button>
-                                <button type="button" onclick="deleteSingleDay('${d.date}')" class="p-2 bg-red-50 text-red-500 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                                <button type="button" onclick="quickEditDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-stone-100 active:bg-stone-200 active:scale-95 rounded-lg text-stone-600"><i class="fa-solid fa-pen-to-square pointer-events-none"></i></button>
+                                <button type="button" onclick="deleteSingleDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-red-50 active:bg-red-100 active:scale-95 text-red-500 rounded-lg"><i class="fa-solid fa-trash-can pointer-events-none"></i></button>
                             </div>
+                            `}
                         </td>
                     </tr>
                 `);
+            });
+        }
+
+        // --- BUTTON FUNKTIONEN MIT FEHLER-CATCH ---
+        function quickEditDay(dateStr) {
+            try {
+                switchTab('eingabe');
+                const dateInput = document.getElementById('entry-date');
+                if (dateInput) {
+                    dateInput.value = dateStr;
+                    handleEntryDateChange();
+                }
+            } catch(e) {
+                console.error("Bearbeitungsfehler:", e);
+                showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
+            }
+        }
+
+        function deleteSingleDay(d) {
+            showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
+                try {
+                    dbDays = dbDays.filter(x => x.date !== d);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
+                    if(activeProfileId) saveToJSONBin();
+                    renderAll();
+                } catch(e) {
+                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
+                }
             });
         }
 
@@ -1973,6 +2055,16 @@
                     document.documentElement.style.overflow = 'hidden';
                 });
             }, 200); 
+        }
+
+        function clearDatabase() {
+            showConfirmModal("Alles Löschen?", "Sicher, dass alle Daten entfernt werden sollen?", () => {
+                dbDays = [];
+                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                showToast("Erledigt", "Datenbank geleert.");
+                if(activeProfileId) saveToJSONBin();
+                renderAll();
+            });
         }
 
         function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
