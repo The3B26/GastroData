@@ -558,7 +558,7 @@
                                 <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
                                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Sicheres Merging mit existierenden Ausgaben!</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Extrahiert Details & sortiert Gehälter automatisch!</p>
                             </div>
                         </div>
 
@@ -633,7 +633,7 @@
                             </div>
                         </div>
 
-                        <!-- NEU: System-Einstellungen (Admin Only) -->
+                        <!-- System-Einstellungen (Admin Only) -->
                         <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
@@ -851,7 +851,6 @@
         let startY = 0;
         let isPulling = false;
         
-        // Smart-Sync Versioning
         let cloudVersion = 0; 
 
         // SYSTEM EINSTELLUNGEN (DYNAMISCH)
@@ -860,29 +859,24 @@
             employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
         };
 
-        // Lese PINs direkt aus Storage (Für Login)
         let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
         let readPin = localStorage.getItem('gastro_read_pin') || "2024";
 
         window.onload = function() {
-            // 1. Settings Laden
             if (localStorage.getItem('gastro_app_settings')) {
                 appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
             }
 
-            // 2. Datenbank Laden & Migrieren auf dynamisches Format
             if (localStorage.getItem('gastro_finance_premium_db')) {
                 let loadedDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
                 dbDays = migrateToDynamicSalaries(loadedDays);
             }
 
-            // 3. Profile Laden
             if (localStorage.getItem('gastro_db_profiles')) {
                 dbProfiles = JSON.parse(localStorage.getItem('gastro_db_profiles'));
             }
             activeProfileId = localStorage.getItem('gastro_active_profile_id') || null;
 
-            // 4. UI Initialisieren
             initAdminSettingsUI();
             buildDynamicEmployeeUI();
 
@@ -907,7 +901,6 @@
             renderExpenseRows([]);
         };
 
-        // --- MIGRATION (Alt -> Neu) ---
         function migrateToDynamicSalaries(daysArray) {
             daysArray.forEach(d => {
                 if (d.expensesDetail && d.expensesDetail.salaries && d.expensesDetail.salaries.adam !== undefined) {
@@ -923,7 +916,6 @@
             return daysArray;
         }
 
-        // --- DYNAMISCHE UI AUFBAUEN ---
         function initAdminSettingsUI() {
             document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
             document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
@@ -933,7 +925,6 @@
         function saveSystemSettings() {
             if (loggedInUser !== 'buchhaltung') return;
 
-            // 1. PINs Speichern
             const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
             const newRead = document.getElementById('cfg-read-pin').value.trim();
             if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
@@ -943,7 +934,6 @@
                 readPin = newRead; localStorage.setItem('gastro_read_pin', readPin); document.getElementById('cfg-read-pin').value = '';
             }
 
-            // 2. Settings Speichern
             const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
             if (!isNaN(wg) && wg >= 0) appSettings.changeMoney = wg;
 
@@ -970,7 +960,6 @@
             if (pdfContainer) pdfContainer.innerHTML = '';
 
             appSettings.employees.forEach((emp, index) => {
-                const safeId = 'emp_' + index;
                 
                 dashContainer.insertAdjacentHTML('beforeend', `
                     <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
@@ -1007,7 +996,6 @@
             });
         }
 
-        // --- LOKALES BACKUP ---
         function downloadBackup() {
             if (dbDays.length === 0) {
                 showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
@@ -1031,7 +1019,6 @@
             showToast("Backup erstellt", "Datei wurde heruntergeladen.");
         }
 
-        // --- Status Light ---
         function setDbStatus(state) {
             const dotOut = document.getElementById('db-status-dot'); 
             const textOut = document.getElementById('db-status-text'); 
@@ -1230,7 +1217,6 @@
             }, { passive: true });
         }
 
-        // --- JSONBIN PROFILE MANAGEMENT ---
         function renderProfilesList() {
             const container = document.getElementById('saved-profiles-list');
             container.innerHTML = '';
@@ -1368,7 +1354,6 @@
             );
         }
 
-        // --- JSONBIN NETZWERK LOGIK MIT SMART SYNC ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (!activeProfile) {
@@ -1389,7 +1374,6 @@
                 if(!res.ok) { throw new Error(data.message || `HTTP Error: ${res.status}`); }
                 
                 let record = data.record || data;
-                
                 if (record.version) cloudVersion = record.version;
                 
                 if (record.data && Array.isArray(record.data)) { dbDays = record.data; } 
@@ -1406,16 +1390,12 @@
             } catch(e) { 
                 setDbStatus('disconnected');
                 if(!silent) showToast("Netzwerkfehler", e.message, false); 
-                console.error("JSONBin Load Error:", e);
             }
         }
 
         async function saveToJSONBin() {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (!activeProfile) {
-                showToast("Fehler", "Kein aktives Profil zum Speichern gewählt.", false); 
-                return; 
-            }
+            if (!activeProfile) { showToast("Fehler", "Kein aktives Profil zum Speichern gewählt.", false); return; }
             
             setDbStatus('connecting');
             showToast("Prüfe Cloud...", "Suche nach Konflikten...");
@@ -1464,8 +1444,6 @@
                 showToast("Speicherfehler", e.message, false); 
             }
         }
-
-        // --- MANUELLE EINGABE LOGIK (DYNAMISCH) ---
 
         function renderExpenseRows(generalExpenses = []) {
             const container = document.getElementById('dynamic-expenses-container');
@@ -1716,7 +1694,7 @@
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
-        // --- SMARTER TAGESMAPPEN-SCANNER (Liest Zeile für Zeile) ---
+        // --- SMARTER TAGESMAPPEN-SCANNER ---
         function parseExcelFile(file) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
@@ -1740,15 +1718,20 @@
                         let month = match[2];
                         let sheetYear = match[3];
 
-                        // NEUE REGEL: Monat >= 9 -> 2024, sonst -> 2025
+                        // FIX: Die Mappen-Regelung erst erzwingen, DANN das Profil prüfen.
                         if (!sheetYear) {
                             const monthInt = parseInt(month, 10);
-                            if (monthInt >= 9) { sheetYear = "2024"; } else { sheetYear = "2025"; }
+                            if (monthInt >= 9 && monthInt <= 12) { 
+                                sheetYear = "2024"; 
+                            } else { 
+                                sheetYear = "2025"; 
+                            }
                         }
 
+                        // JETZT prüfen wir, ob die Mappe in das aktuell ausgewählte Jahr passt
                         if (profileYearFilter !== 'all' && sheetYear !== profileYearFilter) {
                             skippedCount++;
-                            return;
+                            return; // Mappe verwerfen, da falsches Jahr
                         }
 
                         const fullGermanDate = `${day}.${month}.${sheetYear}`;
@@ -1805,37 +1788,46 @@
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
                         let inAusgabenSection = false;
-                        let amountCol = 1, remarkCol = -1;
+                        let nameCol = -1, amountCol = -1, remarkCol = -1;
                         let extractedExpenses = [];
 
                         for (let r = 0; r < rawJson.length; r++) {
                             const row = rawJson[r];
                             if (!row || row.length === 0) continue;
 
-                            const firstCell = String(row[0] || "").trim().toLowerCase();
-
-                            if (firstCell === "arikel:" || firstCell === "artikel:" || firstCell === "artikel" || firstCell === "artikel/zweck" || firstCell === "artikel/zweck:") {
-                                inAusgabenSection = true;
+                            if (!inAusgabenSection) {
                                 for(let c=0; c<row.length; c++) {
-                                    const h = String(row[c]||"").toLowerCase();
-                                    if(h.includes("brutto") || h.includes("betrag") || h.includes("netto")) amountCol = c;
-                                    if(h.includes("bemerkung")) remarkCol = c;
+                                    const cellVal = String(row[c] || "").trim().toLowerCase();
+                                    if (cellVal === "arikel:" || cellVal === "artikel:" || cellVal === "artikel" || cellVal === "artikel/zweck" || cellVal === "artikel/zweck:") {
+                                        inAusgabenSection = true;
+                                        nameCol = c;
+                                        for(let c2=c+1; c2<row.length; c2++) {
+                                            const h = String(row[c2]||"").toLowerCase();
+                                            if(h.includes("brutto") || h.includes("betrag") || h.includes("netto")) amountCol = c2;
+                                            if(h.includes("bemerkung")) remarkCol = c2;
+                                        }
+                                        break;
+                                    }
                                 }
                                 continue;
                             }
 
-                            if (firstCell.startsWith("summe") || firstCell.startsWith("einnahme") || firstCell.startsWith("tüte") || firstCell.startsWith("gewinn")) {
-                                inAusgabenSection = false;
-                            }
-
                             if (inAusgabenSection) {
-                                const name = String(row[0] || "").trim();
+                                if (nameCol === -1) nameCol = 0;
+                                const nameCell = String(row[nameCol] || "").trim().toLowerCase();
+
+                                if (nameCell.startsWith("summe") || nameCell.startsWith("einnahme") || nameCell.startsWith("tüte") || nameCell.startsWith("gewinn") || nameCell === "art:") {
+                                    inAusgabenSection = false;
+                                    continue;
+                                }
+
+                                const name = String(row[nameCol] || "").trim();
                                 if (!name) continue;
 
-                                let amountRaw = row[amountCol];
+                                let amountRaw = amountCol !== -1 ? row[amountCol] : undefined;
                                 if (amountRaw === undefined || amountRaw === null || amountRaw === "") {
-                                    for(let c=1; c<row.length; c++) {
-                                        if (row[c] !== undefined && row[c] !== null && row[c] !== "") {
+                                    for(let c=nameCol+1; c<row.length; c++) {
+                                        if (row[c] !== undefined && row[c] !== null && String(row[c]).trim() !== "") {
                                             amountRaw = row[c]; break;
                                         }
                                     }
@@ -1855,7 +1847,7 @@
                                     name: name,
                                     bar: isCard ? 0 : Math.abs(amount),
                                     card: isCard ? Math.abs(amount) : 0,
-                                    tax: 0
+                                    tax: 0 
                                 });
                             }
                         }
@@ -1928,7 +1920,7 @@
                     });
 
                     if (tempImportBuffer.length === 0) { 
-                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert.`, false);
+                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert (Falsches Jahr).`, false);
                         else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
                         return; 
                     }
@@ -1973,18 +1965,30 @@
                         const row = rawJson[i];
                         if (!row || row.length === 0 || !row[dateIdx]) continue;
 
-                        const rawDateMatch = String(row[dateIdx]).match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                        // FIX: Auch die CSV-Exporte können unvollständige Jahre haben oder die Filter-Regel verletzen
+                        const rawDateMatch = String(row[dateIdx]).match(/(\d{2})\.(\d{2})(?:\.(\d{4}))?/);
                         if(!rawDateMatch) continue;
 
-                        const rowYear = rawDateMatch[3];
+                        let day = rawDateMatch[1];
+                        let month = rawDateMatch[2];
+                        let rowYear = rawDateMatch[3];
+
+                        if (!rowYear) {
+                            const monthInt = parseInt(month, 10);
+                            if (monthInt >= 9 && monthInt <= 12) { 
+                                rowYear = "2024"; 
+                            } else { 
+                                rowYear = "2025"; 
+                            }
+                        }
                         
-                        // JAHRES-FILTER (Auch auf CSV-Zeilen anwenden!)
+                        // JAHRES-FILTER (Anwenden!)
                         if (profileYearFilter !== 'all' && rowYear !== profileYearFilter) {
                             skippedCount++;
                             continue; 
                         }
 
-                        const isoDate = `${rawDateMatch[3]}-${rawDateMatch[2]}-${rawDateMatch[1]}`;
+                        const isoDate = `${rowYear}-${month}-${day}`;
 
                         let isStorno = false;
                         if (stornoIdx !== -1 && row[stornoIdx]) {
@@ -2414,7 +2418,7 @@
             });
         }
 
-        // --- PDF EXPORT LOGIK MIT MONATS-GRUPPIERUNG ---
+        // --- PDF EXPORT LOGIK ---
         function generatePDFReport() {
             const filtered = getFilteredDays();
             if (filtered.length === 0) {
