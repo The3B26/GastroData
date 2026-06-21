@@ -273,9 +273,16 @@
                             <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
                             <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
                         </div>
-                        <button type="button" onclick="generatePDFReport()" class="btn-gold flex items-center justify-center gap-2 py-2 px-4 text-xs h-full w-full sm:w-auto ml-0 sm:ml-2">
-                            <i class="fa-solid fa-file-pdf"></i> Bericht (PDF)
-                        </button>
+                        
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="flex items-center gap-2 text-xs font-bold text-stone-500 cursor-pointer bg-stone-100 py-2 px-3 rounded-xl border border-stone-200">
+                                <input type="checkbox" id="pdf-monthly-grouping" class="accent-[#C5A85C]">
+                                Als Monats-Bericht
+                            </label>
+                            <button type="button" onclick="generatePDFReport()" class="btn-gold flex items-center justify-center gap-2 py-2 px-4 text-xs h-full w-full sm:w-auto">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -326,28 +333,9 @@
                         <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4 border-b border-stone-100 pb-2">
                             <i class="fa-solid fa-users text-[#C5A85C] mr-2"></i> Mitarbeiter Gehälter im Zeitraum
                         </h3>
-                        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                            <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Adam</span>
-                                <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-adam">0,00 €</div>
-                            </div>
-                            <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Mohammed</span>
-                                <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-moh">0,00 €</div>
-                            </div>
-                            <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Karam</span>
-                                <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-kar">0,00 €</div>
-                            </div>
-                            <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nourddin</span>
-                                <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-nour">0,00 €</div>
-                            </div>
-                            <!-- NEU: EHEMALIGE -->
-                            <div class="bg-stone-100 rounded-xl p-4 border border-stone-300">
-                                <span class="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Ehem. / Aushilfen</span>
-                                <div class="text-lg sm:text-xl font-black text-stone-700 mt-1" id="dash-sal-ehem">0,00 €</div>
-                            </div>
+                        <!-- DYNAMISCHER CONTAINER FÜR GEHÄLTER -->
+                        <div id="dash-salaries-container" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                            <!-- JS Fills this -->
                         </div>
                     </div>
 
@@ -359,7 +347,7 @@
                             </div>
                         </div>
                         <div class="glass-card p-6 w-full">
-                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Einnahmeverteilung</h3>
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Ausgaben nach Steuer</h3>
                             <div class="relative flex flex-col items-center justify-center w-full">
                                 <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
                                 <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
@@ -400,7 +388,7 @@
                                         <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block bg-white">
                                         <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
                                     </div>
-                                    <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: 150€ Wechselgeld werden hiervon intern abgezogen.</span>
+                                    <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: <span id="hint-wechselgeld">150</span>€ Wechselgeld werden hiervon intern abgezogen.</span>
                                 </div>
                                 <div class="w-full">
                                     <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
@@ -460,61 +448,9 @@
                                 <div class="space-y-4">
                                     <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest mb-3"><i class="fa-solid fa-users text-stone-400 mr-1"></i> Mitarbeiter Gehälter</h5>
                                     
-                                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
-                                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Adam</label>
-                                        <div class="flex gap-2">
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-adam-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                            </div>
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-adam-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
-                                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Mohammed</label>
-                                        <div class="flex gap-2">
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-moh-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                            </div>
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-moh-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
-                                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Karam</label>
-                                        <div class="flex gap-2">
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-kar-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                            </div>
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-kar-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
-                                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">Nourddin</label>
-                                        <div class="flex gap-2">
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-nour-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                            </div>
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-nour-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- NEU: Ehemalige / Unbekannte in der Erfassung -->
-                                    <div class="bg-stone-100 p-3 rounded-xl border border-stone-300 shadow-sm">
-                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Ehemalige / Aushilfen</label>
-                                        <div class="flex gap-2">
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-ehem-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                            </div>
-                                            <div class="relative w-full">
-                                                <input type="number" step="0.01" min="0" id="sal-ehem-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                            </div>
-                                        </div>
+                                    <!-- DYNAMISCHER CONTAINER FÜR GEHÄLTER -->
+                                    <div id="entry-salaries-container" class="space-y-3">
+                                        <!-- JS Fills this -->
                                     </div>
                                 </div>
 
@@ -606,8 +542,9 @@
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     
+                    <!-- UPLOAD BEREICHE -->
                     <div class="flex flex-col gap-6">
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
                                     <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
@@ -621,11 +558,11 @@
                                 <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
                                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Extrahiert Details & sortiert Gehälter automatisch!</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Sicheres Merging mit existierenden Ausgaben!</p>
                             </div>
                         </div>
 
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
                                     <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
@@ -639,17 +576,23 @@
                                 <input type="file" id="excel-ausgaben-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleAusgabenUpload(event)">
                                 <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk Export hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest "Buchungsdatum" & "Lieferant" aus</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest USt., Datum & Lieferant sicher aus</p>
                             </div>
                         </div>
                     </div>
 
+                    <!-- JSON BIN & ADMIN SETTINGS -->
                     <div class="flex flex-col gap-6 w-full">
                         <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
-                                    <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
+                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Datenbank Manager</h4>
+                                    </div>
+                                    <button type="button" onclick="downloadBackup()" class="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer" title="Lokales Backup laden">
+                                        <i class="fa-solid fa-download"></i> Backup
+                                    </button>
                                 </div>
                                 <p class="text-xs text-stone-500 font-medium">Verbinde die App mit deiner JSONBin.</p>
                             </div>
@@ -690,25 +633,36 @@
                             </div>
                         </div>
 
-                        <div id="admin-user-config" class="hidden glass-card p-6 space-y-4 w-full">
+                        <!-- NEU: System-Einstellungen (Admin Only) -->
+                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
                             <div class="flex items-center gap-2 mb-2">
-                                <i class="fa-solid fa-users-gear text-[#C5A85C] text-xl"></i>
-                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Benutzerverwaltung</h4>
+                                <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
+                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Systemeinstellungen</h4>
                             </div>
-                            <p class="text-xs text-stone-500 font-medium">Verwalte hier die Sicherheits-PINs (4-stellig).</p>
+                            <p class="text-xs text-stone-500 font-medium">Dynamische Variablen & PINs</p>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <div class="space-y-3 mt-4">
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN (Vollzugriff)</label>
-                                    <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="Aktuell: 1991" class="modern-input text-center font-bold tracking-widest text-lg">
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Wechselgeld Abzug (€)</label>
+                                    <input type="number" id="cfg-wechselgeld" placeholder="150" class="modern-input text-sm py-2">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN (Inhaber)</label>
-                                    <input type="password" id="cfg-read-pin" maxlength="4" placeholder="Aktuell: 2024" class="modern-input text-center font-bold tracking-widest text-lg">
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Mitarbeiter (Komma-getrennt)</label>
+                                    <textarea id="cfg-employees" rows="2" class="modern-input text-xs py-2 leading-relaxed" placeholder="Adam, Mohammed, Karam..."></textarea>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 mt-2">
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN</label>
+                                        <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="1991" class="modern-input text-center font-bold tracking-widest text-sm py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN</label>
+                                        <input type="password" id="cfg-read-pin" maxlength="4" placeholder="2024" class="modern-input text-center font-bold tracking-widest text-sm py-2">
+                                    </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="saveNewPins()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
-                                PINs speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
+                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
+                                Einstellungen Speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
                             </button>
                         </div>
                     </div>
@@ -843,31 +797,12 @@
 
         <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
             <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter im Zeitraum</h3>
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center;">
-                    <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">Adam</p>
-                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-adam">0,00 €</p>
-                </div>
-                <div style="flex: 1; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center;">
-                    <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">Mohammed</p>
-                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-moh">0,00 €</p>
-                </div>
-                <div style="flex: 1; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center;">
-                    <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">Karam</p>
-                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-kar">0,00 €</p>
-                </div>
-                <div style="flex: 1; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center;">
-                    <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">Nourddin</p>
-                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-nour">0,00 €</p>
-                </div>
-                <div style="flex: 1; background-color: #F5F5F4; border: 1px solid #D6D3D1; padding: 10px; border-radius: 6px; text-align: center;">
-                    <p style="font-size: 8px; font-weight: bold; color: #57534E; text-transform: uppercase; margin: 0 0 4px 0;">Ehem. / Aushilfen</p>
-                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-ehem">0,00 €</p>
-                </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container">
+                <!-- JS Fills this dynamically -->
             </div>
         </div>
 
-        <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
+        <div id="pdf-trend-wrapper" style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Entwicklungstrend</h3>
                 <div style="font-size: 9px; font-weight: bold; color: #78716C;">
@@ -882,7 +817,7 @@
         <table class="pdf-table">
             <thead>
                 <tr>
-                    <th>Datum</th>
+                    <th id="pdf-th-datum">Datum</th>
                     <th>Bar (Netto)</th>
                     <th>Karte</th>
                     <th>Umsatz</th>
@@ -905,30 +840,51 @@
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
+        // GLOBALE VARIABLEN
         let dbDays = [];
         let loggedInUser = null;
         let activeTab = 'dashboard';
         let tempImportBuffer = [];
         let enteredPin = ""; 
-
         let dbProfiles = [];
         let activeProfileId = null;
+        let startY = 0;
+        let isPulling = false;
+        
+        // Smart-Sync Versioning
+        let cloudVersion = 0; 
 
+        // SYSTEM EINSTELLUNGEN (DYNAMISCH)
+        let appSettings = {
+            changeMoney: 150,
+            employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
+        };
+
+        // Lese PINs direkt aus Storage (Für Login)
         let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
         let readPin = localStorage.getItem('gastro_read_pin') || "2024";
 
-        let startY = 0;
-        let isPulling = false;
-
         window.onload = function() {
-            if (localStorage.getItem('gastro_finance_premium_db')) {
-                dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
+            // 1. Settings Laden
+            if (localStorage.getItem('gastro_app_settings')) {
+                appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
             }
 
+            // 2. Datenbank Laden & Migrieren auf dynamisches Format
+            if (localStorage.getItem('gastro_finance_premium_db')) {
+                let loadedDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
+                dbDays = migrateToDynamicSalaries(loadedDays);
+            }
+
+            // 3. Profile Laden
             if (localStorage.getItem('gastro_db_profiles')) {
                 dbProfiles = JSON.parse(localStorage.getItem('gastro_db_profiles'));
             }
             activeProfileId = localStorage.getItem('gastro_active_profile_id') || null;
+
+            // 4. UI Initialisieren
+            initAdminSettingsUI();
+            buildDynamicEmployeeUI();
 
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (activeProfile) {
@@ -950,6 +906,138 @@
             
             renderExpenseRows([]);
         };
+
+        // --- MIGRATION (Alt -> Neu) ---
+        function migrateToDynamicSalaries(daysArray) {
+            daysArray.forEach(d => {
+                if (d.expensesDetail && d.expensesDetail.salaries && d.expensesDetail.salaries.adam !== undefined) {
+                    const s = d.expensesDetail.salaries;
+                    d.expensesDetail.salaries = {};
+                    d.expensesDetail.salaries["Adam"] = s.adam || {bar:0, card:0};
+                    d.expensesDetail.salaries["Mohammed"] = s.moh || {bar:0, card:0};
+                    d.expensesDetail.salaries["Karam"] = s.kar || {bar:0, card:0};
+                    d.expensesDetail.salaries["Nourddin"] = s.nour || {bar:0, card:0};
+                    d.expensesDetail.salaries["Ehemalige / Aushilfen"] = s.ehem || {bar:0, card:0};
+                }
+            });
+            return daysArray;
+        }
+
+        // --- DYNAMISCHE UI AUFBAUEN ---
+        function initAdminSettingsUI() {
+            document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
+            document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
+            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+        }
+
+        function saveSystemSettings() {
+            if (loggedInUser !== 'buchhaltung') return;
+
+            // 1. PINs Speichern
+            const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
+            const newRead = document.getElementById('cfg-read-pin').value.trim();
+            if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
+                adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', adminPin); document.getElementById('cfg-admin-pin').value = '';
+            }
+            if (newRead && newRead.length === 4 && !isNaN(newRead)) {
+                readPin = newRead; localStorage.setItem('gastro_read_pin', readPin); document.getElementById('cfg-read-pin').value = '';
+            }
+
+            // 2. Settings Speichern
+            const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
+            if (!isNaN(wg) && wg >= 0) appSettings.changeMoney = wg;
+
+            const empStr = document.getElementById('cfg-employees').value;
+            if (empStr.trim()) {
+                // Split by comma, trim spaces, remove empty
+                appSettings.employees = empStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            }
+
+            localStorage.setItem('gastro_app_settings', JSON.stringify(appSettings));
+            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+            
+            // Re-render UI
+            buildDynamicEmployeeUI();
+            renderAll();
+            
+            showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
+        }
+
+        function buildDynamicEmployeeUI() {
+            const dashContainer = document.getElementById('dash-salaries-container');
+            const entryContainer = document.getElementById('entry-salaries-container');
+            const pdfContainer = document.getElementById('pdf-salaries-container');
+
+            dashContainer.innerHTML = '';
+            entryContainer.innerHTML = '';
+            if (pdfContainer) pdfContainer.innerHTML = '';
+
+            appSettings.employees.forEach((emp, index) => {
+                const safeId = 'emp_' + index;
+                
+                // Dashboard
+                dashContainer.insertAdjacentHTML('beforeend', `
+                    <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
+                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${emp}</span>
+                        <div class="text-lg sm:text-xl font-black text-stone-900 mt-1 dash-sal-val" data-emp="${emp}">0,00 €</div>
+                    </div>
+                `);
+
+                // Erfassung
+                entryContainer.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dyn-sal-row">
+                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">${emp}</label>
+                        <input type="hidden" class="dyn-sal-name" value="${emp}">
+                        <div class="flex gap-2">
+                            <div class="relative w-full">
+                                <input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-sal-bar modern-input py-2 pl-3 pr-6 text-sm">
+                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
+                            </div>
+                            <div class="relative w-full">
+                                <input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-sal-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
+                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                // PDF (if exists)
+                if (pdfContainer) {
+                    pdfContainer.insertAdjacentHTML('beforeend', `
+                        <div style="flex: 1 1 18%; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #E7E5E4;">
+                            <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">${emp}</p>
+                            <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" class="pdf-sal-val" data-emp="${emp}">0,00 €</p>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+
+        // --- LOKALES BACKUP ---
+        function downloadBackup() {
+            if (dbDays.length === 0) {
+                showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
+                return;
+            }
+            const payload = {
+                timestamp: new Date().toISOString(),
+                settings: appSettings,
+                profiles: dbProfiles,
+                data: dbDays
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `GastroFinance_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Backup erstellt", "Datei wurde heruntergeladen.");
+        }
+
 
         // --- Status Light ---
         function setDbStatus(state) {
@@ -1049,11 +1137,11 @@
 
             if (loggedInUser === 'inhaber') {
                 document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
-                document.getElementById('admin-user-config').classList.add('hidden');
+                document.getElementById('admin-sys-config').classList.add('hidden');
                 disableWritePermissions();
             } else {
                 document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
-                document.getElementById('admin-user-config').classList.remove('hidden');
+                document.getElementById('admin-sys-config').classList.remove('hidden');
             }
 
             showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
@@ -1063,24 +1151,6 @@
             if(activeProfileId) {
                 loadFromJSONBin(true); 
             }
-        }
-
-        function saveNewPins() {
-            if (loggedInUser !== 'buchhaltung') return;
-            const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
-            const newRead = document.getElementById('cfg-read-pin').value.trim();
-
-            if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
-                adminPin = newAdmin;
-                localStorage.setItem('gastro_admin_pin', adminPin);
-                document.getElementById('cfg-admin-pin').value = '';
-            }
-            if (newRead && newRead.length === 4 && !isNaN(newRead)) {
-                readPin = newRead;
-                localStorage.setItem('gastro_read_pin', readPin);
-                document.getElementById('cfg-read-pin').value = '';
-            }
-            showToast("Sicherheit aktualisiert", "Deine neuen PINs wurden gespeichert.");
         }
 
         function logout() {
@@ -1100,9 +1170,9 @@
             const dropzone2 = document.getElementById('drop-zone-ausgaben');
             if (dropzone2) { dropzone2.style.pointerEvents = "none"; dropzone2.style.opacity = "0.5"; }
             
-            const inputs = document.querySelectorAll('input, select');
+            const inputs = document.querySelectorAll('input, select, textarea');
             inputs.forEach(i => {
-                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to'].includes(i.id)) {
+                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping'].includes(i.id)) {
                     i.disabled = true;
                 }
             });
@@ -1307,7 +1377,7 @@
             );
         }
 
-        // --- JSONBIN NETZWERK LOGIK ---
+        // --- JSONBIN NETZWERK LOGIK MIT SMART SYNC ---
         async function loadFromJSONBin(silent = false) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             if (!activeProfile) {
@@ -1321,27 +1391,22 @@
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}/latest`, {
                     method: 'GET',
-                    headers: { 
-                        'X-Master-Key': activeProfile.apiKey,
-                        'Cache-Control': 'no-cache' 
-                    }
+                    headers: { 'X-Master-Key': activeProfile.apiKey, 'Cache-Control': 'no-cache' }
                 });
                 
                 const data = await res.json();
-                
                 if(!res.ok) { throw new Error(data.message || `HTTP Error: ${res.status}`); }
                 
                 let record = data.record || data;
                 
-                if (Array.isArray(record)) {
-                     dbDays = record;
-                } else if (record && Array.isArray(record.data)) {
-                     dbDays = record.data;
-                } else if (typeof record === 'object') {
-                     dbDays = Object.values(record).find(v => Array.isArray(v)) || [];
-                } else {
-                     dbDays = [];
-                }
+                // Smart Sync Version auslesen
+                if (record.version) cloudVersion = record.version;
+                
+                if (record.data && Array.isArray(record.data)) { dbDays = record.data; } 
+                else if (Array.isArray(record)) { dbDays = record; }
+                else { dbDays = []; }
+
+                dbDays = migrateToDynamicSalaries(dbDays);
 
                 localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
                 setDbStatus('connected');
@@ -1363,21 +1428,45 @@
             }
             
             setDbStatus('connecting');
+            showToast("Prüfe Cloud...", "Suche nach Konflikten...");
+
+            try {
+                // 1. Version Check
+                const resCheck = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}/latest`, {
+                    method: 'GET', headers: { 'X-Master-Key': activeProfile.apiKey, 'Cache-Control': 'no-cache' }
+                });
+                const dataCheck = await resCheck.json();
+                let checkRecord = dataCheck.record || dataCheck;
+                
+                if (checkRecord.version && checkRecord.version > cloudVersion) {
+                    showConfirmModal("Konflikt erkannt!", "Achtung: Es gibt neuere Daten in der Cloud (von jemand anderem). Wenn du jetzt speicherst, überschreibst du diese. Trotzdem speichern?", () => {
+                        forceSaveToJSONBin(activeProfile);
+                    });
+                    setDbStatus('connected');
+                    return; // Block save until confirmed
+                }
+
+                // Kein Konflikt, direkt speichern
+                forceSaveToJSONBin(activeProfile);
+
+            } catch(e) {
+                showToast("Netzwerkfehler", "Konnte Version nicht prüfen.", false);
+                setDbStatus('disconnected');
+            }
+        }
+
+        async function forceSaveToJSONBin(activeProfile) {
             showToast("Sichere...", "Lade in die Cloud hoch...");
+            cloudVersion = Date.now(); // Neue Version setzen
             
             try {
-                const payload = { "data": dbDays };
+                const payload = { data: dbDays, version: cloudVersion };
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${activeProfile.binId}`, {
                     method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json', 
-                        'X-Master-Key': activeProfile.apiKey 
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': activeProfile.apiKey },
                     body: JSON.stringify(payload)
                 });
-                
                 const data = await res.json();
-
                 if(!res.ok) { throw new Error(data.message || "Fehler beim Upload auf JSONBin"); }
                 
                 setDbStatus('connected');
@@ -1385,11 +1474,11 @@
             } catch(e) { 
                 setDbStatus('disconnected');
                 showToast("Speicherfehler", e.message, false); 
-                console.error("JSONBin Save Error:", e);
             }
         }
 
-        // --- MANUELLE EINGABE LOGIK ---
+
+        // --- MANUELLE EINGABE LOGIK (DYNAMISCH) ---
 
         function renderExpenseRows(generalExpenses = []) {
             const container = document.getElementById('dynamic-expenses-container');
@@ -1397,21 +1486,29 @@
             
             let expenses = [...generalExpenses];
             while (expenses.length < 4) {
-                expenses.push({ name: '', bar: '', card: '' });
+                expenses.push({ name: '', bar: '', card: '', tax: 0 });
             }
 
             expenses.forEach((exp, index) => {
+                const taxSel = exp.tax || 0;
                 const rowHtml = `
                     <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
                         <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Rewe)" value="${exp.name || ''}">
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 mb-2">
                             <div class="relative w-full">
                                 <input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.bar || ''}" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm">
                             </div>
                             <div class="relative w-full">
                                 <input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.card || ''}" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                             </div>
-                            ${index >= 4 ? `<button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 px-3 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                                <option value="0" ${taxSel == 0 ? 'selected' : ''}>0% Steuer</option>
+                                <option value="7" ${taxSel == 7 ? 'selected' : ''}>7% Steuer (Lebensm.)</option>
+                                <option value="19" ${taxSel == 19 ? 'selected' : ''}>19% Steuer (Dienstl.)</option>
+                            </select>
+                            ${index >= 4 ? `<button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </div>
                     </div>
                 `;
@@ -1427,14 +1524,21 @@
             const rowHtml = `
                 <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
                     <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Ausgabe ${rowCount})">
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 mb-2">
                         <div class="relative w-full">
                             <input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm">
                         </div>
                         <div class="relative w-full">
                             <input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                         </div>
-                        <button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 px-3 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                            <option value="0">0% Steuer</option>
+                            <option value="7">7% Steuer (Lebensm.)</option>
+                            <option value="19">19% Steuer (Dienstl.)</option>
+                        </select>
+                        <button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;
@@ -1445,23 +1549,19 @@
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
-            const actualBar = rawBar > 0 ? rawBar - 150 : 0;
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
             const totalRevenue = actualBar + cardRev; 
 
-            const adamBar = parseFloat(document.getElementById('sal-adam-bar').value) || 0;
-            const adamCard = parseFloat(document.getElementById('sal-adam-card').value) || 0;
-            const mohBar = parseFloat(document.getElementById('sal-moh-bar').value) || 0;
-            const mohCard = parseFloat(document.getElementById('sal-moh-card').value) || 0;
-            const karBar = parseFloat(document.getElementById('sal-kar-bar').value) || 0;
-            const karCard = parseFloat(document.getElementById('sal-kar-card').value) || 0;
-            const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
-            const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
-            const ehemBar = parseFloat(document.getElementById('sal-ehem-bar').value) || 0;
-            const ehemCard = parseFloat(document.getElementById('sal-ehem-card').value) || 0;
+            let expSumBar = 0;
+            let expSumCard = 0;
 
-            let expSumBar = adamBar + mohBar + karBar + nourBar + ehemBar;
-            let expSumCard = adamCard + mohCard + karCard + nourCard + ehemCard;
+            // Dynamische Gehälter summieren
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                expSumBar += parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
+                expSumCard += parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
+            });
 
+            // Dynamische Ausgaben summieren
             document.querySelectorAll('.dynamic-expense-row').forEach(row => {
                 expSumBar += parseFloat(row.querySelector('.dyn-bar').value) || 0;
                 expSumCard += parseFloat(row.querySelector('.dyn-card').value) || 0;
@@ -1474,9 +1574,6 @@
             document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
             document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
             
-            document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
-            document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
-
             document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
             document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
             
@@ -1488,17 +1585,19 @@
             const pickedDate = document.getElementById('entry-date').value;
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
-            const fieldsToClear = [
-                'entry-rev-bar', 'entry-rev-card', 'entry-exp-sumbar', 'entry-exp-sumcard',
-                'sal-adam-bar', 'sal-adam-card', 'sal-moh-bar', 'sal-moh-card',
-                'sal-kar-bar', 'sal-kar-card', 'sal-nour-bar', 'sal-nour-card',
-                'sal-ehem-bar', 'sal-ehem-card'
-            ];
-            fieldsToClear.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
+            // Clear Einnahmen
+            document.getElementById('entry-rev-bar').value = '';
+            document.getElementById('entry-rev-card').value = '';
+            
+            // Clear Salaries
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                row.querySelector('.dyn-sal-bar').value = '';
+                row.querySelector('.dyn-sal-card').value = '';
+            });
 
             if (existingDay) {
                 if (existingDay.revenue.bar > 0 || existingDay.revenue.total > 0) {
-                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + 150;
+                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + appSettings.changeMoney;
                 }
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card > 0 ? existingDay.revenue.card : '';
 
@@ -1508,21 +1607,18 @@
                     const sal = existingDay.expensesDetail.salaries || {};
                     loadedGenerals = existingDay.expensesDetail.general || [];
                     
-                    const setVal = (id, val) => { document.getElementById(id).value = val ? val : ''; };
-                    setVal('sal-adam-bar', sal.adam?.bar);
-                    setVal('sal-adam-card', sal.adam?.card);
-                    setVal('sal-moh-bar', sal.moh?.bar);
-                    setVal('sal-moh-card', sal.moh?.card);
-                    setVal('sal-kar-bar', sal.kar?.bar);
-                    setVal('sal-kar-card', sal.kar?.card);
-                    setVal('sal-nour-bar', sal.nour?.bar);
-                    setVal('sal-nour-card', sal.nour?.card);
-                    setVal('sal-ehem-bar', sal.ehem?.bar);
-                    setVal('sal-ehem-card', sal.ehem?.card);
+                    // Populate dynamic salaries
+                    document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                        const name = row.querySelector('.dyn-sal-name').value;
+                        if (sal[name]) {
+                            row.querySelector('.dyn-sal-bar').value = sal[name].bar || '';
+                            row.querySelector('.dyn-sal-card').value = sal[name].card || '';
+                        }
+                    });
                 } 
                 else {
                     if(existingDay.expensesSum.bar || existingDay.expensesSum.card) {
-                        loadedGenerals.push({ name: "Alte Summe", bar: existingDay.expensesSum.bar, card: existingDay.expensesSum.card });
+                        loadedGenerals.push({ name: "Alte Summe", bar: existingDay.expensesSum.bar, card: existingDay.expensesSum.card, tax: 0 });
                     }
                 }
                 
@@ -1542,30 +1638,33 @@
 
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
-            const actualBar = rawBar > 0 ? rawBar - 150 : 0; 
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0; 
             const totalRevenue = actualBar + cardRev; 
 
-            const adamBar = parseFloat(document.getElementById('sal-adam-bar').value) || 0;
-            const adamCard = parseFloat(document.getElementById('sal-adam-card').value) || 0;
-            const mohBar = parseFloat(document.getElementById('sal-moh-bar').value) || 0;
-            const mohCard = parseFloat(document.getElementById('sal-moh-card').value) || 0;
-            const karBar = parseFloat(document.getElementById('sal-kar-bar').value) || 0;
-            const karCard = parseFloat(document.getElementById('sal-kar-card').value) || 0;
-            const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
-            const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
-            const ehemBar = parseFloat(document.getElementById('sal-ehem-bar').value) || 0;
-            const ehemCard = parseFloat(document.getElementById('sal-ehem-card').value) || 0;
+            let expSumBar = 0;
+            let expSumCard = 0;
 
-            let expSumBar = adamBar + mohBar + karBar + nourBar + ehemBar;
-            let expSumCard = adamCard + mohCard + karCard + nourCard + ehemCard;
+            // Gehälter dynamisch sammeln
+            let exSalaries = {};
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                const name = row.querySelector('.dyn-sal-name').value;
+                const b = parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
+                const c = parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
+                exSalaries[name] = { bar: b, card: c };
+                expSumBar += b;
+                expSumCard += c;
+            });
 
+            // Sonstige Ausgaben dynamisch sammeln
             let genExpenses = [];
             document.querySelectorAll('.dynamic-expense-row').forEach(row => {
                 const name = row.querySelector('.dyn-name').value.trim();
                 const b = parseFloat(row.querySelector('.dyn-bar').value) || 0;
                 const c = parseFloat(row.querySelector('.dyn-card').value) || 0;
+                const t = parseInt(row.querySelector('.dyn-tax').value) || 0;
+                
                 if (name || b !== 0 || c !== 0) {
-                    genExpenses.push({ name: name, bar: b, card: c });
+                    genExpenses.push({ name: name, bar: b, card: c, tax: t });
                     expSumBar += b;
                     expSumCard += c;
                 }
@@ -1578,13 +1677,7 @@
                 germanDate: formatGermanDate(pickedDate),
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesDetail: {
-                    salaries: {
-                        adam: { bar: adamBar, card: adamCard },
-                        moh: { bar: mohBar, card: mohCard },
-                        kar: { bar: karBar, card: karCard },
-                        nour: { bar: nourBar, card: nourCard },
-                        ehem: { bar: ehemBar, card: ehemCard }
-                    },
+                    salaries: exSalaries,
                     general: genExpenses
                 },
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
@@ -1606,7 +1699,7 @@
             switchTab('dashboard');
         }
 
-        // --- EXCEL PARSER (1: TAGESMAPPEN) ---
+        // --- EXCEL PARSER (1: TAGESMAPPEN MIT DYNAMISCHER ERKENNUNG) ---
         function initExcelDropzone() {
             const dz1 = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.add('bg-stone-100'); }));
@@ -1626,8 +1719,10 @@
             let b = 0, c = 0;
             if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
                 const sal = dayObj.expensesDetail.salaries;
-                b += (parseFloat(sal.adam?.bar)||0) + (parseFloat(sal.moh?.bar)||0) + (parseFloat(sal.kar?.bar)||0) + (parseFloat(sal.nour?.bar)||0) + (parseFloat(sal.ehem?.bar)||0);
-                c += (parseFloat(sal.adam?.card)||0) + (parseFloat(sal.moh?.card)||0) + (parseFloat(sal.kar?.card)||0) + (parseFloat(sal.nour?.card)||0) + (parseFloat(sal.ehem?.card)||0);
+                Object.keys(sal).forEach(empKey => {
+                    b += (parseFloat(sal[empKey]?.bar)||0);
+                    c += (parseFloat(sal[empKey]?.card)||0);
+                });
             }
             if (dayObj.expensesDetail && dayObj.expensesDetail.general) {
                 dayObj.expensesDetail.general.forEach(g => {
@@ -1641,7 +1736,7 @@
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
-        // --- SMARTER TAGESMAPPEN-SCANNER (Liest Zeile für Zeile) ---
+        // --- SMARTER TAGESMAPPEN-SCANNER ---
         function parseExcelFile(file) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
@@ -1688,7 +1783,7 @@
                         let revBarRaw = 0, revCard = 0;
                         let wechselgeldRowIdx = -1;
                         
-                        // 1. Einnahmen & Wechselgeld suchen (Bewährte Methode beibehalten)
+                        // 1. Einnahmen & Wechselgeld suchen
                         for (let r = 0; r < rawJson.length; r++) {
                             if (!rawJson[r]) continue;
                             for (let c = 0; c < rawJson[r].length; c++) {
@@ -1730,10 +1825,10 @@
                             }
                         }
 
-                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - 150 : 0; 
+                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - appSettings.changeMoney : 0; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
-                        // 2. SMARTER AUSGABEN-SCANNER
+                        // 2. SMARTER AUSGABEN-SCANNER (Liest Liste in Excel aus)
                         let inAusgabenSection = false;
                         let amountCol = 1, remarkCol = -1;
                         let extractedExpenses = [];
@@ -1745,11 +1840,11 @@
                             const firstCell = String(row[0] || "").trim().toLowerCase();
 
                             // Start-Punkt der Liste finden
-                            if (firstCell === "arikel:" || firstCell === "artikel:" || firstCell === "artikel" || firstCell === "artikel/zweck") {
+                            if (firstCell === "arikel:" || firstCell === "artikel:" || firstCell === "artikel" || firstCell === "artikel/zweck" || firstCell === "artikel/zweck:") {
                                 inAusgabenSection = true;
                                 for(let c=0; c<row.length; c++) {
                                     const h = String(row[c]||"").toLowerCase();
-                                    if(h.includes("brutto") || h.includes("betrag")) amountCol = c;
+                                    if(h.includes("brutto") || h.includes("betrag") || h.includes("netto")) amountCol = c;
                                     if(h.includes("bemerkung")) remarkCol = c;
                                 }
                                 continue;
@@ -1765,12 +1860,10 @@
                                 if (!name) continue;
 
                                 let amountRaw = row[amountCol];
-                                // Wenn amountCol leer ist, suche die erste Zahl rechts davon
                                 if (amountRaw === undefined || amountRaw === null || amountRaw === "") {
                                     for(let c=1; c<row.length; c++) {
                                         if (row[c] !== undefined && row[c] !== null && row[c] !== "") {
-                                            amountRaw = row[c];
-                                            break;
+                                            amountRaw = row[c]; break;
                                         }
                                     }
                                 }
@@ -1788,23 +1881,33 @@
                                 extractedExpenses.push({
                                     name: name,
                                     bar: isCard ? 0 : Math.abs(amount),
-                                    card: isCard ? Math.abs(amount) : 0
+                                    card: isCard ? Math.abs(amount) : 0,
+                                    tax: 0 // Tagesmappe hat i.d.R. keine Steuer-Spalte
                                 });
                             }
                         }
 
-                        // 3. Extrahierte Liste sortieren (Gehälter vs. Sonstiges)
-                        let exSalaries = { adam: {bar:0,card:0}, moh: {bar:0,card:0}, kar: {bar:0,card:0}, nour: {bar:0,card:0}, ehem: {bar:0,card:0} };
+                        // 3. Extrahierte Liste dynamisch aufteilen (Gehälter vs. Sonstiges)
+                        let exSalaries = {};
+                        appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
                         let exGeneral = [];
 
                         extractedExpenses.forEach(exp => {
                             let ln = exp.name.toLowerCase();
                             if (ln.includes("gehalt") || ln.includes("lohn") || ln.includes("vorschuss")) {
-                                if (ln.includes("adam")) { exSalaries.adam.bar += exp.bar; exSalaries.adam.card += exp.card; }
-                                else if (ln.includes("moh")) { exSalaries.moh.bar += exp.bar; exSalaries.moh.card += exp.card; }
-                                else if (ln.includes("kar")) { exSalaries.kar.bar += exp.bar; exSalaries.kar.card += exp.card; }
-                                else if (ln.includes("nour")) { exSalaries.nour.bar += exp.bar; exSalaries.nour.card += exp.card; }
-                                else { exSalaries.ehem.bar += exp.bar; exSalaries.ehem.card += exp.card; }
+                                let matched = false;
+                                for (let emp of appSettings.employees) {
+                                    if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige / Aushilfen") {
+                                        exSalaries[emp].bar += exp.bar;
+                                        exSalaries[emp].card += exp.card;
+                                        matched = true;
+                                        break;
+                                    }
+                                }
+                                if (!matched && exSalaries["Ehemalige / Aushilfen"]) {
+                                    exSalaries["Ehemalige / Aushilfen"].bar += exp.bar;
+                                    exSalaries["Ehemalige / Aushilfen"].card += exp.card;
+                                }
                             } else {
                                 exGeneral.push(exp);
                             }
@@ -1820,23 +1923,17 @@
                             
                             if (!dayObj.expensesDetail) {
                                 dayObj.expensesDetail = {
-                                    salaries: { adam: { bar: 0, card: 0 }, moh: { bar: 0, card: 0 }, kar: { bar: 0, card: 0 }, nour: { bar: 0, card: 0 }, ehem: { bar: 0, card: 0 } },
-                                    general: []
+                                    salaries: {}, general: []
                                 };
+                                appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
-                            if (!dayObj.expensesDetail.salaries.ehem) dayObj.expensesDetail.salaries.ehem = {bar:0, card:0};
 
-                            // Gehälter summieren
-                            dayObj.expensesDetail.salaries.adam.bar += exSalaries.adam.bar;
-                            dayObj.expensesDetail.salaries.adam.card += exSalaries.adam.card;
-                            dayObj.expensesDetail.salaries.moh.bar += exSalaries.moh.bar;
-                            dayObj.expensesDetail.salaries.moh.card += exSalaries.moh.card;
-                            dayObj.expensesDetail.salaries.kar.bar += exSalaries.kar.bar;
-                            dayObj.expensesDetail.salaries.kar.card += exSalaries.kar.card;
-                            dayObj.expensesDetail.salaries.nour.bar += exSalaries.nour.bar;
-                            dayObj.expensesDetail.salaries.nour.card += exSalaries.nour.card;
-                            dayObj.expensesDetail.salaries.ehem.bar += exSalaries.ehem.bar;
-                            dayObj.expensesDetail.salaries.ehem.card += exSalaries.ehem.card;
+                            // Gehälter aufaddieren
+                            Object.keys(exSalaries).forEach(empKey => {
+                                if (!dayObj.expensesDetail.salaries[empKey]) dayObj.expensesDetail.salaries[empKey] = {bar:0, card:0};
+                                dayObj.expensesDetail.salaries[empKey].bar += exSalaries[empKey].bar;
+                                dayObj.expensesDetail.salaries[empKey].card += exSalaries[empKey].card;
+                            });
                             
                             // Sonstige Ausgaben anhängen
                             exGeneral.forEach(nx => {
@@ -1869,12 +1966,12 @@
                     }
                     if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
                     renderImportPreview();
-                } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); }
+                } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // --- EXCEL PARSER (2: AUSGABEN IMPORT MIT STORNO INTELLIGENZ) ---
+        // --- EXCEL PARSER (2: AUSGABEN IMPORT MIT UMSATZSTEUER) ---
         function parseAusgabenFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -1889,11 +1986,12 @@
                     const headers = rawJson[0];
                     
                     const dateIdx = headers.findIndex(h => h && /buchungsdatum|datum der kontobewegung|rechnungsdatum/i.test(String(h).trim()));
-                    const nameIdx = headers.findIndex(h => h && /lieferanten|senders\/empfängers|kundenname|verwendungszweck/i.test(String(h).trim()));
+                    const nameIdx = headers.findIndex(h => h && /lieferanten|senders\/empfängers|kundenname|verwendungszweck|artikel/i.test(String(h).trim()));
                     const amountIdx = headers.findIndex(h => h && /gesamtbetrag|^betrag$/i.test(String(h).trim()));
                     const bankIdx = headers.findIndex(h => h && /kontobewegungen|kontonummer|konto des senders/i.test(String(h).trim()));
-                    
                     const stornoIdx = headers.findIndex(h => h && /storno/i.test(String(h).trim()));
+                    // NEU: USt Scanner
+                    const taxIdx = headers.findIndex(h => h && /ust.-satz|steuersatz|mwst/i.test(String(h).trim()));
 
                     if (dateIdx === -1 || amountIdx === -1) {
                         showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
@@ -1912,9 +2010,7 @@
 
                         let isStorno = false;
                         if (stornoIdx !== -1 && row[stornoIdx]) {
-                            if (String(row[stornoIdx]).trim().toLowerCase() === 'ja') {
-                                isStorno = true;
-                            }
+                            if (String(row[stornoIdx]).trim().toLowerCase() === 'ja') isStorno = true;
                         }
 
                         const amountStr = String(row[amountIdx]).replace(',', '.');
@@ -1922,29 +2018,36 @@
                         if(amount === 0) continue; 
                         
                         amount = Math.abs(amount);
-                        
-                        if (isStorno) {
-                            amount = -amount;
-                        }
+                        if (isStorno) amount = -amount;
 
                         let supplier = (nameIdx !== -1 && row[nameIdx]) ? String(row[nameIdx]).trim() : "Unbekannte Ausgabe";
-                        if (isStorno) {
-                            supplier += " (Storno)";
-                        }
+                        if (isStorno) supplier += " (Storno)";
                         
                         let isCard = false;
                         if (bankIdx !== -1 && row[bankIdx]) {
                             const bVal = String(row[bankIdx]).trim().toLowerCase();
-                            if (bVal !== '' && bVal !== 'nein' && bVal !== 'bar' && bVal !== 'false') {
-                                isCard = true;
+                            if (bVal !== '' && bVal !== 'nein' && bVal !== 'bar' && bVal !== 'false') isCard = true;
+                        }
+
+                        // Steuersatz auslesen (z.B. "0.19" -> 19%, "7%" -> 7%)
+                        let taxRate = 0;
+                        if (taxIdx !== -1 && row[taxIdx] !== undefined) {
+                            let tStr = String(row[taxIdx]).replace('%', '').replace(',', '.').trim();
+                            let tVal = parseFloat(tStr);
+                            if (!isNaN(tVal)) {
+                                if (tVal > 0 && tVal < 1) taxRate = Math.round(tVal * 100); // 0.19 -> 19
+                                else if (tVal >= 1) taxRate = Math.round(tVal); // 19 -> 19
                             }
                         }
+                        // Normalize zu 0, 7 oder 19
+                        if (taxRate !== 7 && taxRate !== 19) taxRate = 0;
 
                         if (!expensesByDate[isoDate]) expensesByDate[isoDate] = [];
                         expensesByDate[isoDate].push({
                             name: supplier,
                             bar: isCard ? 0 : amount,
-                            card: isCard ? amount : 0
+                            card: isCard ? amount : 0,
+                            tax: taxRate
                         });
                     }
 
@@ -1957,10 +2060,8 @@
                         if (existingDay) {
                             let dayCopy = JSON.parse(JSON.stringify(existingDay));
                             if(!dayCopy.expensesDetail) {
-                                dayCopy.expensesDetail = {
-                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0}, ehem:{bar:0,card:0} },
-                                    general: []
-                                };
+                                dayCopy.expensesDetail = { salaries: {}, general: [] };
+                                appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
                             
                             dayCopy.expensesDetail.general.push(...newExpenses);
@@ -1968,12 +2069,15 @@
                             recalcDaySums(dayCopy);
                             tempImportBuffer.push(dayCopy);
                         } else {
+                            let exSalaries = {};
+                            appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+
                             let newDay = {
                                 date: isoDate,
                                 germanDate: formatGermanDate(isoDate),
                                 revenue: { total: 0, bar: 0, card: 0 },
                                 expensesDetail: {
-                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0}, ehem:{bar:0,card:0} },
+                                    salaries: exSalaries,
                                     general: newExpenses
                                 },
                                 note: "Ausgaben Import"
@@ -2125,18 +2229,48 @@
 
             if (activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
-                let salAdam = 0, salMoh = 0, salKar = 0, salNour = 0, salEhem = 0;
+                
+                // Setze Gehälter zurück
+                document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
+                if (document.querySelectorAll('.pdf-sal-val')) {
+                    document.querySelectorAll('.pdf-sal-val').forEach(el => el.textContent = '0,00 €');
+                }
+
+                let tax0 = 0, tax7 = 0, tax19 = 0;
 
                 filtered.forEach(d => { 
                     r+=d.revenue.total; c+=d.revenue.card; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; 
                     
                     if(d.expensesDetail && d.expensesDetail.salaries) {
                         const sal = d.expensesDetail.salaries;
-                        salAdam += ((parseFloat(sal.adam?.bar)||0) + (parseFloat(sal.adam?.card)||0));
-                        salMoh += ((parseFloat(sal.moh?.bar)||0) + (parseFloat(sal.moh?.card)||0));
-                        salKar += ((parseFloat(sal.kar?.bar)||0) + (parseFloat(sal.kar?.card)||0));
-                        salNour += ((parseFloat(sal.nour?.bar)||0) + (parseFloat(sal.nour?.card)||0));
-                        salEhem += ((parseFloat(sal.ehem?.bar)||0) + (parseFloat(sal.ehem?.card)||0));
+                        Object.keys(sal).forEach(empKey => {
+                            const val = (parseFloat(sal[empKey]?.bar)||0) + (parseFloat(sal[empKey]?.card)||0);
+                            tax0 += val; // Gehälter sind immer 0%
+                            
+                            // Suche das Element auf dem Dashboard
+                            document.querySelectorAll('.dash-sal-val').forEach(el => {
+                                if (el.getAttribute('data-emp') === empKey) {
+                                    let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
+                                    el.textContent = formatCurrency(cur + val);
+                                }
+                            });
+                            // PDF Element
+                            document.querySelectorAll('.pdf-sal-val').forEach(el => {
+                                if (el.getAttribute('data-emp') === empKey) {
+                                    let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
+                                    el.textContent = formatCurrency(cur + val);
+                                }
+                            });
+                        });
+                    }
+
+                    if(d.expensesDetail && d.expensesDetail.general) {
+                        d.expensesDetail.general.forEach(g => {
+                            const v = (parseFloat(g.bar)||0) + (parseFloat(g.card)||0);
+                            if (g.tax == 7) tax7 += v;
+                            else if (g.tax == 19) tax19 += v;
+                            else tax0 += v;
+                        });
                     }
                 });
                 
@@ -2145,20 +2279,8 @@
                 document.getElementById('kpi-profit').textContent = formatCurrency(p);
                 document.getElementById('kpi-tuete').textContent = formatCurrency(t);
                 
-                document.getElementById('dash-sal-adam').textContent = formatCurrency(salAdam);
-                document.getElementById('dash-sal-moh').textContent = formatCurrency(salMoh);
-                document.getElementById('dash-sal-kar').textContent = formatCurrency(salKar);
-                document.getElementById('dash-sal-nour').textContent = formatCurrency(salNour);
-                document.getElementById('dash-sal-ehem').textContent = formatCurrency(salEhem);
-
-                document.getElementById('pdf-sal-adam').textContent = formatCurrency(salAdam);
-                document.getElementById('pdf-sal-moh').textContent = formatCurrency(salMoh);
-                document.getElementById('pdf-sal-kar').textContent = formatCurrency(salKar);
-                document.getElementById('pdf-sal-nour').textContent = formatCurrency(salNour);
-                document.getElementById('pdf-sal-ehem').textContent = formatCurrency(salEhem);
-
                 drawTrendChart(filtered, 'trend-chart-container');
-                drawDistributionChart(filtered);
+                drawDistributionChart(tax0, tax7, tax19);
             } else if (activeTab === 'historie') {
                 renderHistory();
             }
@@ -2193,11 +2315,27 @@
             </svg>`;
         }
 
-        function drawDistributionChart(data) {
-            let bar = 0, card = 0;
-            data.forEach(d => { bar += d.revenue.bar; card += d.revenue.card; });
-            const total = bar + card;
-            document.getElementById('pie-chart-container').innerHTML = `<div class="text-center font-black text-2xl text-stone-900">${formatCurrency(total)}</div>`;
+        // Angepasst für Steuerverteilung
+        function drawDistributionChart(tax0, tax7, tax19) {
+            const total = tax0 + tax7 + tax19;
+            const p0 = total > 0 ? ((tax0/total)*100).toFixed(1) : 0;
+            const p7 = total > 0 ? ((tax7/total)*100).toFixed(1) : 0;
+            const p19 = total > 0 ? ((tax19/total)*100).toFixed(1) : 0;
+
+            document.getElementById('pie-chart-container').innerHTML = `
+                <div class="w-full flex flex-col gap-2">
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200">
+                        <span>Ohne / 0%</span> <span class="text-stone-900">${formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-blue-50 p-2 rounded-lg border border-blue-200">
+                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${formatCurrency(total)}</div>`;
         }
 
         // --- HISTORIE RENDERN ---
@@ -2302,7 +2440,7 @@
             });
         }
 
-        // --- PDF EXPORT LOGIK ---
+        // --- PDF EXPORT LOGIK MIT MONATS-GRUPPIERUNG ---
         function generatePDFReport() {
             const filtered = getFilteredDays();
             if (filtered.length === 0) {
@@ -2310,7 +2448,9 @@
                 return;
             }
 
-            showToast("Generiere PDF...", "Einen Moment, der Bericht wird erstellt.");
+            const isMonthly = document.getElementById('pdf-monthly-grouping').checked;
+
+            showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
             const element = document.getElementById('pdf-export-container');
             
             element.style.display = 'block';
@@ -2327,7 +2467,7 @@
             else if (from) rangeText = `Ab ${formatGermanDate(from)}`;
             else if (to) rangeText = `Bis ${formatGermanDate(to)}`;
             
-            document.getElementById('pdf-date-range').textContent = rangeText;
+            document.getElementById('pdf-date-range').textContent = isMonthly ? rangeText + " (Monatliche Gruppierung)" : rangeText;
             const sel = document.getElementById('filter-preset');
             document.getElementById('pdf-filter-name').textContent = sel.options[sel.selectedIndex].text;
 
@@ -2338,31 +2478,79 @@
             document.getElementById('pdf-kpi-prof').textContent = formatCurrency(p);
             document.getElementById('pdf-kpi-tuete').textContent = formatCurrency(t);
 
-            drawTrendChart(filtered, 'pdf-trend-chart-container');
+            if (!isMonthly) {
+                document.getElementById('pdf-trend-wrapper').style.display = 'block';
+                drawTrendChart(filtered, 'pdf-trend-chart-container');
+            } else {
+                document.getElementById('pdf-trend-wrapper').style.display = 'none'; // Trend bei Monats-Ansicht ausblenden für sauberes Layout
+            }
 
             const tbody = document.getElementById('pdf-tbody');
             tbody.innerHTML = '';
             
-            const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+            if (isMonthly) {
+                document.getElementById('pdf-th-datum').textContent = 'Monat';
+                
+                // Gruppiere nach Monat YYYY-MM
+                const monthlyData = {};
+                filtered.forEach(d => {
+                    const monthKey = d.date.substring(0, 7); // e.g. "2025-07"
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { bar:0, card:0, total:0, exp:0, profit:0, tuete:0 };
+                    }
+                    monthlyData[monthKey].bar += d.revenue.bar;
+                    monthlyData[monthKey].card += d.revenue.card;
+                    monthlyData[monthKey].total += d.revenue.total;
+                    monthlyData[monthKey].exp += d.expensesSum.total;
+                    monthlyData[monthKey].profit += d.profit;
+                    monthlyData[monthKey].tuete += d.tuete;
+                });
 
-            sorted.forEach(d => {
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td>${d.germanDate}</td>
-                        <td>${formatCurrency(d.revenue.bar)}</td>
-                        <td>${formatCurrency(d.revenue.card)}</td>
-                        <td style="font-weight: 800; color: #1C1917;">${formatCurrency(d.revenue.total)}</td>
-                        <td style="color: #EF4444;">${formatCurrency(d.expensesSum.total)}</td>
-                        <td style="font-weight: 800; color: #10B981;">${formatCurrency(d.profit)}</td>
-                        <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(d.tuete)}</td>
-                    </tr>
-                `);
-            });
+                // Sort keys absteigend
+                const sortedMonths = Object.keys(monthlyData).sort((a,b) => b.localeCompare(a));
+                const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+
+                sortedMonths.forEach(m => {
+                    const parts = m.split('-');
+                    const mName = monthNames[parseInt(parts[1])-1] + " " + parts[0];
+                    const data = monthlyData[m];
+                    
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr style="background-color: #FAFAFA;">
+                            <td style="font-weight: 800;">${mName}</td>
+                            <td>${formatCurrency(data.bar)}</td>
+                            <td>${formatCurrency(data.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(data.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(data.exp)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(data.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(data.tuete)}</td>
+                        </tr>
+                    `);
+                });
+
+            } else {
+                document.getElementById('pdf-th-datum').textContent = 'Datum';
+                const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+                sorted.forEach(d => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${d.germanDate}</td>
+                            <td>${formatCurrency(d.revenue.bar)}</td>
+                            <td>${formatCurrency(d.revenue.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(d.revenue.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(d.expensesSum.total)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(d.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(d.tuete)}</td>
+                        </tr>
+                    `);
+                });
+            }
 
             setTimeout(() => {
                 const opt = {
                     margin:       10, 
-                    filename:     `GastroFinance_Bericht_${new Date().getTime()}.pdf`,
+                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
