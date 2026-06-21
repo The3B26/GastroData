@@ -317,7 +317,7 @@
                             <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Bar Mitnahmen</span>
                             <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
                             <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Bar Einnahmen minus Bar Ausg.</span>
+                                <span>Bargeld minus Bar Ausgaben</span>
                             </div>
                         </div>
                     </div>
@@ -326,7 +326,7 @@
                         <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4 border-b border-stone-100 pb-2">
                             <i class="fa-solid fa-users text-[#C5A85C] mr-2"></i> Mitarbeiter Gehälter im Zeitraum
                         </h3>
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
                             <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
                                 <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Adam</span>
                                 <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-adam">0,00 €</div>
@@ -342,6 +342,11 @@
                             <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
                                 <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nourddin</span>
                                 <div class="text-lg sm:text-xl font-black text-stone-900 mt-1" id="dash-sal-nour">0,00 €</div>
+                            </div>
+                            <!-- NEU: EHEMALIGE -->
+                            <div class="bg-stone-100 rounded-xl p-4 border border-stone-300">
+                                <span class="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Ehem. / Aushilfen</span>
+                                <div class="text-lg sm:text-xl font-black text-stone-700 mt-1" id="dash-sal-ehem">0,00 €</div>
                             </div>
                         </div>
                     </div>
@@ -460,11 +465,9 @@
                                         <div class="flex gap-2">
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-adam-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
                                             </div>
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-adam-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -473,11 +476,9 @@
                                         <div class="flex gap-2">
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-moh-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
                                             </div>
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-moh-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -486,11 +487,9 @@
                                         <div class="flex gap-2">
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-kar-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
                                             </div>
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-kar-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -499,11 +498,21 @@
                                         <div class="flex gap-2">
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-nour-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
-                                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
                                             </div>
                                             <div class="relative w-full">
                                                 <input type="number" step="0.01" min="0" id="sal-nour-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- NEU: Ehemalige / Unbekannte in der Erfassung -->
+                                    <div class="bg-stone-100 p-3 rounded-xl border border-stone-300 shadow-sm">
+                                        <label class="block text-[10px] font-bold text-stone-500 uppercase mb-2">Ehemalige / Aushilfen</label>
+                                        <div class="flex gap-2">
+                                            <div class="relative w-full">
+                                                <input type="number" step="0.01" min="0" id="sal-ehem-bar" oninput="calculateLiveFormula()" placeholder="Bar" class="modern-input py-2 pl-3 pr-6 text-sm">
+                                            </div>
+                                            <div class="relative w-full">
+                                                <input type="number" step="0.01" min="0" id="sal-ehem-card" oninput="calculateLiveFormula()" placeholder="Karte" class="modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
                                             </div>
                                         </div>
                                     </div>
@@ -612,7 +621,7 @@
                                 <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
                                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Sicheres Merging mit existierenden Ausgaben!</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Extrahiert Details & sortiert Gehälter automatisch!</p>
                             </div>
                         </div>
 
@@ -710,7 +719,7 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <div>
                             <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
-                            <p class="text-[10px] text-stone-500 mt-1" id="preview-filter-hint">Es wurden nur Daten für das ausgewählte Jahr geladen.</p>
+                            <p class="text-[10px] text-stone-500 mt-1" id="preview-filter-hint">Tage werden mit bestehenden Daten gemerged.</p>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
                             <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
@@ -850,6 +859,10 @@
                 <div style="flex: 1; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center;">
                     <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">Nourddin</p>
                     <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-nour">0,00 €</p>
+                </div>
+                <div style="flex: 1; background-color: #F5F5F4; border: 1px solid #D6D3D1; padding: 10px; border-radius: 6px; text-align: center;">
+                    <p style="font-size: 8px; font-weight: bold; color: #57534E; text-transform: uppercase; margin: 0 0 4px 0;">Ehem. / Aushilfen</p>
+                    <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-sal-ehem">0,00 €</p>
                 </div>
             </div>
         </div>
@@ -1443,9 +1456,11 @@
             const karCard = parseFloat(document.getElementById('sal-kar-card').value) || 0;
             const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
             const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
+            const ehemBar = parseFloat(document.getElementById('sal-ehem-bar').value) || 0;
+            const ehemCard = parseFloat(document.getElementById('sal-ehem-card').value) || 0;
 
-            let expSumBar = adamBar + mohBar + karBar + nourBar;
-            let expSumCard = adamCard + mohCard + karCard + nourCard;
+            let expSumBar = adamBar + mohBar + karBar + nourBar + ehemBar;
+            let expSumCard = adamCard + mohCard + karCard + nourCard + ehemCard;
 
             document.querySelectorAll('.dynamic-expense-row').forEach(row => {
                 expSumBar += parseFloat(row.querySelector('.dyn-bar').value) || 0;
@@ -1454,8 +1469,6 @@
 
             const combinedExpenses = expSumBar + expSumCard;
             const profit = totalRevenue - combinedExpenses;
-            
-            // NEUE MATHEMATIK FÜR BAR MITNAHMEN (Bargeld Kasse - Bargeld Ausgaben)
             const tuete = actualBar - expSumBar;
 
             document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
@@ -1478,7 +1491,8 @@
             const fieldsToClear = [
                 'entry-rev-bar', 'entry-rev-card', 'entry-exp-sumbar', 'entry-exp-sumcard',
                 'sal-adam-bar', 'sal-adam-card', 'sal-moh-bar', 'sal-moh-card',
-                'sal-kar-bar', 'sal-kar-card', 'sal-nour-bar', 'sal-nour-card'
+                'sal-kar-bar', 'sal-kar-card', 'sal-nour-bar', 'sal-nour-card',
+                'sal-ehem-bar', 'sal-ehem-card'
             ];
             fieldsToClear.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
 
@@ -1503,6 +1517,8 @@
                     setVal('sal-kar-card', sal.kar?.card);
                     setVal('sal-nour-bar', sal.nour?.bar);
                     setVal('sal-nour-card', sal.nour?.card);
+                    setVal('sal-ehem-bar', sal.ehem?.bar);
+                    setVal('sal-ehem-card', sal.ehem?.card);
                 } 
                 else {
                     if(existingDay.expensesSum.bar || existingDay.expensesSum.card) {
@@ -1537,9 +1553,11 @@
             const karCard = parseFloat(document.getElementById('sal-kar-card').value) || 0;
             const nourBar = parseFloat(document.getElementById('sal-nour-bar').value) || 0;
             const nourCard = parseFloat(document.getElementById('sal-nour-card').value) || 0;
+            const ehemBar = parseFloat(document.getElementById('sal-ehem-bar').value) || 0;
+            const ehemCard = parseFloat(document.getElementById('sal-ehem-card').value) || 0;
 
-            let expSumBar = adamBar + mohBar + karBar + nourBar;
-            let expSumCard = adamCard + mohCard + karCard + nourCard;
+            let expSumBar = adamBar + mohBar + karBar + nourBar + ehemBar;
+            let expSumCard = adamCard + mohCard + karCard + nourCard + ehemCard;
 
             let genExpenses = [];
             document.querySelectorAll('.dynamic-expense-row').forEach(row => {
@@ -1564,13 +1582,14 @@
                         adam: { bar: adamBar, card: adamCard },
                         moh: { bar: mohBar, card: mohCard },
                         kar: { bar: karBar, card: karCard },
-                        nour: { bar: nourBar, card: nourCard }
+                        nour: { bar: nourBar, card: nourCard },
+                        ehem: { bar: ehemBar, card: ehemCard }
                     },
                     general: genExpenses
                 },
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
                 profit: totalRevenue - totalExpenses,
-                tuete: actualBar - expSumBar, // Neue Logik
+                tuete: actualBar - expSumBar,
                 note: "Manuelle Buchung"
             };
 
@@ -1607,8 +1626,8 @@
             let b = 0, c = 0;
             if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
                 const sal = dayObj.expensesDetail.salaries;
-                b += (parseFloat(sal.adam?.bar)||0) + (parseFloat(sal.moh?.bar)||0) + (parseFloat(sal.kar?.bar)||0) + (parseFloat(sal.nour?.bar)||0);
-                c += (parseFloat(sal.adam?.card)||0) + (parseFloat(sal.moh?.card)||0) + (parseFloat(sal.kar?.card)||0) + (parseFloat(sal.nour?.card)||0);
+                b += (parseFloat(sal.adam?.bar)||0) + (parseFloat(sal.moh?.bar)||0) + (parseFloat(sal.kar?.bar)||0) + (parseFloat(sal.nour?.bar)||0) + (parseFloat(sal.ehem?.bar)||0);
+                c += (parseFloat(sal.adam?.card)||0) + (parseFloat(sal.moh?.card)||0) + (parseFloat(sal.kar?.card)||0) + (parseFloat(sal.nour?.card)||0) + (parseFloat(sal.ehem?.card)||0);
             }
             if (dayObj.expensesDetail && dayObj.expensesDetail.general) {
                 dayObj.expensesDetail.general.forEach(g => {
@@ -1619,11 +1638,10 @@
 
             dayObj.expensesSum = { bar: b, card: c, total: b + c };
             dayObj.profit = (parseFloat(dayObj.revenue.total) || 0) - dayObj.expensesSum.total;
-            
-            // Neue Logik für Bar Mitnahmen
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
+        // --- SMARTER TAGESMAPPEN-SCANNER (Liest Zeile für Zeile) ---
         function parseExcelFile(file) {
             const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
             const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
@@ -1667,9 +1685,10 @@
                         const ws = workbook.Sheets[sheetName];
                         const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-                        let expSumBar = 0, expSumCard = 0, revBarRaw = 0, revCard = 0;
+                        let revBarRaw = 0, revCard = 0;
                         let wechselgeldRowIdx = -1;
                         
+                        // 1. Einnahmen & Wechselgeld suchen (Bewährte Methode beibehalten)
                         for (let r = 0; r < rawJson.length; r++) {
                             if (!rawJson[r]) continue;
                             for (let c = 0; c < rawJson[r].length; c++) {
@@ -1684,7 +1703,6 @@
                         for (let r = 0; r < rawJson.length; r++) {
                             const row = rawJson[r];
                             if (!row || row.length === 0) continue;
-
                             for (let c = 0; c < row.length; c++) {
                                 const rawCellVal = row[c];
                                 if (rawCellVal === undefined || rawCellVal === null) continue;
@@ -1701,9 +1719,7 @@
                                     return 0;
                                 };
 
-                                if (cellVal === "summe(bar)" || cellVal === "summe (bar)") { expSumBar = getValueDirectlyToRight(c); }
-                                else if (cellVal === "summe(karte)" || cellVal === "summe (karte)") { expSumCard = getValueDirectlyToRight(c); }
-                                else if (cellVal === "bar" || cellVal === "bar:") {
+                                if (cellVal === "bar" || cellVal === "bar:") {
                                     if (wechselgeldRowIdx !== -1 && Math.abs(r - wechselgeldRowIdx) <= 4) { revBarRaw = getValueDirectlyToRight(c); }
                                     else if (wechselgeldRowIdx === -1 && r > 10) { revBarRaw = getValueDirectlyToRight(c); }
                                 }
@@ -1717,6 +1733,84 @@
                         const actualBarRevenue = revBarRaw > 0 ? revBarRaw - 150 : 0; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
+                        // 2. SMARTER AUSGABEN-SCANNER
+                        let inAusgabenSection = false;
+                        let amountCol = 1, remarkCol = -1;
+                        let extractedExpenses = [];
+
+                        for (let r = 0; r < rawJson.length; r++) {
+                            const row = rawJson[r];
+                            if (!row || row.length === 0) continue;
+
+                            const firstCell = String(row[0] || "").trim().toLowerCase();
+
+                            // Start-Punkt der Liste finden
+                            if (firstCell === "arikel:" || firstCell === "artikel:" || firstCell === "artikel" || firstCell === "artikel/zweck") {
+                                inAusgabenSection = true;
+                                for(let c=0; c<row.length; c++) {
+                                    const h = String(row[c]||"").toLowerCase();
+                                    if(h.includes("brutto") || h.includes("betrag")) amountCol = c;
+                                    if(h.includes("bemerkung")) remarkCol = c;
+                                }
+                                continue;
+                            }
+
+                            // End-Punkt der Liste finden
+                            if (firstCell.startsWith("summe") || firstCell.startsWith("einnahme") || firstCell.startsWith("tüte") || firstCell.startsWith("gewinn")) {
+                                inAusgabenSection = false;
+                            }
+
+                            if (inAusgabenSection) {
+                                const name = String(row[0] || "").trim();
+                                if (!name) continue;
+
+                                let amountRaw = row[amountCol];
+                                // Wenn amountCol leer ist, suche die erste Zahl rechts davon
+                                if (amountRaw === undefined || amountRaw === null || amountRaw === "") {
+                                    for(let c=1; c<row.length; c++) {
+                                        if (row[c] !== undefined && row[c] !== null && row[c] !== "") {
+                                            amountRaw = row[c];
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                const amount = parseFloat(String(amountRaw).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                                if (amount === 0) continue;
+
+                                let isCard = false;
+                                let remarkStr = (remarkCol !== -1 && row[remarkCol]) ? String(row[remarkCol]).toLowerCase() : row.join(" ").toLowerCase();
+                                
+                                if (remarkStr.includes("karte") || remarkStr.includes("überweisung")) {
+                                    isCard = true;
+                                }
+
+                                extractedExpenses.push({
+                                    name: name,
+                                    bar: isCard ? 0 : Math.abs(amount),
+                                    card: isCard ? Math.abs(amount) : 0
+                                });
+                            }
+                        }
+
+                        // 3. Extrahierte Liste sortieren (Gehälter vs. Sonstiges)
+                        let exSalaries = { adam: {bar:0,card:0}, moh: {bar:0,card:0}, kar: {bar:0,card:0}, nour: {bar:0,card:0}, ehem: {bar:0,card:0} };
+                        let exGeneral = [];
+
+                        extractedExpenses.forEach(exp => {
+                            let ln = exp.name.toLowerCase();
+                            if (ln.includes("gehalt") || ln.includes("lohn") || ln.includes("vorschuss")) {
+                                if (ln.includes("adam")) { exSalaries.adam.bar += exp.bar; exSalaries.adam.card += exp.card; }
+                                else if (ln.includes("moh")) { exSalaries.moh.bar += exp.bar; exSalaries.moh.card += exp.card; }
+                                else if (ln.includes("kar")) { exSalaries.kar.bar += exp.bar; exSalaries.kar.card += exp.card; }
+                                else if (ln.includes("nour")) { exSalaries.nour.bar += exp.bar; exSalaries.nour.card += exp.card; }
+                                else { exSalaries.ehem.bar += exp.bar; exSalaries.ehem.card += exp.card; }
+                            } else {
+                                exGeneral.push(exp);
+                            }
+                        });
+
+
                         let existingDay = dbDays.find(d => d.date === isoDate);
                         let dayObj;
 
@@ -1726,33 +1820,39 @@
                             
                             if (!dayObj.expensesDetail) {
                                 dayObj.expensesDetail = {
-                                    salaries: { adam: { bar: 0, card: 0 }, moh: { bar: 0, card: 0 }, kar: { bar: 0, card: 0 }, nour: { bar: 0, card: 0 } },
+                                    salaries: { adam: { bar: 0, card: 0 }, moh: { bar: 0, card: 0 }, kar: { bar: 0, card: 0 }, nour: { bar: 0, card: 0 }, ehem: { bar: 0, card: 0 } },
                                     general: []
                                 };
                             }
+                            if (!dayObj.expensesDetail.salaries.ehem) dayObj.expensesDetail.salaries.ehem = {bar:0, card:0};
+
+                            // Gehälter summieren
+                            dayObj.expensesDetail.salaries.adam.bar += exSalaries.adam.bar;
+                            dayObj.expensesDetail.salaries.adam.card += exSalaries.adam.card;
+                            dayObj.expensesDetail.salaries.moh.bar += exSalaries.moh.bar;
+                            dayObj.expensesDetail.salaries.moh.card += exSalaries.moh.card;
+                            dayObj.expensesDetail.salaries.kar.bar += exSalaries.kar.bar;
+                            dayObj.expensesDetail.salaries.kar.card += exSalaries.kar.card;
+                            dayObj.expensesDetail.salaries.nour.bar += exSalaries.nour.bar;
+                            dayObj.expensesDetail.salaries.nour.card += exSalaries.nour.card;
+                            dayObj.expensesDetail.salaries.ehem.bar += exSalaries.ehem.bar;
+                            dayObj.expensesDetail.salaries.ehem.card += exSalaries.ehem.card;
                             
-                            if (expSumBar > 0 || expSumCard > 0) {
-                                let mappSum = dayObj.expensesDetail.general.find(g => g.name === "Mappen-Summe");
-                                if (mappSum) {
-                                    mappSum.bar = expSumBar;
-                                    mappSum.card = expSumCard;
-                                } else {
-                                    dayObj.expensesDetail.general.push({ name: "Mappen-Summe", bar: expSumBar, card: expSumCard });
-                                }
-                            }
+                            // Sonstige Ausgaben anhängen
+                            exGeneral.forEach(nx => {
+                                const exists = dayObj.expensesDetail.general.find(g => g.name === nx.name && g.bar === nx.bar && g.card === nx.card);
+                                if (!exists) dayObj.expensesDetail.general.push(nx);
+                            });
+
                             recalcDaySums(dayObj);
                         } else {
-                            let genExp = [];
-                            if (expSumBar !== 0 || expSumCard !== 0) {
-                                genExp.push({ name: "Mappen-Summe", bar: expSumBar, card: expSumCard });
-                            }
                             dayObj = {
                                 date: isoDate,
                                 germanDate: fullGermanDate,
                                 revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
                                 expensesDetail: {
-                                    salaries: { adam: { bar: 0, card: 0 }, moh: { bar: 0, card: 0 }, kar: { bar: 0, card: 0 }, nour: { bar: 0, card: 0 } },
-                                    general: genExp
+                                    salaries: exSalaries,
+                                    general: exGeneral
                                 },
                                 note: "Mappen-Import"
                             };
@@ -1793,7 +1893,6 @@
                     const amountIdx = headers.findIndex(h => h && /gesamtbetrag|^betrag$/i.test(String(h).trim()));
                     const bankIdx = headers.findIndex(h => h && /kontobewegungen|kontonummer|konto des senders/i.test(String(h).trim()));
                     
-                    // NEU: Storno Spalte finden
                     const stornoIdx = headers.findIndex(h => h && /storno/i.test(String(h).trim()));
 
                     if (dateIdx === -1 || amountIdx === -1) {
@@ -1811,7 +1910,6 @@
 
                         const isoDate = `${rawDateMatch[3]}-${rawDateMatch[2]}-${rawDateMatch[1]}`;
 
-                        // Storno Erkennung
                         let isStorno = false;
                         if (stornoIdx !== -1 && row[stornoIdx]) {
                             if (String(row[stornoIdx]).trim().toLowerCase() === 'ja') {
@@ -1823,10 +1921,8 @@
                         let amount = parseFloat(amountStr) || 0;
                         if(amount === 0) continue; 
                         
-                        // Grundsätzlich nehmen wir den Betrag als positive Ausgabe für unser System.
                         amount = Math.abs(amount);
                         
-                        // Wenn es ein Storno ist, kehren wir das Vorzeichen um (Wird zu einer negativen Ausgabe = Gutschrift)
                         if (isStorno) {
                             amount = -amount;
                         }
@@ -1862,12 +1958,11 @@
                             let dayCopy = JSON.parse(JSON.stringify(existingDay));
                             if(!dayCopy.expensesDetail) {
                                 dayCopy.expensesDetail = {
-                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0} },
+                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0}, ehem:{bar:0,card:0} },
                                     general: []
                                 };
                             }
                             
-                            // Keine Blockade mehr durch Duplikat-Filter! Alle Lexoffice/CSV-Zeilen werden übernommen.
                             dayCopy.expensesDetail.general.push(...newExpenses);
                             
                             recalcDaySums(dayCopy);
@@ -1878,7 +1973,7 @@
                                 germanDate: formatGermanDate(isoDate),
                                 revenue: { total: 0, bar: 0, card: 0 },
                                 expensesDetail: {
-                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0} },
+                                    salaries: { adam:{bar:0,card:0}, moh:{bar:0,card:0}, kar:{bar:0,card:0}, nour:{bar:0,card:0}, ehem:{bar:0,card:0} },
                                     general: newExpenses
                                 },
                                 note: "Ausgaben Import"
@@ -2030,7 +2125,7 @@
 
             if (activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
-                let salAdam = 0, salMoh = 0, salKar = 0, salNour = 0;
+                let salAdam = 0, salMoh = 0, salKar = 0, salNour = 0, salEhem = 0;
 
                 filtered.forEach(d => { 
                     r+=d.revenue.total; c+=d.revenue.card; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; 
@@ -2041,6 +2136,7 @@
                         salMoh += ((parseFloat(sal.moh?.bar)||0) + (parseFloat(sal.moh?.card)||0));
                         salKar += ((parseFloat(sal.kar?.bar)||0) + (parseFloat(sal.kar?.card)||0));
                         salNour += ((parseFloat(sal.nour?.bar)||0) + (parseFloat(sal.nour?.card)||0));
+                        salEhem += ((parseFloat(sal.ehem?.bar)||0) + (parseFloat(sal.ehem?.card)||0));
                     }
                 });
                 
@@ -2053,11 +2149,13 @@
                 document.getElementById('dash-sal-moh').textContent = formatCurrency(salMoh);
                 document.getElementById('dash-sal-kar').textContent = formatCurrency(salKar);
                 document.getElementById('dash-sal-nour').textContent = formatCurrency(salNour);
+                document.getElementById('dash-sal-ehem').textContent = formatCurrency(salEhem);
 
                 document.getElementById('pdf-sal-adam').textContent = formatCurrency(salAdam);
                 document.getElementById('pdf-sal-moh').textContent = formatCurrency(salMoh);
                 document.getElementById('pdf-sal-kar').textContent = formatCurrency(salKar);
                 document.getElementById('pdf-sal-nour').textContent = formatCurrency(salNour);
+                document.getElementById('pdf-sal-ehem').textContent = formatCurrency(salEhem);
 
                 drawTrendChart(filtered, 'trend-chart-container');
                 drawDistributionChart(filtered);
@@ -2169,7 +2267,6 @@
             });
         }
 
-        // --- SMARTER LÖSCHEN BUTTON ---
         function clearDatabase() {
             if (dbDays.length === 0) {
                 showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
