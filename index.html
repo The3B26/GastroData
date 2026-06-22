@@ -922,7 +922,7 @@
             
             try {
                 // Strikt gepflegte Firebase-Pfade für die sichere Umgebung
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'gastro_jahre', year);
+                const docRef = doc(db, 'restaurant_daten', year);⁠
                 const snap = await getDoc(docRef);
                 
                 if (snap.exists()) {
@@ -963,7 +963,7 @@
             window.showToast("Sichere in Cloud...", "Daten werden hochgeladen.");
 
             try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'gastro_jahre', window.currentYear);
+                const docRef = doc(db, 'restaurant_daten', window.currentYear);⁠
                 const payload = {
                     timestamp: new Date().toISOString(),
                     settings: window.appSettings,
