@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -8,8 +9,8 @@
     <!-- PWA / Homescreen Icons -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="image.PNG">
-    <link rel="icon" type="image/png" href="image.PNG">
+    <link rel="apple-touch-icon" href="image.png">
+    <link rel="icon" type="image/png" href="image.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,7 +23,7 @@
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FIREBASE COMPAT (Funktioniert lokal per Doppelklick!) -->
+    <!-- FIREBASE COMPAT -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -186,7 +187,7 @@
         <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center my-auto">
             <div class="flex justify-center mb-6">
                 <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
-                    <img src="image.PNG" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
+                    <img src="image.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
                     <div id="fallback-logo" class="hidden w-full h-full flex items-center justify-center bg-stone-50">
                         <span class="gold-title text-2xl font-black text-[#C5A85C]">3B</span>
                     </div>
@@ -229,7 +230,7 @@
         <header class="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full m-4 max-w-[calc(100%-32px)] mx-auto z-20 bg-white/95">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-full overflow-hidden border border-[#C5A85C]/35 bg-white p-0.5 flex-shrink-0">
-                    <img src="image.PNG" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
+                    <img src="image.png" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
                 </div>
                 <div>
                     <h1 class="gold-title text-base font-bold text-stone-900 leading-tight">The 3B - GastroFinance</h1>
@@ -559,7 +560,7 @@
                                 <input type="file" id="excel-input" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="handleExcelUpload(event)">
                                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Extrahiert Details & sortiert Gehälter automatisch!</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Datum richtet sich nach ausgewähltem Cloud-Jahr</p>
                             </div>
                         </div>
 
@@ -595,7 +596,7 @@
                                         <i class="fa-solid fa-download"></i> Backup
                                     </button>
                                 </div>
-                                <p class="text-xs text-stone-500 font-medium">Wechsle hier das aktive Geschäftsjahr.</p>
+                                <p class="text-xs text-stone-500 font-medium">Aktives Geschäftsjahr auswählen.</p>
                             </div>
                             
                             <div class="space-y-3 w-full mt-4">
@@ -612,7 +613,8 @@
                                 <button type="button" onclick="loadYearFromCloud(currentYear)" class="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
                                     <i class="fa-solid fa-cloud-arrow-down"></i> Aus Cloud neu laden
                                 </button>
-                                <button type="button" onclick="saveYearToCloud()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
+                                <!-- ID hinzugefügt, um den Button bei Inhabern auszublenden -->
+                                <button type="button" id="btn-save-cloud" onclick="saveYearToCloud()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
                                     <i class="fa-solid fa-cloud-arrow-up"></i> Jahr in Cloud sichern
                                 </button>
                             </div>
@@ -1170,17 +1172,18 @@
             if (loggedInUser === 'inhaber') {
                 document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
                 document.getElementById('admin-sys-config').classList.add('hidden');
+                document.getElementById('btn-save-cloud').classList.add('hidden'); // Versteckt Speichern-Button
                 disableWritePermissions();
             } else {
                 document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
                 document.getElementById('admin-sys-config').classList.remove('hidden');
+                document.getElementById('btn-save-cloud').classList.remove('hidden'); // Zeigt Speichern-Button
             }
 
             showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
             switchTab('dashboard');
             renderAll();
             
-            // Firebase automatisch nach Login laden
             loadYearFromCloud(currentYear); 
         }
 
@@ -1208,7 +1211,7 @@
             });
             const buttons = document.querySelectorAll('form button, #tab-daten button');
             buttons.forEach(b => {
-                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup')) b.disabled = true;
+                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup') && b.id !== 'btn-save-cloud') b.disabled = true;
             });
         }
 
@@ -1559,10 +1562,9 @@
                         let month = match[2];
                         let sheetYear = match[3];
 
+                        // NEUE LOGIK: Wenn kein Jahr angegeben ist, nimm das aktuell ausgewählte Jahr im Cloud Manager
                         if (!sheetYear) {
-                            const monthInt = parseInt(month, 10);
-                            if (monthInt >= 9 && monthInt <= 12) { sheetYear = "2024"; } 
-                            else { sheetYear = "2025"; }
+                            sheetYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
                         }
 
                         if (currentYear !== 'all' && sheetYear !== currentYear) {
@@ -1791,10 +1793,9 @@
                         let month = rawDateMatch[2];
                         let rowYear = rawDateMatch[3];
 
+                        // NEUE LOGIK: Wenn kein Jahr angegeben ist, nimm das aktuell ausgewählte Jahr im Cloud Manager
                         if (!rowYear) {
-                            const monthInt = parseInt(month, 10);
-                            if (monthInt >= 9 && monthInt <= 12) { rowYear = "2024"; } 
-                            else { rowYear = "2025"; }
+                            rowYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
                         }
                         
                         if (currentYear !== 'all' && rowYear !== currentYear) {
