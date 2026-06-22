@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -21,6 +22,10 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- FIREBASE COMPAT (Funktioniert lokal per Doppelklick!) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
@@ -818,170 +823,141 @@
     </div>
 
 
-    <!-- ================= JAVASCRIPT MIT FIREBASE ================= -->
-    <script type="module">
-        // 1. Firebase Module Importieren
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // 2. Firebase Konfiguration (Angepasst für die Vorschau-Umgebung)
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        // === HIER DEINE CONFIG EINFÜGEN ===
         const firebaseConfig = {
-        apiKey: "AIzaSyBnTC9OhnWsHE6QL3CwpEPnkAWrmFxFPCw",
-     authDomain: "gastrofibu.firebaseapp.com",
-    databaseURL: "https://gastrofibu-default-rtdb.firebaseio.com",
-    projectId: "gastrofibu",
-    storageBucket: "gastrofibu.firebasestorage.app",
-    messagingSenderId: "193576941075",
-    appId: "1:193576941075:web:7c1ce52629229f7e87f1e6",
-    measurementId: "G-3R67PDW4EZ"
-  };
+  apiKey: "AIzaSyBnTC9OhnWsHE6QL3CwpEPnkAWrmFxFPCw",
+  authDomain: "gastrofibu.firebaseapp.com",
+  databaseURL: "https://gastrofibu-default-rtdb.firebaseio.com",
+  projectId: "gastrofibu",
+  storageBucket: "gastrofibu.firebasestorage.app",
+  messagingSenderId: "193576941075",
+  appId: "1:193576941075:web:7c1ce52629229f7e87f1e6",
+  measurementId: "G-3R67PDW4EZ"
+};
+        // ===================================
+
+        // Firebase Initialisierung
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
         // GLOBALE VARIABLEN
-        window.dbDays = [];
-        window.loggedInUser = null;
-        window.activeTab = 'dashboard';
-        window.tempImportBuffer = [];
-        window.enteredPin = ""; 
-        window.currentYear = "2026"; 
+        let dbDays = [];
+        let loggedInUser = null;
+        let activeTab = 'dashboard';
+        let tempImportBuffer = [];
+        let enteredPin = ""; 
+        let currentYear = "2026"; 
         
-        window.importSortDesc = true; 
+        let importSortDesc = true; 
 
-        window.appSettings = {
+        let appSettings = {
             changeMoney: 150,
             employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
         };
 
-        window.adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
-        window.readPin = localStorage.getItem('gastro_read_pin') || "2024";
-
-        // --- AUTH & INIT ---
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-            }
-        };
+        let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
+        let readPin = localStorage.getItem('gastro_read_pin') || "2024";
 
         window.onload = function() {
-            initAuth(); // Start Firebase Auth
-
             if (localStorage.getItem('gastro_app_settings')) {
-                window.appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
+                appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
             }
 
             if (localStorage.getItem('gastro_finance_premium_db')) {
                 let loadedDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
-                window.dbDays = window.migrateToDynamicSalaries(loadedDays);
+                dbDays = migrateToDynamicSalaries(loadedDays);
             }
 
-            window.initAdminSettingsUI();
-            window.buildDynamicEmployeeUI();
+            initAdminSettingsUI();
+            buildDynamicEmployeeUI();
 
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             document.getElementById('entry-date').value = yesterday.toISOString().split('T')[0];
 
-            window.setupFilterDefaultDates();
-            window.initExcelDropzone();
-            window.setDbStatus('disconnected'); 
-            window.setupPullToRefresh();
-            window.renderExpenseRows([]);
+            setupFilterDefaultDates();
+            initExcelDropzone();
+            setDbStatus('disconnected'); 
+            setupPullToRefresh();
+            renderExpenseRows([]);
         };
 
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            // Wenn der Nutzer bereits den PIN eingegeben hat und Firebase ready ist, lade Daten
-            if (user && window.loggedInUser) {
-                window.loadYearFromCloud(window.currentYear);
-            }
-        });
+        // --- FIREBASE CLOUD FUNKTIONEN ---
 
-        // --- FIREBASE CLOUD FUNKTIONEN (Ersetzt JSONbin) ---
-
-        window.changeCloudYear = function() {
+        function changeCloudYear() {
             const select = document.getElementById('firebase-year-select');
-            window.currentYear = select.value;
-            document.getElementById('active-year-display').textContent = `Jahr: ${window.currentYear}`;
-            window.loadYearFromCloud(window.currentYear);
+            currentYear = select.value;
+            document.getElementById('active-year-display').textContent = `Jahr: ${currentYear}`;
+            loadYearFromCloud(currentYear);
         }
 
-        window.loadYearFromCloud = async function(year) {
-            if (!currentUser) {
-                window.showToast("Warte auf Cloud", "Verbindung wird noch aufgebaut...");
-                return;
-            }
-            
-            window.setDbStatus('connecting');
-            window.showToast("Lade Cloud...", `Daten für das Jahr ${year} werden synchronisiert.`);
+        async function loadYearFromCloud(year) {
+            setDbStatus('connecting');
+            showToast("Lade Cloud...", `Daten für das Jahr ${year} werden synchronisiert.`);
             
             try {
-                // Strikt gepflegte Firebase-Pfade für die sichere Umgebung
-                const docRef = doc(db, 'restaurant_daten', year);⁠
-                const snap = await getDoc(docRef);
+                // Liest direkt aus der Datenbank, Ordner "restaurant_daten"
+                const docRef = db.collection('restaurant_daten').doc(year);
+                const snap = await docRef.get();
                 
-                if (snap.exists()) {
+                if (snap.exists) {
                     const docData = snap.data();
-                    window.dbDays = docData.data || [];
+                    dbDays = docData.data || [];
                     if(docData.settings) {
-                        window.appSettings = docData.settings;
-                        window.initAdminSettingsUI();
-                        window.buildDynamicEmployeeUI();
+                        appSettings = docData.settings;
+                        initAdminSettingsUI();
+                        buildDynamicEmployeeUI();
                     }
-                    window.dbDays = window.migrateToDynamicSalaries(window.dbDays);
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
-                    window.showToast("Erfolg", `Geschäftsjahr ${year} aus der Cloud geladen.`);
+                    dbDays = migrateToDynamicSalaries(dbDays);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Erfolg", `Geschäftsjahr ${year} aus der Cloud geladen.`);
                 } else {
-                    // Wenn es das Jahr noch nicht gibt
-                    window.dbDays = [];
+                    dbDays = [];
                     localStorage.setItem('gastro_finance_premium_db', JSON.stringify([]));
-                    window.showToast("Hinweis", `Noch keine Daten für ${year} in der Cloud.`);
+                    showToast("Hinweis", `Noch keine Daten für ${year} in der Cloud.`);
                 }
                 
-                window.setDbStatus('connected');
-                window.renderAll();
+                setDbStatus('connected');
+                renderAll();
             } catch(e) { 
                 console.error(e);
-                window.setDbStatus('disconnected');
-                window.showToast("Cloud-Fehler", "Fehler beim Laden der Daten.", false); 
+                setDbStatus('disconnected');
+                showToast("Cloud-Fehler", "Fehler beim Laden der Daten.", false); 
             }
         }
 
-        window.saveYearToCloud = async function() {
-            if (!currentUser) return;
-            if (window.loggedInUser === 'inhaber') { 
-                window.showToast("Fehler", "Keine Cloud-Schreibrechte als Inhaber.", false); 
+        async function saveYearToCloud() {
+            if (loggedInUser === 'inhaber') { 
+                showToast("Fehler", "Keine Cloud-Schreibrechte als Inhaber.", false); 
                 return; 
             }
             
-            window.setDbStatus('connecting');
-            window.showToast("Sichere in Cloud...", "Daten werden hochgeladen.");
+            setDbStatus('connecting');
+            showToast("Sichere in Cloud...", "Daten werden hochgeladen.");
 
             try {
-                const docRef = doc(db, 'restaurant_daten', window.currentYear);⁠
+                // Speichert direkt in die Datenbank, Ordner "restaurant_daten"
+                const docRef = db.collection('restaurant_daten').doc(currentYear);
                 const payload = {
                     timestamp: new Date().toISOString(),
-                    settings: window.appSettings,
-                    data: window.dbDays
+                    settings: appSettings,
+                    data: dbDays
                 };
                 
-                await setDoc(docRef, payload);
-                window.setDbStatus('connected');
-                window.showToast("Gesichert", `Daten für ${window.currentYear} sicher in Firebase gespeichert.`);
+                await docRef.set(payload);
+                setDbStatus('connected');
+                showToast("Gesichert", `Daten für ${currentYear} sicher in Firebase gespeichert.`);
             } catch(e) { 
                 console.error(e);
-                window.setDbStatus('disconnected');
-                window.showToast("Speicherfehler", "Konnte nicht in Firebase speichern.", false); 
+                setDbStatus('disconnected');
+                showToast("Speicherfehler", "Konnte nicht in Firebase speichern.", false); 
             }
         }
 
         // --- RESTLICHE GLOBALE FUNKTIONEN ---
-        window.migrateToDynamicSalaries = function(daysArray) {
+        function migrateToDynamicSalaries(daysArray) {
             daysArray.forEach(d => {
                 if (d.expensesDetail && d.expensesDetail.salaries && d.expensesDetail.salaries.adam !== undefined) {
                     const s = d.expensesDetail.salaries;
@@ -996,41 +972,41 @@
             return daysArray;
         }
 
-        window.initAdminSettingsUI = function() {
-            document.getElementById('cfg-wechselgeld').value = window.appSettings.changeMoney;
-            document.getElementById('cfg-employees').value = window.appSettings.employees.join(", ");
-            document.getElementById('hint-wechselgeld').textContent = window.appSettings.changeMoney;
+        function initAdminSettingsUI() {
+            document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
+            document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
+            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
         }
 
-        window.saveSystemSettings = function() {
-            if (window.loggedInUser !== 'buchhaltung') return;
+        function saveSystemSettings() {
+            if (loggedInUser !== 'buchhaltung') return;
 
             const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
             const newRead = document.getElementById('cfg-read-pin').value.trim();
             if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
-                window.adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', window.adminPin); document.getElementById('cfg-admin-pin').value = '';
+                adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', adminPin); document.getElementById('cfg-admin-pin').value = '';
             }
             if (newRead && newRead.length === 4 && !isNaN(newRead)) {
-                window.readPin = newRead; localStorage.setItem('gastro_read_pin', window.readPin); document.getElementById('cfg-read-pin').value = '';
+                readPin = newRead; localStorage.setItem('gastro_read_pin', readPin); document.getElementById('cfg-read-pin').value = '';
             }
 
             const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
-            if (!isNaN(wg) && wg >= 0) window.appSettings.changeMoney = wg;
+            if (!isNaN(wg) && wg >= 0) appSettings.changeMoney = wg;
 
             const empStr = document.getElementById('cfg-employees').value;
             if (empStr.trim()) {
-                window.appSettings.employees = empStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                appSettings.employees = empStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
             }
 
-            localStorage.setItem('gastro_app_settings', JSON.stringify(window.appSettings));
-            document.getElementById('hint-wechselgeld').textContent = window.appSettings.changeMoney;
+            localStorage.setItem('gastro_app_settings', JSON.stringify(appSettings));
+            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
             
-            window.buildDynamicEmployeeUI();
-            window.renderAll();
-            window.showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
+            buildDynamicEmployeeUI();
+            renderAll();
+            showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
         }
 
-        window.buildDynamicEmployeeUI = function() {
+        function buildDynamicEmployeeUI() {
             const dashContainer = document.getElementById('dash-salaries-container');
             const entryContainer = document.getElementById('entry-salaries-container');
             const pdfContainer = document.getElementById('pdf-salaries-container');
@@ -1039,7 +1015,7 @@
             entryContainer.innerHTML = '';
             if (pdfContainer) pdfContainer.innerHTML = '';
 
-            window.appSettings.employees.forEach((emp) => {
+            appSettings.employees.forEach((emp) => {
                 dashContainer.insertAdjacentHTML('beforeend', `
                     <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
                         <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${emp}</span>
@@ -1075,29 +1051,29 @@
             });
         }
 
-        window.downloadBackup = function() {
-            if (window.dbDays.length === 0) {
-                window.showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
+        function downloadBackup() {
+            if (dbDays.length === 0) {
+                showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
                 return;
             }
             const payload = {
                 timestamp: new Date().toISOString(),
-                settings: window.appSettings,
-                data: window.dbDays
+                settings: appSettings,
+                data: dbDays
             };
             const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `GastroFinance_Backup_${window.currentYear}_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `GastroFinance_Backup_${currentYear}_${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            window.showToast("Backup erstellt", "Datei wurde heruntergeladen.");
+            showToast("Backup erstellt", "Datei wurde heruntergeladen.");
         }
 
-        window.setDbStatus = function(state) {
+        function setDbStatus(state) {
             const dotOut = document.getElementById('db-status-dot'); 
             const textOut = document.getElementById('db-status-text'); 
             const dotIn = document.getElementById('db-status-dot-inner'); 
@@ -1124,7 +1100,7 @@
             }
         }
 
-        window.showConfirmModal = function(title, desc, confirmCallback) {
+        function showConfirmModal(title, desc, confirmCallback) {
             const modal = document.getElementById('custom-modal');
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-desc').textContent = desc;
@@ -1138,7 +1114,7 @@
             modal.classList.remove('hidden');
         }
 
-        window.showToast = function(title, message, isSuccess = true) {
+        function showToast(title, message, isSuccess = true) {
             const toast = document.getElementById('system-toast');
             document.getElementById('toast-title').textContent = title;
             document.getElementById('toast-message').textContent = message;
@@ -1151,77 +1127,75 @@
             setTimeout(() => { toast.classList.add('hidden'); }, 4000);
         }
 
-        window.pressPin = function(num) {
-            if (window.enteredPin.length < 4) {
-                window.enteredPin += num;
-                window.updatePinDots();
-                if (window.enteredPin.length === 4) setTimeout(window.checkPin, 200);
+        function pressPin(num) {
+            if (enteredPin.length < 4) {
+                enteredPin += num;
+                updatePinDots();
+                if (enteredPin.length === 4) setTimeout(checkPin, 200);
             }
         }
 
-        window.clearPin = function() { window.enteredPin = ""; window.updatePinDots(); }
-        window.backspacePin = function() { window.enteredPin = window.enteredPin.slice(0, -1); window.updatePinDots(); }
+        function clearPin() { enteredPin = ""; updatePinDots(); }
+        function backspacePin() { enteredPin = enteredPin.slice(0, -1); updatePinDots(); }
 
-        window.updatePinDots = function() {
+        function updatePinDots() {
             const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
             dots.forEach((dot, index) => {
-                if (index < window.enteredPin.length) dot.classList.add('filled');
+                if (index < enteredPin.length) dot.classList.add('filled');
                 else dot.classList.remove('filled');
             });
         }
 
-        window.checkPin = function() {
+        function checkPin() {
             const dotsContainer = document.getElementById('pin-dots-container');
 
-            if (window.enteredPin === window.adminPin) {
-                window.loggedInUser = "buchhaltung";
-                window.completeLogin();
-            } else if (window.enteredPin === window.readPin) {
-                window.loggedInUser = "inhaber";
-                window.completeLogin();
+            if (enteredPin === adminPin) {
+                loggedInUser = "buchhaltung";
+                completeLogin();
+            } else if (enteredPin === readPin) {
+                loggedInUser = "inhaber";
+                completeLogin();
             } else {
                 dotsContainer.classList.add('shake-animation');
-                window.showToast("Falsche PIN", "Zugriff verweigert.", false);
-                setTimeout(() => { dotsContainer.classList.remove('shake-animation'); window.clearPin(); }, 400);
+                showToast("Falsche PIN", "Zugriff verweigert.", false);
+                setTimeout(() => { dotsContainer.classList.remove('shake-animation'); clearPin(); }, 400);
             }
         }
 
-        window.completeLogin = function() {
+        function completeLogin() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-portal').classList.remove('hidden');
             document.getElementById('app-portal').classList.add('flex');
             document.getElementById('bottom-tab-bar').classList.remove('hidden');
 
-            if (window.loggedInUser === 'inhaber') {
+            if (loggedInUser === 'inhaber') {
                 document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
                 document.getElementById('admin-sys-config').classList.add('hidden');
-                window.disableWritePermissions();
+                disableWritePermissions();
             } else {
                 document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
                 document.getElementById('admin-sys-config').classList.remove('hidden');
             }
 
-            window.showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
-            window.switchTab('dashboard');
-            window.renderAll();
+            showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
+            switchTab('dashboard');
+            renderAll();
             
-            // Wenn Firebase schon im Hintergrund geladen hat
-            if(currentUser) {
-                window.loadYearFromCloud(window.currentYear); 
-            }
+            // Firebase automatisch nach Login laden
+            loadYearFromCloud(currentYear); 
         }
 
-        window.logout = function() {
-            window.loggedInUser = null;
+        function logout() {
+            loggedInUser = null;
             document.getElementById('app-portal').classList.add('hidden');
             document.getElementById('app-portal').classList.remove('flex');
             document.getElementById('bottom-tab-bar').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
-            window.clearPin();
-            window.showToast("Abgemeldet", "System sicher gesperrt.");
+            clearPin();
+            showToast("Abgemeldet", "System sicher gesperrt.");
         }
 
-        window.disableWritePermissions = function() {
+        function disableWritePermissions() {
             const dropzone = document.getElementById('drop-zone');
             if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
             const dropzone2 = document.getElementById('drop-zone-ausgaben');
@@ -1239,8 +1213,8 @@
             });
         }
 
-        window.switchTab = function(tabId) {
-            window.activeTab = tabId;
+        function switchTab(tabId) {
+            activeTab = tabId;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
 
@@ -1254,10 +1228,10 @@
                 btn.classList.add('tab-active', 'scale-105');
                 btn.classList.remove('text-stone-400');
             }
-            window.renderAll();
+            renderAll();
         }
 
-        window.setupPullToRefresh = function() {
+        function setupPullToRefresh() {
             let startY = 0;
             let isPulling = false;
             const scrollable = document.getElementById('scroll-container');
@@ -1282,10 +1256,10 @@
             scrollable.addEventListener('touchend', () => {
                 if (isPulling) {
                     if (spinner.style.height === '60px') {
-                        if (currentUser && window.loggedInUser !== null) {
-                            window.loadYearFromCloud(window.currentYear);
+                        if (loggedInUser !== null) {
+                            loadYearFromCloud(currentYear);
                         } else {
-                            window.showToast("Lokal", "Keine Cloud aktiv.");
+                            showToast("Lokal", "Keine Cloud aktiv.");
                         }
                     }
                     setTimeout(() => {
@@ -1297,7 +1271,7 @@
             }, { passive: true });
         }
 
-        window.renderExpenseRows = function(generalExpenses = []) {
+        function renderExpenseRows(generalExpenses = []) {
             const container = document.getElementById('dynamic-expenses-container');
             container.innerHTML = '';
             
@@ -1331,10 +1305,10 @@
                 `;
                 container.insertAdjacentHTML('beforeend', rowHtml);
             });
-            window.calculateLiveFormula();
+            calculateLiveFormula();
         }
 
-        window.addDynamicExpenseRow = function() {
+        function addDynamicExpenseRow() {
             const container = document.getElementById('dynamic-expenses-container');
             const rowCount = container.querySelectorAll('.dynamic-expense-row').length + 1;
             const rowHtml = `
@@ -1361,11 +1335,11 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        window.calculateLiveFormula = function() {
+        function calculateLiveFormula() {
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
-            const actualBar = rawBar > 0 ? rawBar - window.appSettings.changeMoney : 0;
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
             const totalRevenue = actualBar + cardRev; 
 
             let expSumBar = 0;
@@ -1385,22 +1359,22 @@
             const profit = totalRevenue - combinedExpenses;
             const tuete = actualBar - expSumBar;
 
-            document.getElementById('calc-preview-total').textContent = window.formatCurrency(totalRevenue);
-            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + window.formatCurrency(combinedExpenses);
+            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
+            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
             
             document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
             document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
 
-            document.getElementById('calc-preview-profit').textContent = window.formatCurrency(profit);
+            document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
             document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
             
-            document.getElementById('calc-preview-tuete').textContent = window.formatCurrency(tuete);
+            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
             document.getElementById('calc-preview-tuete').style.color = tuete >= 0 ? "var(--gold)" : "#EF4444";
         }
 
-        window.handleEntryDateChange = function() {
+        function handleEntryDateChange() {
             const pickedDate = document.getElementById('entry-date').value;
-            const existingDay = window.dbDays.find(d => d.date === pickedDate);
+            const existingDay = dbDays.find(d => d.date === pickedDate);
 
             document.getElementById('entry-rev-bar').value = '';
             document.getElementById('entry-rev-card').value = '';
@@ -1412,7 +1386,7 @@
 
             if (existingDay) {
                 if (existingDay.revenue.bar > 0 || existingDay.revenue.total > 0) {
-                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + window.appSettings.changeMoney;
+                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + appSettings.changeMoney;
                 }
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card > 0 ? existingDay.revenue.card : '';
 
@@ -1436,23 +1410,23 @@
                     }
                 }
                 
-                window.renderExpenseRows(loadedGenerals);
-                window.showToast("Geladen", `Tag ${window.formatGermanDate(pickedDate)} existiert bereits.`);
+                renderExpenseRows(loadedGenerals);
+                showToast("Geladen", `Tag ${formatGermanDate(pickedDate)} existiert bereits.`);
             } else {
-                window.renderExpenseRows([]);
+                renderExpenseRows([]);
             }
-            window.calculateLiveFormula();
+            calculateLiveFormula();
         }
 
-        window.saveManualEntry = function() {
-            if (window.loggedInUser === 'inhaber') { window.showToast("Fehler", "Nur Leserechte.", false); return; }
+        function saveManualEntry() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
 
             const pickedDate = document.getElementById('entry-date').value;
-            if(!pickedDate) { window.showToast("Fehler", "Bitte wähle ein Datum.", false); return; }
+            if(!pickedDate) { showToast("Fehler", "Bitte wähle ein Datum.", false); return; }
 
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
-            const actualBar = rawBar > 0 ? rawBar - window.appSettings.changeMoney : 0; 
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0; 
             const totalRevenue = actualBar + cardRev; 
 
             let expSumBar = 0;
@@ -1486,7 +1460,7 @@
 
             const dayObj = {
                 date: pickedDate,
-                germanDate: window.formatGermanDate(pickedDate),
+                germanDate: formatGermanDate(pickedDate),
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesDetail: {
                     salaries: exSalaries,
@@ -1498,35 +1472,35 @@
                 note: "Manuelle Buchung"
             };
 
-            const idx = window.dbDays.findIndex(d => d.date === pickedDate);
-            if (idx !== -1) { window.dbDays[idx] = dayObj; } else { window.dbDays.push(dayObj); }
+            const idx = dbDays.findIndex(d => d.date === pickedDate);
+            if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
 
-            window.dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
             
-            window.showToast("Gespeichert", `Tag ${window.formatGermanDate(pickedDate)} verbucht.`);
-            window.saveYearToCloud();
+            showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
+            saveYearToCloud();
 
-            window.renderAll();
-            window.switchTab('dashboard');
+            renderAll();
+            switchTab('dashboard');
         }
 
-        window.initExcelDropzone = function() {
+        function initExcelDropzone() {
             const dz1 = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.add('bg-stone-100'); }));
             ['dragleave', 'drop'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.remove('bg-stone-100'); }));
-            dz1.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) window.parseExcelFile(e.dataTransfer.files[0]); });
+            dz1.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseExcelFile(e.dataTransfer.files[0]); });
             
             const dz2 = document.getElementById('drop-zone-ausgaben');
             ['dragenter', 'dragover'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.add('bg-red-100'); }));
             ['dragleave', 'drop'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.remove('bg-red-100'); }));
-            dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) window.parseAusgabenFile(e.dataTransfer.files[0]); });
+            dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseAusgabenFile(e.dataTransfer.files[0]); });
         }
         
-        window.handleExcelUpload = function(e) { if(e.target.files.length > 0) window.parseExcelFile(e.target.files[0]); }
-        window.handleAusgabenUpload = function(e) { if(e.target.files.length > 0) window.parseAusgabenFile(e.target.files[0]); }
+        function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
+        function handleAusgabenUpload(e) { if(e.target.files.length > 0) parseAusgabenFile(e.target.files[0]); }
 
-        window.recalcDaySums = function(dayObj) {
+        function recalcDaySums(dayObj) {
             let b = 0, c = 0;
             if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
                 const sal = dayObj.expensesDetail.salaries;
@@ -1547,7 +1521,7 @@
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
-        window.parseExcelFile = function(file) {
+        function parseExcelFile(file) {
             // Json direkt-Import erlauben als Fallback
             if (file.name.endsWith('.json')) {
                 const r = new FileReader();
@@ -1556,12 +1530,12 @@
                         const d = JSON.parse(e.target.result);
                         let arr = d.data || d;
                         if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
-                        window.dbDays = arr;
-                        localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
-                        window.saveYearToCloud();
-                        window.renderAll();
-                        window.showToast("JSON Importiert", "Backup wurde direkt eingespielt.");
-                    } catch(err) { window.showToast("Fehler", "JSON ungültig.", false); }
+                        dbDays = arr;
+                        localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                        saveYearToCloud();
+                        renderAll();
+                        showToast("JSON Importiert", "Backup wurde direkt eingespielt.");
+                    } catch(err) { showToast("Fehler", "JSON ungültig.", false); }
                 };
                 r.readAsText(file);
                 return;
@@ -1572,7 +1546,7 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    window.tempImportBuffer = [];
+                    tempImportBuffer = [];
                     let skippedCount = 0;
 
                     const dateRegex = /^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/;
@@ -1592,7 +1566,7 @@
                             else { sheetYear = "2025"; }
                         }
 
-                        if (window.currentYear !== 'all' && sheetYear !== window.currentYear) {
+                        if (currentYear !== 'all' && sheetYear !== currentYear) {
                             skippedCount++;
                             return;
                         }
@@ -1646,7 +1620,7 @@
                             }
                         }
 
-                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - window.appSettings.changeMoney : 0; 
+                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - appSettings.changeMoney : 0; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
                         let inAusgabenSection = false;
@@ -1710,14 +1684,14 @@
                         }
 
                         let exSalaries = {};
-                        window.appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+                        appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
                         let exGeneral = [];
 
                         extractedExpenses.forEach(exp => {
                             let ln = exp.name.toLowerCase();
                             if (ln.includes("gehalt") || ln.includes("lohn") || ln.includes("vorschuss")) {
                                 let matched = false;
-                                for (let emp of window.appSettings.employees) {
+                                for (let emp of appSettings.employees) {
                                     if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige / Aushilfen") {
                                         exSalaries[emp].bar += exp.bar;
                                         exSalaries[emp].card += exp.card;
@@ -1734,7 +1708,7 @@
                             }
                         });
 
-                        let existingDay = window.dbDays.find(d => d.date === isoDate);
+                        let existingDay = dbDays.find(d => d.date === isoDate);
                         let dayObj;
 
                         if (existingDay) {
@@ -1742,7 +1716,7 @@
                             dayObj.revenue = { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard };
                             if (!dayObj.expensesDetail) {
                                 dayObj.expensesDetail = { salaries: {}, general: [] };
-                                window.appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
+                                appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
                             Object.keys(exSalaries).forEach(empKey => {
                                 if (!dayObj.expensesDetail.salaries[empKey]) dayObj.expensesDetail.salaries[empKey] = {bar:0, card:0};
@@ -1753,7 +1727,7 @@
                                 const exists = dayObj.expensesDetail.general.find(g => g.name === nx.name && g.bar === nx.bar && g.card === nx.card);
                                 if (!exists) dayObj.expensesDetail.general.push(nx);
                             });
-                            window.recalcDaySums(dayObj);
+                            recalcDaySums(dayObj);
                         } else {
                             dayObj = {
                                 date: isoDate, germanDate: fullGermanDate,
@@ -1761,27 +1735,27 @@
                                 expensesDetail: { salaries: exSalaries, general: exGeneral },
                                 note: "Mappen-Import"
                             };
-                            window.recalcDaySums(dayObj);
+                            recalcDaySums(dayObj);
                         }
-                        window.tempImportBuffer.push(dayObj);
+                        tempImportBuffer.push(dayObj);
                     });
 
-                    if (window.tempImportBuffer.length === 0) { 
-                        if (skippedCount > 0) window.showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert (Anderes Jahr).`, false);
-                        else window.showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                    if (tempImportBuffer.length === 0) { 
+                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert (Anderes Jahr).`, false);
+                        else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
                         return; 
                     }
-                    if (skippedCount > 0) window.showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
+                    if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
                     
-                    window.importSortDesc = true;
-                    window.tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
-                    window.renderImportPreview();
-                } catch (err) { window.showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
+                    importSortDesc = true;
+                    tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                    renderImportPreview();
+                } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        window.parseAusgabenFile = function(file) {
+        function parseAusgabenFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1790,7 +1764,7 @@
                     const ws = workbook.Sheets[workbook.SheetNames[0]]; 
                     const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-                    if (rawJson.length < 2) { window.showToast("Fehler", "Datei scheint leer zu sein.", false); return; }
+                    if (rawJson.length < 2) { showToast("Fehler", "Datei scheint leer zu sein.", false); return; }
 
                     const headers = rawJson[0];
                     const dateIdx = headers.findIndex(h => h && /buchungsdatum|datum der kontobewegung|rechnungsdatum/i.test(String(h).trim()));
@@ -1801,7 +1775,7 @@
                     const taxIdx = headers.findIndex(h => h && /ust.-satz|steuersatz|mwst/i.test(String(h).trim()));
 
                     if (dateIdx === -1 || amountIdx === -1) {
-                        window.showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
+                        showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
                     }
 
                     const expensesByDate = {};
@@ -1824,7 +1798,7 @@
                             else { rowYear = "2025"; }
                         }
                         
-                        if (window.currentYear !== 'all' && rowYear !== window.currentYear) {
+                        if (currentYear !== 'all' && rowYear !== currentYear) {
                             skippedCount++;
                             continue; 
                         }
@@ -1867,93 +1841,93 @@
                         expensesByDate[isoDate].push({ name: supplier, bar: isCard ? 0 : amount, card: isCard ? amount : 0, tax: taxRate });
                     }
 
-                    window.tempImportBuffer = [];
+                    tempImportBuffer = [];
 
                     Object.keys(expensesByDate).forEach(isoDate => {
                         const newExpenses = expensesByDate[isoDate];
-                        let existingDay = window.dbDays.find(d => d.date === isoDate);
+                        let existingDay = dbDays.find(d => d.date === isoDate);
 
                         if (existingDay) {
                             let dayCopy = JSON.parse(JSON.stringify(existingDay));
                             if(!dayCopy.expensesDetail) {
                                 dayCopy.expensesDetail = { salaries: {}, general: [] };
-                                window.appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
+                                appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
                             dayCopy.expensesDetail.general.push(...newExpenses);
-                            window.recalcDaySums(dayCopy);
-                            window.tempImportBuffer.push(dayCopy);
+                            recalcDaySums(dayCopy);
+                            tempImportBuffer.push(dayCopy);
                         } else {
                             let exSalaries = {};
-                            window.appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+                            appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
 
                             let newDay = {
-                                date: isoDate, germanDate: window.formatGermanDate(isoDate),
+                                date: isoDate, germanDate: formatGermanDate(isoDate),
                                 revenue: { total: 0, bar: 0, card: 0 },
                                 expensesDetail: { salaries: exSalaries, general: newExpenses },
                                 note: "Ausgaben Import"
                             };
-                            window.recalcDaySums(newDay);
-                            window.tempImportBuffer.push(newDay);
+                            recalcDaySums(newDay);
+                            tempImportBuffer.push(newDay);
                         }
                     });
 
-                    if (window.tempImportBuffer.length === 0) {
-                        if (skippedCount > 0) window.showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
-                        else window.showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
+                    if (tempImportBuffer.length === 0) {
+                        if (skippedCount > 0) showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
+                        else showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
                     } else {
-                        if (skippedCount > 0) window.showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
-                        window.importSortDesc = true;
-                        window.tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
-                        window.renderImportPreview();
+                        if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
+                        importSortDesc = true;
+                        tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                        renderImportPreview();
                     }
                 } catch (err) { 
                     console.error(err);
-                    window.showToast("Fehler", "Ausgaben konnten nicht gelesen werden.", false); 
+                    showToast("Fehler", "Ausgaben konnten nicht gelesen werden.", false); 
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        window.toggleImportSort = function() {
-            if (window.tempImportBuffer.length === 0) return;
-            window.importSortDesc = !window.importSortDesc;
-            window.tempImportBuffer.sort((a, b) => {
-                if (window.importSortDesc) return b.date.localeCompare(a.date);
+        function toggleImportSort() {
+            if (tempImportBuffer.length === 0) return;
+            importSortDesc = !importSortDesc;
+            tempImportBuffer.sort((a, b) => {
+                if (importSortDesc) return b.date.localeCompare(a.date);
                 return a.date.localeCompare(b.date);
             });
-            window.renderImportPreview();
+            renderImportPreview();
         }
 
-        window.removePreviewItem = function(dateToRemove) {
-            window.tempImportBuffer = window.tempImportBuffer.filter(day => day.date !== dateToRemove);
-            if (window.tempImportBuffer.length === 0) {
+        function removePreviewItem(dateToRemove) {
+            tempImportBuffer = tempImportBuffer.filter(day => day.date !== dateToRemove);
+            if (tempImportBuffer.length === 0) {
                 document.getElementById('import-preview-container').classList.add('hidden');
-                window.showToast("Vorschau leer", "Alle Einträge wurden aus dem Import entfernt.");
+                showToast("Vorschau leer", "Alle Einträge wurden aus dem Import entfernt.");
             } else {
-                window.renderImportPreview();
+                renderImportPreview();
             }
         }
 
-        window.renderImportPreview = function() {
+        function renderImportPreview() {
             const tbody = document.getElementById('import-preview-tbody');
             tbody.innerHTML = '';
-            document.getElementById('preview-count-text').textContent = window.tempImportBuffer.length;
+            document.getElementById('preview-count-text').textContent = tempImportBuffer.length;
             
             const sortIcon = document.getElementById('import-sort-icon');
             if (sortIcon) {
-                sortIcon.className = window.importSortDesc ? "fa-solid fa-arrow-down ml-1 text-stone-400" : "fa-solid fa-arrow-up ml-1 text-stone-400";
+                sortIcon.className = importSortDesc ? "fa-solid fa-arrow-down ml-1 text-stone-400" : "fa-solid fa-arrow-up ml-1 text-stone-400";
             }
 
-            window.tempImportBuffer.forEach(day => {
+            tempImportBuffer.forEach(day => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="border-b border-stone-100 hover:bg-stone-50 transition-colors">
                         <td class="p-3 font-bold text-stone-900">${day.germanDate}</td>
-                        <td class="p-3 text-right">${window.formatCurrency(day.revenue.bar)}</td>
-                        <td class="p-3 text-right">${window.formatCurrency(day.revenue.card)}</td>
-                        <td class="p-3 text-right text-emerald-600 font-bold">${window.formatCurrency(day.revenue.total)}</td>
-                        <td class="p-3 text-right text-red-500 font-bold">${window.formatCurrency(day.expensesSum.total)}</td>
-                        <td class="p-3 text-right font-black text-emerald-600">${window.formatCurrency(day.profit)}</td>
-                        <td class="p-3 text-right font-black text-[#C5A85C]">${window.formatCurrency(day.tuete)}</td>
+                        <td class="p-3 text-right">${formatCurrency(day.revenue.bar)}</td>
+                        <td class="p-3 text-right">${formatCurrency(day.revenue.card)}</td>
+                        <td class="p-3 text-right text-emerald-600 font-bold">${formatCurrency(day.revenue.total)}</td>
+                        <td class="p-3 text-right text-red-500 font-bold">${formatCurrency(day.expensesSum.total)}</td>
+                        <td class="p-3 text-right font-black text-emerald-600">${formatCurrency(day.profit)}</td>
+                        <td class="p-3 text-right font-black text-[#C5A85C]">${formatCurrency(day.tuete)}</td>
                         <td class="p-3 text-center">
                             <button type="button" onclick="removePreviewItem('${day.date}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors cursor-pointer" title="Aus Import entfernen">
                                 <i class="fa-solid fa-trash-can pointer-events-none"></i>
@@ -1966,39 +1940,39 @@
             document.getElementById('import-preview-container').scrollIntoView({ behavior: 'smooth' });
         }
 
-        window.discardBuffer = function() {
-            window.tempImportBuffer = [];
+        function discardBuffer() {
+            tempImportBuffer = [];
             document.getElementById('import-preview-container').classList.add('hidden');
-            window.showToast("Verworfen", "Temporäre Daten gelöscht.");
+            showToast("Verworfen", "Temporäre Daten gelöscht.");
         }
 
-        window.commitBuffer = function() {
-            if (window.loggedInUser === 'inhaber') { window.showToast("Fehler", "Keine Schreibrechte", false); return; }
+        function commitBuffer() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Keine Schreibrechte", false); return; }
             let ins = 0, upd = 0;
-            window.tempImportBuffer.forEach(day => {
-                const idx = window.dbDays.findIndex(d => d.date === day.date);
-                if (idx !== -1) { window.dbDays[idx] = day; upd++; } else { window.dbDays.push(day); ins++; }
+            tempImportBuffer.forEach(day => {
+                const idx = dbDays.findIndex(d => d.date === day.date);
+                if (idx !== -1) { dbDays[idx] = day; upd++; } else { dbDays.push(day); ins++; }
             });
-            window.dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
-            window.showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
-            window.tempImportBuffer = [];
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+            showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
+            tempImportBuffer = [];
             document.getElementById('import-preview-container').classList.add('hidden');
             
-            window.saveYearToCloud();
+            saveYearToCloud();
             
-            window.renderAll();
-            window.switchTab('dashboard');
+            renderAll();
+            switchTab('dashboard');
         }
 
-        window.setupFilterDefaultDates = function() {
+        function setupFilterDefaultDates() {
             const now = new Date();
             const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
             document.getElementById('filter-from').value = `${y}-${m}-01`;
             document.getElementById('filter-to').value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
         }
 
-        window.applyPresetDates = function() {
+        function applyPresetDates() {
             const val = document.getElementById('filter-preset').value;
             const now = new Date(), y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
             if (val === 'all') { document.getElementById('filter-from').value = ''; document.getElementById('filter-to').value = ''; }
@@ -2011,10 +1985,10 @@
                 document.getElementById('filter-from').value = pastDate.toISOString().split('T')[0];
                 document.getElementById('filter-to').value = now.toISOString().split('T')[0];
             }
-            window.renderAll();
+            renderAll();
         }
 
-        window.applyHistPresetDates = function() {
+        function applyHistPresetDates() {
             const val = document.getElementById('hist-filter-preset').value;
             const fromInput = document.getElementById('hist-filter-from');
             const toInput = document.getElementById('hist-filter-to');
@@ -2036,20 +2010,20 @@
                 fromInput.value = `${y}-01-01`;
                 toInput.value = `${y}-12-31`;
             }
-            window.renderHistory();
+            renderHistory();
         }
 
-        window.getFilteredDays = function() {
+        function getFilteredDays() {
             const from = document.getElementById('filter-from').value, to = document.getElementById('filter-to').value;
-            return window.dbDays.filter(d => (!from || d.date >= from) && (!to || d.date <= to));
+            return dbDays.filter(d => (!from || d.date >= from) && (!to || d.date <= to));
         }
 
-        window.getFilteredHistoryDays = function() {
+        function getFilteredHistoryDays() {
             const q = document.getElementById('hist-search').value.toLowerCase();
             const from = document.getElementById('hist-filter-from').value;
             const to = document.getElementById('hist-filter-to').value;
             
-            return window.dbDays.filter(d => {
+            return dbDays.filter(d => {
                 const matchesSearch = d.germanDate.includes(q) || (d.note && d.note.toLowerCase().includes(q));
                 const matchesFrom = !from || d.date >= from;
                 const matchesTo = !to || d.date <= to;
@@ -2057,11 +2031,11 @@
             });
         }
 
-        window.renderAll = function() {
-            if (!window.loggedInUser) return;
-            const filtered = window.getFilteredDays();
+        function renderAll() {
+            if (!loggedInUser) return;
+            const filtered = getFilteredDays();
 
-            if (window.dbDays.length === 0) {
+            if (dbDays.length === 0) {
                 document.getElementById('dashboard-empty').classList.remove('hidden');
                 document.getElementById('dashboard-active').classList.add('hidden');
             } else {
@@ -2069,7 +2043,7 @@
                 document.getElementById('dashboard-active').classList.remove('hidden');
             }
 
-            if (window.activeTab === 'dashboard') {
+            if (activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
                 
                 document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
@@ -2091,13 +2065,13 @@
                             document.querySelectorAll('.dash-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
                                     let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
-                                    el.textContent = window.formatCurrency(cur + val);
+                                    el.textContent = formatCurrency(cur + val);
                                 }
                             });
                             document.querySelectorAll('.pdf-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
                                     let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
-                                    el.textContent = window.formatCurrency(cur + val);
+                                    el.textContent = formatCurrency(cur + val);
                                 }
                             });
                         });
@@ -2113,19 +2087,19 @@
                     }
                 });
                 
-                document.getElementById('kpi-revenue').textContent = window.formatCurrency(r);
-                document.getElementById('kpi-expenses').textContent = window.formatCurrency(e);
-                document.getElementById('kpi-profit').textContent = window.formatCurrency(p);
-                document.getElementById('kpi-tuete').textContent = window.formatCurrency(t);
+                document.getElementById('kpi-revenue').textContent = formatCurrency(r);
+                document.getElementById('kpi-expenses').textContent = formatCurrency(e);
+                document.getElementById('kpi-profit').textContent = formatCurrency(p);
+                document.getElementById('kpi-tuete').textContent = formatCurrency(t);
                 
-                window.drawTrendChart(filtered, 'trend-chart-container');
-                window.drawDistributionChart(tax0, tax7, tax19);
-            } else if (window.activeTab === 'historie') {
-                window.renderHistory();
+                drawTrendChart(filtered, 'trend-chart-container');
+                drawDistributionChart(tax0, tax7, tax19);
+            } else if (activeTab === 'historie') {
+                renderHistory();
             }
         }
 
-        window.drawTrendChart = function(data, containerId) {
+        function drawTrendChart(data, containerId) {
             const c = document.getElementById(containerId);
             if (!c) return;
             if(data.length === 0) { c.innerHTML='<span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #A8A29E;">Keine Daten</span>'; return; }
@@ -2153,7 +2127,7 @@
             </svg>`;
         }
 
-        window.drawDistributionChart = function(tax0, tax7, tax19) {
+        function drawDistributionChart(tax0, tax7, tax19) {
             const total = tax0 + tax7 + tax19;
             const p0 = total > 0 ? ((tax0/total)*100).toFixed(1) : 0;
             const p7 = total > 0 ? ((tax7/total)*100).toFixed(1) : 0;
@@ -2162,24 +2136,24 @@
             document.getElementById('pie-chart-container').innerHTML = `
                 <div class="w-full flex flex-col gap-2">
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200">
-                        <span>Ohne / 0%</span> <span class="text-stone-900">${window.formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
+                        <span>Ohne / 0%</span> <span class="text-stone-900">${formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
                     </div>
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${window.formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
+                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
                     </div>
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-blue-50 p-2 rounded-lg border border-blue-200">
-                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${window.formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
+                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
                     </div>
                 </div>
             `;
-            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${window.formatCurrency(total)}</div>`;
+            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${formatCurrency(total)}</div>`;
         }
 
-        window.renderHistory = function() {
+        function renderHistory() {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
             
-            let filtered = window.getFilteredHistoryDays();
+            let filtered = getFilteredHistoryDays();
             filtered.sort((a,b) => b.date.localeCompare(a.date));
 
             if(filtered.length === 0) {
@@ -2187,18 +2161,18 @@
                  return;
             }
 
-            const isReadOnly = window.loggedInUser === 'inhaber';
+            const isReadOnly = loggedInUser === 'inhaber';
 
             filtered.forEach(d => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="border-b border-stone-100">
                         <td class="p-4 font-bold">${d.germanDate}</td>
-                        <td class="p-4 text-right">${window.formatCurrency(d.revenue.bar)}</td>
-                        <td class="p-4 text-right">${window.formatCurrency(d.revenue.card)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${window.formatCurrency(d.revenue.total)}</td>
-                        <td class="p-4 text-right text-red-500 font-bold">${window.formatCurrency(d.expensesSum.total)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${window.formatCurrency(d.profit)}</td>
-                        <td class="p-4 text-right text-[#C5A85C] font-black">${window.formatCurrency(d.tuete)}</td>
+                        <td class="p-4 text-right">${formatCurrency(d.revenue.bar)}</td>
+                        <td class="p-4 text-right">${formatCurrency(d.revenue.card)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.revenue.total)}</td>
+                        <td class="p-4 text-right text-red-500 font-bold">${formatCurrency(d.expensesSum.total)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.profit)}</td>
+                        <td class="p-4 text-right text-[#C5A85C] font-black">${formatCurrency(d.tuete)}</td>
                         <td class="p-4 text-center">
                             ${isReadOnly ? '<span class="text-[10px] text-stone-400 font-bold uppercase">Gesperrt</span>' : `
                             <div class="flex items-center justify-center gap-2">
@@ -2212,79 +2186,79 @@
             });
         }
 
-        window.quickEditDay = function(dateStr) {
+        function quickEditDay(dateStr) {
             try {
-                window.switchTab('eingabe');
+                switchTab('eingabe');
                 const dateInput = document.getElementById('entry-date');
                 if (dateInput) {
                     dateInput.value = dateStr;
-                    window.handleEntryDateChange();
+                    handleEntryDateChange();
                 }
             } catch(e) {
                 console.error("Bearbeitungsfehler:", e);
-                window.showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
+                showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
             }
         }
 
-        window.deleteSingleDay = function(d) {
-            window.showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
+        function deleteSingleDay(d) {
+            showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
                 try {
-                    window.dbDays = window.dbDays.filter(x => x.date !== d);
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
-                    window.showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
-                    window.saveYearToCloud();
-                    window.renderAll();
+                    dbDays = dbDays.filter(x => x.date !== d);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
+                    saveYearToCloud();
+                    renderAll();
                 } catch(e) {
-                    window.showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
+                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
                 }
             });
         }
 
-        window.clearDatabase = function() {
-            if (window.dbDays.length === 0) {
-                window.showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
+        function clearDatabase() {
+            if (dbDays.length === 0) {
+                showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
                 return;
             }
 
-            const filtered = window.getFilteredHistoryDays();
+            const filtered = getFilteredHistoryDays();
             
             if (filtered.length === 0) {
-                 window.showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
+                 showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
                  return;
             }
 
-            const isFullyFiltered = filtered.length === window.dbDays.length;
+            const isFullyFiltered = filtered.length === dbDays.length;
             
             let title = isFullyFiltered ? "Alles Löschen?" : "Gefilterte Löschen?";
             let desc = isFullyFiltered 
                 ? "Sicher, dass ALLE Daten in diesem Jahr dauerhaft entfernt werden sollen?" 
                 : `Sicher, dass die ${filtered.length} angezeigten Tage dauerhaft gelöscht werden sollen?`;
 
-            window.showConfirmModal(title, desc, () => {
+            showConfirmModal(title, desc, () => {
                 if (isFullyFiltered) {
-                    window.dbDays = []; 
+                    dbDays = []; 
                 } else {
                     const datesToRemove = new Set(filtered.map(d => d.date));
-                    window.dbDays = window.dbDays.filter(d => !datesToRemove.has(d.date));
+                    dbDays = dbDays.filter(d => !datesToRemove.has(d.date));
                 }
                 
-                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
-                window.showToast("Erledigt", "Daten wurden erfolgreich gelöscht.");
-                window.saveYearToCloud();
-                window.renderAll();
+                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                showToast("Erledigt", "Daten wurden erfolgreich gelöscht.");
+                saveYearToCloud();
+                renderAll();
             });
         }
 
-        window.generatePDFReport = function() {
-            const filtered = window.getFilteredDays();
+        function generatePDFReport() {
+            const filtered = getFilteredDays();
             if (filtered.length === 0) {
-                window.showToast("Fehler", "Keine Daten im aktuellen Zeitraum zum Exportieren.", false);
+                showToast("Fehler", "Keine Daten im aktuellen Zeitraum zum Exportieren.", false);
                 return;
             }
 
             const isMonthly = document.getElementById('pdf-monthly-grouping').checked;
 
-            window.showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
+            showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
             const element = document.getElementById('pdf-export-container');
             
             element.style.display = 'block';
@@ -2297,9 +2271,9 @@
             const from = document.getElementById('filter-from').value;
             const to = document.getElementById('filter-to').value;
             let rangeText = "Gesamte Historie";
-            if (from && to) rangeText = `${window.formatGermanDate(from)} bis ${window.formatGermanDate(to)}`;
-            else if (from) rangeText = `Ab ${window.formatGermanDate(from)}`;
-            else if (to) rangeText = `Bis ${window.formatGermanDate(to)}`;
+            if (from && to) rangeText = `${formatGermanDate(from)} bis ${formatGermanDate(to)}`;
+            else if (from) rangeText = `Ab ${formatGermanDate(from)}`;
+            else if (to) rangeText = `Bis ${formatGermanDate(to)}`;
             
             document.getElementById('pdf-date-range').textContent = isMonthly ? rangeText + " (Monatliche Gruppierung)" : rangeText;
             const sel = document.getElementById('filter-preset');
@@ -2307,14 +2281,14 @@
 
             let r=0, e=0, p=0, t=0;
             filtered.forEach(d => { r+=d.revenue.total; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; });
-            document.getElementById('pdf-kpi-rev').textContent = window.formatCurrency(r);
-            document.getElementById('pdf-kpi-exp').textContent = window.formatCurrency(e);
-            document.getElementById('pdf-kpi-prof').textContent = window.formatCurrency(p);
-            document.getElementById('pdf-kpi-tuete').textContent = window.formatCurrency(t);
+            document.getElementById('pdf-kpi-rev').textContent = formatCurrency(r);
+            document.getElementById('pdf-kpi-exp').textContent = formatCurrency(e);
+            document.getElementById('pdf-kpi-prof').textContent = formatCurrency(p);
+            document.getElementById('pdf-kpi-tuete').textContent = formatCurrency(t);
 
             if (!isMonthly) {
                 document.getElementById('pdf-trend-wrapper').style.display = 'block';
-                window.drawTrendChart(filtered, 'pdf-trend-chart-container');
+                drawTrendChart(filtered, 'pdf-trend-chart-container');
             } else {
                 document.getElementById('pdf-trend-wrapper').style.display = 'none'; 
             }
@@ -2350,12 +2324,12 @@
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr style="background-color: #FAFAFA;">
                             <td style="font-weight: 800;">${mName}</td>
-                            <td>${window.formatCurrency(data.bar)}</td>
-                            <td>${window.formatCurrency(data.card)}</td>
-                            <td style="font-weight: 800; color: #1C1917;">${window.formatCurrency(data.total)}</td>
-                            <td style="color: #EF4444;">${window.formatCurrency(data.exp)}</td>
-                            <td style="font-weight: 800; color: #10B981;">${window.formatCurrency(data.profit)}</td>
-                            <td style="font-weight: 800; color: #C5A85C;">${window.formatCurrency(data.tuete)}</td>
+                            <td>${formatCurrency(data.bar)}</td>
+                            <td>${formatCurrency(data.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(data.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(data.exp)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(data.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(data.tuete)}</td>
                         </tr>
                     `);
                 });
@@ -2368,12 +2342,12 @@
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr>
                             <td>${d.germanDate}</td>
-                            <td>${window.formatCurrency(d.revenue.bar)}</td>
-                            <td>${window.formatCurrency(d.revenue.card)}</td>
-                            <td style="font-weight: 800; color: #1C1917;">${window.formatCurrency(d.revenue.total)}</td>
-                            <td style="color: #EF4444;">${window.formatCurrency(d.expensesSum.total)}</td>
-                            <td style="font-weight: 800; color: #10B981;">${window.formatCurrency(d.profit)}</td>
-                            <td style="font-weight: 800; color: #C5A85C;">${window.formatCurrency(d.tuete)}</td>
+                            <td>${formatCurrency(d.revenue.bar)}</td>
+                            <td>${formatCurrency(d.revenue.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(d.revenue.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(d.expensesSum.total)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(d.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(d.tuete)}</td>
                         </tr>
                     `);
                 });
@@ -2382,20 +2356,20 @@
             setTimeout(() => {
                 const opt = {
                     margin:       10, 
-                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${window.currentYear}_${new Date().getTime()}.pdf`,
+                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${currentYear}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 html2pdf().set(opt).from(element).save().then(() => {
-                    window.showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
+                    showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
                     element.style.display = 'none';
                     document.body.style.overflow = 'hidden';
                     document.documentElement.style.overflow = 'hidden';
                 }).catch(err => {
                     console.error("PDF Error:", err);
-                    window.showToast("Fehler", "PDF konnte nicht generiert werden.", false);
+                    showToast("Fehler", "PDF konnte nicht generiert werden.", false);
                     element.style.display = 'none';
                     document.body.style.overflow = 'hidden';
                     document.documentElement.style.overflow = 'hidden';
@@ -2403,8 +2377,8 @@
             }, 200); 
         }
 
-        window.formatGermanDate = function(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
-        window.formatCurrency = function(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
+        function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
+        function formatCurrency(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
     </script>
 </body>
 </html>
