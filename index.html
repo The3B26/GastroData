@@ -22,14 +22,6 @@
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FIREBASE SDKS (Modern v11) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // Wir machen die Module global verfügbar, damit der restliche Code sie nutzen kann
-        window.firebaseSetup = { initializeApp, getFirestore, doc, setDoc, getDoc };
-    </script>
-
     <style>
         :root {
             --gold: #C5A85C;
@@ -239,12 +231,13 @@
                     <h1 class="gold-title text-base font-bold text-stone-900 leading-tight">The 3B - GastroFinance</h1>
                     <div class="flex items-center gap-1.5 mt-0.5">
                         <span class="text-[10px] text-stone-500 font-bold" id="user-role-display">Rolle: Buchhaltung</span>
+                        <span class="text-[10px] text-stone-500 font-bold px-2 py-0.5 bg-stone-100 rounded-md" id="active-year-display">Jahr: 2026</span>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-stone-100">
-                <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadFromCloud()" title="Tippe zum manuellen Aktualisieren">
+                <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadYearFromCloud(currentYear)" title="Tippe zum manuellen Aktualisieren aus der Cloud">
                     <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
                     <span id="db-status-text-inner" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
                 </div>
@@ -342,7 +335,7 @@
                             <i class="fa-solid fa-users text-[#C5A85C] mr-2"></i> Mitarbeiter Gehälter im Zeitraum
                         </h3>
                         <div id="dash-salaries-container" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                            <!-- JS Fills this dynamically based on settings -->
+                            <!-- JS Fills this -->
                         </div>
                     </div>
 
@@ -454,9 +447,8 @@
                                 
                                 <div class="space-y-4">
                                     <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest mb-3"><i class="fa-solid fa-users text-stone-400 mr-1"></i> Mitarbeiter Gehälter</h5>
-                                    
                                     <div id="entry-salaries-container" class="space-y-3">
-                                        <!-- JS Fills this dynamically based on settings -->
+                                        <!-- JS Fills this -->
                                     </div>
                                 </div>
 
@@ -467,7 +459,6 @@
                                             <i class="fa-solid fa-plus"></i> Weitere
                                         </button>
                                     </div>
-                                    
                                     <div id="dynamic-expenses-container" class="space-y-3">
                                         <!-- Wird von JS generiert -->
                                     </div>
@@ -548,6 +539,7 @@
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     
+                    <!-- UPLOAD BEREICHE -->
                     <div class="flex flex-col gap-6">
                         <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
                             <div class="flex items-center gap-3">
@@ -560,10 +552,10 @@
                             </div>
                             <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
                                  class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
-                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="handleExcelUpload(event)">
                                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                                 <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Sicheres Merging mit existierenden Ausgaben!</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Extrahiert Details & sortiert Gehälter automatisch!</p>
                             </div>
                         </div>
 
@@ -586,54 +578,43 @@
                         </div>
                     </div>
 
+                    <!-- FIREBASE CLOUD MANAGER & ADMIN SETTINGS -->
                     <div class="flex flex-col gap-6 w-full">
                         <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
-                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Firebase Manager</h4>
+                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Cloud Manager</h4>
                                     </div>
-                                    <button type="button" onclick="downloadBackup()" class="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer" title="Lokales JSON-Backup laden">
-                                        <i class="fa-solid fa-download"></i> JSON Backup
+                                    <button type="button" onclick="downloadBackup()" class="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer" title="Lokales Backup laden">
+                                        <i class="fa-solid fa-download"></i> Backup
                                     </button>
                                 </div>
-                                <p class="text-xs text-stone-500 font-medium">Verbinde die App mit deiner Firebase Cloud.</p>
+                                <p class="text-xs text-stone-500 font-medium">Wechsle hier das aktive Geschäftsjahr.</p>
                             </div>
                             
                             <div class="space-y-3 w-full mt-4">
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Profil-Name (z.B. Firma 2024)</label>
-                                    <input type="text" id="jsonbin-profile-name" placeholder="Name" class="modern-input text-sm py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Firebase Config (Als JSON einfügen)</label>
-                                    <textarea id="jsonbin-key" rows="4" placeholder='{"apiKey": "...", "projectId": "..."}' class="modern-input text-[11px] py-2 leading-relaxed font-mono bg-stone-50 border-dashed"></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Zugeordnetes Jahr</label>
-                                    <select id="jsonbin-year" class="modern-input text-sm py-2 bg-stone-50">
-                                        <option value="all">Alle Jahre (Kein Filter)</option>
-                                        <option value="2023">2023</option>
-                                        <option value="2024">2024</option>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Aktives Geschäftsjahr</label>
+                                    <select id="firebase-year-select" class="modern-input text-sm py-2 bg-stone-50" onchange="changeCloudYear()">
+                                        <option value="2026" selected>2026</option>
                                         <option value="2025">2025</option>
-                                        <option value="2026">2026</option>
-                                        <option value="2027">2027</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2023">2023</option>
                                     </select>
                                 </div>
-                                <input type="hidden" id="jsonbin-id" value="firebase-mode">
                                 
-                                <button type="button" onclick="saveJSONBinSettings()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-floppy-disk"></i> Firebase Speichern
+                                <button type="button" onclick="loadYearFromCloud(currentYear)" class="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i> Aus Cloud neu laden
                                 </button>
-                            </div>
-
-                            <div class="border-t border-stone-200 pt-4 w-full mt-4">
-                                <h5 class="text-[10px] uppercase font-extrabold text-stone-600 mb-3">Gespeicherte Firebase Datenbanken</h5>
-                                <div id="saved-profiles-list" class="space-y-2 max-h-40 overflow-y-auto w-full pr-1"></div>
+                                <button type="button" onclick="saveYearToCloud()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Jahr in Cloud sichern
+                                </button>
                             </div>
                         </div>
 
+                        <!-- System-Einstellungen (Admin Only) -->
                         <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
@@ -647,7 +628,7 @@
                                     <input type="number" id="cfg-wechselgeld" placeholder="150" class="modern-input text-sm py-2">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Mitarbeiter (Komma-getrennt, keine Sonderzeichen wie /)</label>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Mitarbeiter (Komma-getrennt)</label>
                                     <textarea id="cfg-employees" rows="2" class="modern-input text-xs py-2 leading-relaxed" placeholder="Adam, Mohammed, Karam..."></textarea>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4 mt-2">
@@ -756,6 +737,7 @@
 
     <!-- ================= PDF EXPORT TEMPLATE ================= -->
     <div id="pdf-export-container">
+        <!-- Template unverändert zur Gewährleistung des gewohnten Designs -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #C5A85C; display: flex; align-items: center; justify-content: center; background-color: #FAFAFA;">
@@ -799,9 +781,7 @@
 
         <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
             <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter im Zeitraum</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container">
-                <!-- JS Fills this dynamically -->
-            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container"></div>
         </div>
 
         <div id="pdf-trend-wrapper" style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
@@ -828,9 +808,7 @@
                     <th>Bar Mitnahmen</th>
                 </tr>
             </thead>
-            <tbody id="pdf-tbody">
-                <!-- Dynamisch gefüllt -->
-            </tbody>
+            <tbody id="pdf-tbody"></tbody>
         </table>
 
         <div style="margin-top: 30px; border-top: 1px solid #E7E5E4; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #A8A29E;">
@@ -840,91 +818,170 @@
     </div>
 
 
-    <!-- ================= JAVASCRIPT ================= -->
-    <script>
-        let dbDays = [];
-        let loggedInUser = null;
-        let activeTab = 'dashboard';
-        let tempImportBuffer = [];
-        let enteredPin = ""; 
-        let dbProfiles = [];
-        let activeProfileId = null;
-        let startY = 0;
-        let isPulling = false;
-        
-        let cloudVersion = 0; 
-        let currentFirebaseApp = null;
-        let currentFirestore = null;
-        
-        let importSortDesc = true; 
+    <!-- ================= JAVASCRIPT MIT FIREBASE ================= -->
+    <script type="module">
+        // 1. Firebase Module Importieren
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // DYNAMISCHE SETTINGS (Wurde auf _ umgestellt um Firebase zu schützen)
-        let appSettings = {
+        // 2. Firebase Konfiguration (Angepasst für die Vorschau-Umgebung)
+        const firebaseConfig = {
+    apiKey: "AIzaSyBnTC9OhnWsHE6QL3CwpEPnkAWrmFxFPCw",
+    authDomain: "gastrofibu.firebaseapp.com",
+    databaseURL: "https://gastrofibu-default-rtdb.firebaseio.com",
+    projectId: "gastrofibu",
+    storageBucket: "gastrofibu.firebasestorage.app",
+    messagingSenderId: "193576941075",
+    appId: "1:193576941075:web:7c1ce52629229f7e87f1e6",
+    measurementId: "G-3R67PDW4EZ"
+  };
+
+        // GLOBALE VARIABLEN
+        window.dbDays = [];
+        window.loggedInUser = null;
+        window.activeTab = 'dashboard';
+        window.tempImportBuffer = [];
+        window.enteredPin = ""; 
+        window.currentYear = "2026"; 
+        
+        window.importSortDesc = true; 
+
+        window.appSettings = {
             changeMoney: 150,
-            employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige_Aushilfen"]
+            employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
         };
 
-        let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
-        let readPin = localStorage.getItem('gastro_read_pin') || "2024";
+        window.adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
+        window.readPin = localStorage.getItem('gastro_read_pin') || "2024";
+
+        // --- AUTH & INIT ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+            }
+        };
 
         window.onload = function() {
+            initAuth(); // Start Firebase Auth
+
             if (localStorage.getItem('gastro_app_settings')) {
-                appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
+                window.appSettings = JSON.parse(localStorage.getItem('gastro_app_settings'));
             }
 
             if (localStorage.getItem('gastro_finance_premium_db')) {
                 let loadedDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
-                dbDays = migrateToDynamicSalaries(loadedDays);
+                window.dbDays = window.migrateToDynamicSalaries(loadedDays);
             }
 
-            if (localStorage.getItem('gastro_db_profiles')) {
-                dbProfiles = JSON.parse(localStorage.getItem('gastro_db_profiles'));
-            }
-            activeProfileId = localStorage.getItem('gastro_active_profile_id') || null;
-
-            initAdminSettingsUI();
-            buildDynamicEmployeeUI();
-
-            const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (activeProfile) {
-                document.getElementById('jsonbin-profile-name').value = activeProfile.name;
-                document.getElementById('jsonbin-key').value = activeProfile.apiKey || ''; // Jetzt Firebase Config
-                document.getElementById('jsonbin-year').value = activeProfile.year || 'all';
-            }
+            window.initAdminSettingsUI();
+            window.buildDynamicEmployeeUI();
 
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             document.getElementById('entry-date').value = yesterday.toISOString().split('T')[0];
 
-            setupFilterDefaultDates();
-            initExcelDropzone();
-            setDbStatus('disconnected'); 
-            renderProfilesList();
-            setupPullToRefresh();
-            
-            renderExpenseRows([]);
+            window.setupFilterDefaultDates();
+            window.initExcelDropzone();
+            window.setDbStatus('disconnected'); 
+            window.setupPullToRefresh();
+            window.renderExpenseRows([]);
         };
 
-        // Rekursive Funktion um JSON Keys für Firebase Realtime DB kompatibel zu machen (Wendet NUR auf Keys an)
-        function sanitizeKeysForFirebase(obj) {
-            if (typeof obj !== 'object' || obj === null) {
-                return obj;
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            // Wenn der Nutzer bereits den PIN eingegeben hat und Firebase ready ist, lade Daten
+            if (user && window.loggedInUser) {
+                window.loadYearFromCloud(window.currentYear);
             }
-            if (Array.isArray(obj)) {
-                return obj.map(item => sanitizeKeysForFirebase(item));
-            }
-            const sanitizedObj = {};
-            for (const key in obj) {
-                if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                    // Firebase verbietet . # $ [ ] / in Keys. Wir ersetzen sie durch "_"
-                    const safeKey = key.replace(/[.$#\[\]\/]/g, '_');
-                    sanitizedObj[safeKey] = sanitizeKeysForFirebase(obj[key]);
-                }
-            }
-            return sanitizedObj;
+        });
+
+        // --- FIREBASE CLOUD FUNKTIONEN (Ersetzt JSONbin) ---
+
+        window.changeCloudYear = function() {
+            const select = document.getElementById('firebase-year-select');
+            window.currentYear = select.value;
+            document.getElementById('active-year-display').textContent = `Jahr: ${window.currentYear}`;
+            window.loadYearFromCloud(window.currentYear);
         }
 
-        function migrateToDynamicSalaries(daysArray) {
+        window.loadYearFromCloud = async function(year) {
+            if (!currentUser) {
+                window.showToast("Warte auf Cloud", "Verbindung wird noch aufgebaut...");
+                return;
+            }
+            
+            window.setDbStatus('connecting');
+            window.showToast("Lade Cloud...", `Daten für das Jahr ${year} werden synchronisiert.`);
+            
+            try {
+                // Strikt gepflegte Firebase-Pfade für die sichere Umgebung
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'gastro_jahre', year);
+                const snap = await getDoc(docRef);
+                
+                if (snap.exists()) {
+                    const docData = snap.data();
+                    window.dbDays = docData.data || [];
+                    if(docData.settings) {
+                        window.appSettings = docData.settings;
+                        window.initAdminSettingsUI();
+                        window.buildDynamicEmployeeUI();
+                    }
+                    window.dbDays = window.migrateToDynamicSalaries(window.dbDays);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+                    window.showToast("Erfolg", `Geschäftsjahr ${year} aus der Cloud geladen.`);
+                } else {
+                    // Wenn es das Jahr noch nicht gibt
+                    window.dbDays = [];
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify([]));
+                    window.showToast("Hinweis", `Noch keine Daten für ${year} in der Cloud.`);
+                }
+                
+                window.setDbStatus('connected');
+                window.renderAll();
+            } catch(e) { 
+                console.error(e);
+                window.setDbStatus('disconnected');
+                window.showToast("Cloud-Fehler", "Fehler beim Laden der Daten.", false); 
+            }
+        }
+
+        window.saveYearToCloud = async function() {
+            if (!currentUser) return;
+            if (window.loggedInUser === 'inhaber') { 
+                window.showToast("Fehler", "Keine Cloud-Schreibrechte als Inhaber.", false); 
+                return; 
+            }
+            
+            window.setDbStatus('connecting');
+            window.showToast("Sichere in Cloud...", "Daten werden hochgeladen.");
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'gastro_jahre', window.currentYear);
+                const payload = {
+                    timestamp: new Date().toISOString(),
+                    settings: window.appSettings,
+                    data: window.dbDays
+                };
+                
+                await setDoc(docRef, payload);
+                window.setDbStatus('connected');
+                window.showToast("Gesichert", `Daten für ${window.currentYear} sicher in Firebase gespeichert.`);
+            } catch(e) { 
+                console.error(e);
+                window.setDbStatus('disconnected');
+                window.showToast("Speicherfehler", "Konnte nicht in Firebase speichern.", false); 
+            }
+        }
+
+        // --- RESTLICHE GLOBALE FUNKTIONEN ---
+        window.migrateToDynamicSalaries = function(daysArray) {
             daysArray.forEach(d => {
                 if (d.expensesDetail && d.expensesDetail.salaries && d.expensesDetail.salaries.adam !== undefined) {
                     const s = d.expensesDetail.salaries;
@@ -933,49 +990,47 @@
                     d.expensesDetail.salaries["Mohammed"] = s.moh || {bar:0, card:0};
                     d.expensesDetail.salaries["Karam"] = s.kar || {bar:0, card:0};
                     d.expensesDetail.salaries["Nourddin"] = s.nour || {bar:0, card:0};
-                    // Migriert den alten Namen mit Slash auf Unterstrich
-                    d.expensesDetail.salaries["Ehemalige_Aushilfen"] = s.ehem || s["Ehemalige / Aushilfen"] || {bar:0, card:0};
+                    d.expensesDetail.salaries["Ehemalige / Aushilfen"] = s.ehem || {bar:0, card:0};
                 }
             });
             return daysArray;
         }
 
-        function initAdminSettingsUI() {
-            document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
-            document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
-            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+        window.initAdminSettingsUI = function() {
+            document.getElementById('cfg-wechselgeld').value = window.appSettings.changeMoney;
+            document.getElementById('cfg-employees').value = window.appSettings.employees.join(", ");
+            document.getElementById('hint-wechselgeld').textContent = window.appSettings.changeMoney;
         }
 
-        function saveSystemSettings() {
-            if (loggedInUser !== 'buchhaltung') return;
+        window.saveSystemSettings = function() {
+            if (window.loggedInUser !== 'buchhaltung') return;
 
             const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
             const newRead = document.getElementById('cfg-read-pin').value.trim();
             if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
-                adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', adminPin); document.getElementById('cfg-admin-pin').value = '';
+                window.adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', window.adminPin); document.getElementById('cfg-admin-pin').value = '';
             }
             if (newRead && newRead.length === 4 && !isNaN(newRead)) {
-                readPin = newRead; localStorage.setItem('gastro_read_pin', readPin); document.getElementById('cfg-read-pin').value = '';
+                window.readPin = newRead; localStorage.setItem('gastro_read_pin', window.readPin); document.getElementById('cfg-read-pin').value = '';
             }
 
             const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
-            if (!isNaN(wg) && wg >= 0) appSettings.changeMoney = wg;
+            if (!isNaN(wg) && wg >= 0) window.appSettings.changeMoney = wg;
 
             const empStr = document.getElementById('cfg-employees').value;
             if (empStr.trim()) {
-                // Keine Slashes zulassen
-                appSettings.employees = empStr.replace(/\//g, '_').split(',').map(s => s.trim()).filter(s => s.length > 0);
+                window.appSettings.employees = empStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
             }
 
-            localStorage.setItem('gastro_app_settings', JSON.stringify(appSettings));
-            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+            localStorage.setItem('gastro_app_settings', JSON.stringify(window.appSettings));
+            document.getElementById('hint-wechselgeld').textContent = window.appSettings.changeMoney;
             
-            buildDynamicEmployeeUI();
-            renderAll();
-            showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
+            window.buildDynamicEmployeeUI();
+            window.renderAll();
+            window.showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
         }
 
-        function buildDynamicEmployeeUI() {
+        window.buildDynamicEmployeeUI = function() {
             const dashContainer = document.getElementById('dash-salaries-container');
             const entryContainer = document.getElementById('entry-salaries-container');
             const pdfContainer = document.getElementById('pdf-salaries-container');
@@ -984,8 +1039,7 @@
             entryContainer.innerHTML = '';
             if (pdfContainer) pdfContainer.innerHTML = '';
 
-            appSettings.employees.forEach((emp, index) => {
-                
+            window.appSettings.employees.forEach((emp) => {
                 dashContainer.insertAdjacentHTML('beforeend', `
                     <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
                         <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${emp}</span>
@@ -1021,56 +1075,29 @@
             });
         }
 
-        // --- LOKALES JSON BACKUP ---
-        function downloadBackup() {
-            if (dbDays.length === 0) {
-                showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
+        window.downloadBackup = function() {
+            if (window.dbDays.length === 0) {
+                window.showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
                 return;
             }
             const payload = {
                 timestamp: new Date().toISOString(),
-                settings: appSettings,
-                profiles: dbProfiles,
-                data: dbDays
+                settings: window.appSettings,
+                data: window.dbDays
             };
-            
-            // WICHTIG: Wendet die Sanitization exklusiv auf Keys an, bevor die Datei erzeugt wird!
-            const safePayload = sanitizeKeysForFirebase(payload);
-
-            const blob = new Blob([JSON.stringify(safePayload, null, 2)], {type: "application/json"});
+            const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `GastroFinance_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `GastroFinance_Backup_${window.currentYear}_${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast("Backup erstellt", "Datei wurde sicher heruntergeladen.");
+            window.showToast("Backup erstellt", "Datei wurde heruntergeladen.");
         }
 
-        // --- FIREBASE HELPER ---
-        async function getFirebaseDb(configStr) {
-            if (!window.firebaseSetup) throw new Error("Firebase SDK lädt noch.");
-            const configObj = JSON.parse(configStr);
-
-            if (currentFirebaseApp && currentFirebaseApp.options.projectId === configObj.projectId) {
-                return currentFirestore;
-            }
-
-            try {
-                const appName = "app_" + Date.now();
-                currentFirebaseApp = window.firebaseSetup.initializeApp(configObj, appName);
-                currentFirestore = window.firebaseSetup.getFirestore(currentFirebaseApp);
-                return currentFirestore;
-            } catch (e) {
-                console.error(e);
-                throw new Error("Fehler bei der Firebase Initialisierung.");
-            }
-        }
-
-        // --- UI & AUTH ---
-        function setDbStatus(state) {
+        window.setDbStatus = function(state) {
             const dotOut = document.getElementById('db-status-dot'); 
             const textOut = document.getElementById('db-status-text'); 
             const dotIn = document.getElementById('db-status-dot-inner'); 
@@ -1097,7 +1124,7 @@
             }
         }
 
-        function showConfirmModal(title, desc, confirmCallback) {
+        window.showConfirmModal = function(title, desc, confirmCallback) {
             const modal = document.getElementById('custom-modal');
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-desc').textContent = desc;
@@ -1111,7 +1138,7 @@
             modal.classList.remove('hidden');
         }
 
-        function showToast(title, message, isSuccess = true) {
+        window.showToast = function(title, message, isSuccess = true) {
             const toast = document.getElementById('system-toast');
             document.getElementById('toast-title').textContent = title;
             document.getElementById('toast-message').textContent = message;
@@ -1124,77 +1151,77 @@
             setTimeout(() => { toast.classList.add('hidden'); }, 4000);
         }
 
-        function pressPin(num) {
-            if (enteredPin.length < 4) {
-                enteredPin += num;
-                updatePinDots();
-                if (enteredPin.length === 4) setTimeout(checkPin, 200);
+        window.pressPin = function(num) {
+            if (window.enteredPin.length < 4) {
+                window.enteredPin += num;
+                window.updatePinDots();
+                if (window.enteredPin.length === 4) setTimeout(window.checkPin, 200);
             }
         }
 
-        function clearPin() { enteredPin = ""; updatePinDots(); }
-        function backspacePin() { enteredPin = enteredPin.slice(0, -1); updatePinDots(); }
+        window.clearPin = function() { window.enteredPin = ""; window.updatePinDots(); }
+        window.backspacePin = function() { window.enteredPin = window.enteredPin.slice(0, -1); window.updatePinDots(); }
 
-        function updatePinDots() {
+        window.updatePinDots = function() {
             const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
             dots.forEach((dot, index) => {
-                if (index < enteredPin.length) dot.classList.add('filled');
+                if (index < window.enteredPin.length) dot.classList.add('filled');
                 else dot.classList.remove('filled');
             });
         }
 
-        function checkPin() {
+        window.checkPin = function() {
             const dotsContainer = document.getElementById('pin-dots-container');
 
-            if (enteredPin === adminPin) {
-                loggedInUser = "buchhaltung";
-                completeLogin();
-            } else if (enteredPin === readPin) {
-                loggedInUser = "inhaber";
-                completeLogin();
+            if (window.enteredPin === window.adminPin) {
+                window.loggedInUser = "buchhaltung";
+                window.completeLogin();
+            } else if (window.enteredPin === window.readPin) {
+                window.loggedInUser = "inhaber";
+                window.completeLogin();
             } else {
                 dotsContainer.classList.add('shake-animation');
-                showToast("Falsche PIN", "Zugriff verweigert.", false);
-                setTimeout(() => { dotsContainer.classList.remove('shake-animation'); clearPin(); }, 400);
+                window.showToast("Falsche PIN", "Zugriff verweigert.", false);
+                setTimeout(() => { dotsContainer.classList.remove('shake-animation'); window.clearPin(); }, 400);
             }
         }
 
-        function completeLogin() {
+        window.completeLogin = function() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-portal').classList.remove('hidden');
             document.getElementById('app-portal').classList.add('flex');
             document.getElementById('bottom-tab-bar').classList.remove('hidden');
 
-            if (loggedInUser === 'inhaber') {
+            if (window.loggedInUser === 'inhaber') {
                 document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
                 document.getElementById('admin-sys-config').classList.add('hidden');
-                disableWritePermissions();
+                window.disableWritePermissions();
             } else {
                 document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
                 document.getElementById('admin-sys-config').classList.remove('hidden');
             }
 
-            showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
-            switchTab('dashboard');
-            renderAll();
+            window.showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
+            window.switchTab('dashboard');
+            window.renderAll();
             
-            if(activeProfileId) {
-                loadFromCloud(true); 
+            // Wenn Firebase schon im Hintergrund geladen hat
+            if(currentUser) {
+                window.loadYearFromCloud(window.currentYear); 
             }
         }
 
-        function logout() {
-            loggedInUser = null;
+        window.logout = function() {
+            window.loggedInUser = null;
             document.getElementById('app-portal').classList.add('hidden');
             document.getElementById('app-portal').classList.remove('flex');
             document.getElementById('bottom-tab-bar').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
-            clearPin();
-            setDbStatus('disconnected');
-            showToast("Abgemeldet", "System sicher gesperrt.");
+            window.clearPin();
+            window.showToast("Abgemeldet", "System sicher gesperrt.");
         }
 
-        function disableWritePermissions() {
+        window.disableWritePermissions = function() {
             const dropzone = document.getElementById('drop-zone');
             if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
             const dropzone2 = document.getElementById('drop-zone-ausgaben');
@@ -1202,18 +1229,18 @@
             
             const inputs = document.querySelectorAll('input, select, textarea');
             inputs.forEach(i => {
-                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping'].includes(i.id)) {
+                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping', 'firebase-year-select'].includes(i.id)) {
                     i.disabled = true;
                 }
             });
-            const buttons = document.querySelectorAll('form button');
+            const buttons = document.querySelectorAll('form button, #tab-daten button');
             buttons.forEach(b => {
-                if(!b.id.includes('btn-tab')) b.disabled = true;
+                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup')) b.disabled = true;
             });
         }
 
-        function switchTab(tabId) {
-            activeTab = tabId;
+        window.switchTab = function(tabId) {
+            window.activeTab = tabId;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
 
@@ -1227,10 +1254,12 @@
                 btn.classList.add('tab-active', 'scale-105');
                 btn.classList.remove('text-stone-400');
             }
-            renderAll();
+            window.renderAll();
         }
 
-        function setupPullToRefresh() {
+        window.setupPullToRefresh = function() {
+            let startY = 0;
+            let isPulling = false;
             const scrollable = document.getElementById('scroll-container');
             const spinner = document.getElementById('pull-to-refresh-spinner');
             
@@ -1253,10 +1282,10 @@
             scrollable.addEventListener('touchend', () => {
                 if (isPulling) {
                     if (spinner.style.height === '60px') {
-                        if (activeProfileId && loggedInUser !== null) {
-                            loadFromCloud(false);
+                        if (currentUser && window.loggedInUser !== null) {
+                            window.loadYearFromCloud(window.currentYear);
                         } else {
-                            showToast("Daten aktualisiert", "Keine Cloud aktiv. Lokal geladen.");
+                            window.showToast("Lokal", "Keine Cloud aktiv.");
                         }
                     }
                     setTimeout(() => {
@@ -1268,241 +1297,7 @@
             }, { passive: true });
         }
 
-        // --- FIREBASE PROFILE MANAGEMENT ---
-        function renderProfilesList() {
-            const container = document.getElementById('saved-profiles-list');
-            container.innerHTML = '';
-
-            if (dbProfiles.length === 0) {
-                container.innerHTML = `<span class="text-stone-400 italic text-xs block py-2 font-medium">Keine Firebase-Profile hinterlegt.</span>`;
-                return;
-            }
-
-            dbProfiles.forEach(p => {
-                const isActive = p.id === activeProfileId;
-                const activeClass = isActive 
-                    ? "border-[#C5A85C] bg-[#F6F3EB]" 
-                    : "border-stone-200 bg-white";
-
-                const badge = isActive
-                    ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#C5A85C]/15 text-[#A3853F] border border-[#C5A85C]/30 uppercase">Aktiv</span>`
-                    : "";
-
-                const yearBadge = p.year && p.year !== 'all' 
-                    ? `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Jahr: ${p.year}</span>` 
-                    : `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-stone-200 text-stone-600">Alle Jahre</span>`;
-
-                const item = `
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border ${activeClass} transition-all gap-3">
-                        <div class="space-y-1 w-full">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold text-stone-900">${p.name}</span>
-                                ${badge}
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="text-[9px] font-semibold text-stone-400">Firebase Firestore</div>
-                                ${yearBadge}
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-1.5 w-full sm:w-auto">
-                            <button type="button" onclick="activateProfile('${p.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer">
-                                Aktivieren
-                            </button>
-                            <button type="button" onclick="deleteProfile('${p.id}')" class="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-all cursor-pointer" title="Profil löschen">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', item);
-            });
-        }
-
-        function saveJSONBinSettings() {
-            const name = document.getElementById('jsonbin-profile-name').value.trim();
-            const configStr = document.getElementById('jsonbin-key').value.trim();
-            const year = document.getElementById('jsonbin-year').value;
-
-            if (!name || !configStr) {
-                showToast("Fehler", "Bitte Profil-Name und Firebase JSON Config ausfüllen.", false);
-                return;
-            }
-
-            try {
-                JSON.parse(configStr); // Validiere JSON
-            } catch(e) {
-                showToast("Formatfehler", "Die Firebase Config ist kein gültiges JSON.", false);
-                return;
-            }
-
-            let existingProfile = dbProfiles.find(p => p.name.toLowerCase() === name.toLowerCase());
-
-            if (existingProfile) {
-                existingProfile.apiKey = configStr; // Wir speichern die Config im API-Key Feld (Wiederverwendung)
-                existingProfile.year = year;
-                activeProfileId = existingProfile.id;
-            } else {
-                const newProfile = {
-                    id: 'prof-' + Date.now(),
-                    name: name,
-                    apiKey: configStr, 
-                    binId: 'firebase',
-                    year: year
-                };
-                dbProfiles.push(newProfile);
-                activeProfileId = newProfile.id;
-            }
-
-            localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
-            localStorage.setItem('gastro_active_profile_id', activeProfileId);
-
-            showToast("Firebase gespeichert", `Datenbank-Profil „${name}“ gesichert.`);
-            renderProfilesList();
-            loadFromCloud(true); 
-        }
-
-        function activateProfile(id) {
-            const profile = dbProfiles.find(p => p.id === id);
-            if (!profile) return;
-
-            activeProfileId = id;
-            localStorage.setItem('gastro_active_profile_id', activeProfileId);
-
-            document.getElementById('jsonbin-profile-name').value = profile.name;
-            document.getElementById('jsonbin-key').value = profile.apiKey || '';
-            document.getElementById('jsonbin-year').value = profile.year || 'all';
-
-            showToast("Profil aktiviert", `Verbindung zu „${profile.name}“ hergestellt.`);
-            renderProfilesList();
-            loadFromCloud(true);
-        }
-
-        function deleteProfile(id) {
-            showConfirmModal(
-                "Profil löschen?",
-                `Möchtest du dieses Firebase-Profil wirklich löschen?`,
-                () => {
-                    dbProfiles = dbProfiles.filter(p => p.id !== id);
-                    if (activeProfileId === id) {
-                        activeProfileId = dbProfiles.length > 0 ? dbProfiles[0].id : null;
-                        localStorage.setItem('gastro_active_profile_id', activeProfileId || '');
-                        
-                        if (activeProfileId) {
-                            const newActive = dbProfiles.find(p => p.id === activeProfileId);
-                            document.getElementById('jsonbin-profile-name').value = newActive.name;
-                            document.getElementById('jsonbin-key').value = newActive.apiKey || '';
-                            document.getElementById('jsonbin-year').value = newActive.year || 'all';
-                            loadFromCloud(true);
-                        } else {
-                            document.getElementById('jsonbin-profile-name').value = '';
-                            document.getElementById('jsonbin-key').value = '';
-                            document.getElementById('jsonbin-year').value = 'all';
-                            setDbStatus('disconnected');
-                        }
-                    }
-
-                    localStorage.setItem('gastro_db_profiles', JSON.stringify(dbProfiles));
-                    showToast("Profil gelöscht", "Profil wurde erfolgreich entfernt.");
-                    renderProfilesList();
-                }
-            );
-        }
-
-        // --- FIREBASE SYNC LOGIK ---
-        async function loadFromCloud(silent = false) {
-            const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (!activeProfile || !activeProfile.apiKey) {
-                if(!silent) showToast("Fehler", "Keine gültige Firebase Config hinterlegt.", false); 
-                return; 
-            }
-            
-            setDbStatus('connecting');
-            if(!silent) showToast("Lade...", "Verbindung zu Firestore wird aufgebaut...");
-            
-            try {
-                const db = await getFirebaseDb(activeProfile.apiKey);
-                const docRef = window.firebaseSetup.doc(db, "gastro_data", activeProfile.year || 'all');
-                const docSnap = await window.firebaseSetup.getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    let record = docSnap.data();
-                    if (record.version) cloudVersion = record.version;
-                    
-                    if (record.data && Array.isArray(record.data)) { dbDays = record.data; } 
-                    else { dbDays = []; }
-
-                    dbDays = migrateToDynamicSalaries(dbDays);
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                } else {
-                    dbDays = [];
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                }
-
-                setDbStatus('connected');
-                if(!silent) showToast("Erfolg", "Daten aus Firestore synchronisiert.");
-                renderAll();
-            } catch(e) { 
-                setDbStatus('disconnected');
-                if(!silent) showToast("Netzwerkfehler", "Konnte nicht aus Firebase laden.", false); 
-                console.error("Firebase Load Error:", e);
-            }
-        }
-
-        async function saveToJSONBin() {
-            // Wird jetzt für Firebase Cloud Save wiederverwendet (Name behalten für Kompatibilität)
-            const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            if (!activeProfile || !activeProfile.apiKey) {
-                showToast("Fehler", "Keine gültige Firebase Config.", false); 
-                return; 
-            }
-            
-            setDbStatus('connecting');
-            showToast("Prüfe Cloud...", "Suche nach Version-Konflikten...");
-
-            try {
-                const db = await getFirebaseDb(activeProfile.apiKey);
-                const docRef = window.firebaseSetup.doc(db, "gastro_data", activeProfile.year || 'all');
-                const docSnap = await window.firebaseSetup.getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    let checkRecord = docSnap.data();
-                    if (checkRecord.version && checkRecord.version > cloudVersion) {
-                        showConfirmModal("Konflikt erkannt!", "Achtung: Es gibt neuere Daten in Firebase (anderes Gerät). Wenn du jetzt speicherst, überschreibst du diese. Trotzdem speichern?", () => {
-                            forceSaveToCloud(db, docRef);
-                        });
-                        setDbStatus('connected');
-                        return; 
-                    }
-                }
-
-                forceSaveToCloud(db, docRef);
-
-            } catch(e) {
-                showToast("Netzwerkfehler", "Konnte Firebase Version nicht prüfen.", false);
-                setDbStatus('disconnected');
-            }
-        }
-
-        async function forceSaveToCloud(db, docRef) {
-            showToast("Sichere...", "Lade in Firestore hoch...");
-            cloudVersion = Date.now(); 
-            
-            try {
-                // HIER IST DEINE SANITIZATION BEIM CLOUD-SPEICHERN
-                const sanitizedData = sanitizeKeysForFirebase(dbDays);
-                const payload = { data: sanitizedData, version: cloudVersion };
-                
-                await window.firebaseSetup.setDoc(docRef, payload);
-                
-                setDbStatus('connected');
-                showToast("Gesichert", "Daten erfolgreich in Firestore aktualisiert.");
-            } catch(e) { 
-                setDbStatus('disconnected');
-                showToast("Speicherfehler", e.message, false); 
-            }
-        }
-
-        function renderExpenseRows(generalExpenses = []) {
+        window.renderExpenseRows = function(generalExpenses = []) {
             const container = document.getElementById('dynamic-expenses-container');
             container.innerHTML = '';
             
@@ -1536,11 +1331,10 @@
                 `;
                 container.insertAdjacentHTML('beforeend', rowHtml);
             });
-            
-            calculateLiveFormula();
+            window.calculateLiveFormula();
         }
 
-        function addDynamicExpenseRow() {
+        window.addDynamicExpenseRow = function() {
             const container = document.getElementById('dynamic-expenses-container');
             const rowCount = container.querySelectorAll('.dynamic-expense-row').length + 1;
             const rowHtml = `
@@ -1567,11 +1361,11 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        function calculateLiveFormula() {
+        window.calculateLiveFormula = function() {
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
             
-            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
+            const actualBar = rawBar > 0 ? rawBar - window.appSettings.changeMoney : 0;
             const totalRevenue = actualBar + cardRev; 
 
             let expSumBar = 0;
@@ -1591,22 +1385,22 @@
             const profit = totalRevenue - combinedExpenses;
             const tuete = actualBar - expSumBar;
 
-            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
-            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
+            document.getElementById('calc-preview-total').textContent = window.formatCurrency(totalRevenue);
+            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + window.formatCurrency(combinedExpenses);
             
             document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
             document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
 
-            document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
+            document.getElementById('calc-preview-profit').textContent = window.formatCurrency(profit);
             document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
             
-            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
+            document.getElementById('calc-preview-tuete').textContent = window.formatCurrency(tuete);
             document.getElementById('calc-preview-tuete').style.color = tuete >= 0 ? "var(--gold)" : "#EF4444";
         }
 
-        function handleEntryDateChange() {
+        window.handleEntryDateChange = function() {
             const pickedDate = document.getElementById('entry-date').value;
-            const existingDay = dbDays.find(d => d.date === pickedDate);
+            const existingDay = window.dbDays.find(d => d.date === pickedDate);
 
             document.getElementById('entry-rev-bar').value = '';
             document.getElementById('entry-rev-card').value = '';
@@ -1618,7 +1412,7 @@
 
             if (existingDay) {
                 if (existingDay.revenue.bar > 0 || existingDay.revenue.total > 0) {
-                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + appSettings.changeMoney;
+                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + window.appSettings.changeMoney;
                 }
                 document.getElementById('entry-rev-card').value = existingDay.revenue.card > 0 ? existingDay.revenue.card : '';
 
@@ -1642,23 +1436,23 @@
                     }
                 }
                 
-                renderExpenseRows(loadedGenerals);
-                showToast("Geladen", `Tag ${formatGermanDate(pickedDate)} existiert bereits.`);
+                window.renderExpenseRows(loadedGenerals);
+                window.showToast("Geladen", `Tag ${window.formatGermanDate(pickedDate)} existiert bereits.`);
             } else {
-                renderExpenseRows([]);
+                window.renderExpenseRows([]);
             }
-            calculateLiveFormula();
+            window.calculateLiveFormula();
         }
 
-        function saveManualEntry() {
-            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+        window.saveManualEntry = function() {
+            if (window.loggedInUser === 'inhaber') { window.showToast("Fehler", "Nur Leserechte.", false); return; }
 
             const pickedDate = document.getElementById('entry-date').value;
-            if(!pickedDate) { showToast("Fehler", "Bitte wähle ein Datum.", false); return; }
+            if(!pickedDate) { window.showToast("Fehler", "Bitte wähle ein Datum.", false); return; }
 
             const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
             const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
-            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0; 
+            const actualBar = rawBar > 0 ? rawBar - window.appSettings.changeMoney : 0; 
             const totalRevenue = actualBar + cardRev; 
 
             let expSumBar = 0;
@@ -1692,7 +1486,7 @@
 
             const dayObj = {
                 date: pickedDate,
-                germanDate: formatGermanDate(pickedDate),
+                germanDate: window.formatGermanDate(pickedDate),
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
                 expensesDetail: {
                     salaries: exSalaries,
@@ -1704,36 +1498,35 @@
                 note: "Manuelle Buchung"
             };
 
-            const idx = dbDays.findIndex(d => d.date === pickedDate);
-            if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
+            const idx = window.dbDays.findIndex(d => d.date === pickedDate);
+            if (idx !== -1) { window.dbDays[idx] = dayObj; } else { window.dbDays.push(dayObj); }
 
-            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+            window.dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
             
-            showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
-            if(activeProfileId) saveToJSONBin(); // Hier wird intern forceSaveToCloud aufgerufen
+            window.showToast("Gespeichert", `Tag ${window.formatGermanDate(pickedDate)} verbucht.`);
+            window.saveYearToCloud();
 
-            renderAll();
-            switchTab('dashboard');
+            window.renderAll();
+            window.switchTab('dashboard');
         }
 
-        // --- EXCEL PARSER (1: TAGESMAPPEN) ---
-        function initExcelDropzone() {
+        window.initExcelDropzone = function() {
             const dz1 = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.add('bg-stone-100'); }));
             ['dragleave', 'drop'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.remove('bg-stone-100'); }));
-            dz1.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseExcelFile(e.dataTransfer.files[0]); });
+            dz1.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) window.parseExcelFile(e.dataTransfer.files[0]); });
             
             const dz2 = document.getElementById('drop-zone-ausgaben');
             ['dragenter', 'dragover'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.add('bg-red-100'); }));
             ['dragleave', 'drop'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.remove('bg-red-100'); }));
-            dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseAusgabenFile(e.dataTransfer.files[0]); });
+            dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) window.parseAusgabenFile(e.dataTransfer.files[0]); });
         }
         
-        function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
-        function handleAusgabenUpload(e) { if(e.target.files.length > 0) parseAusgabenFile(e.target.files[0]); }
+        window.handleExcelUpload = function(e) { if(e.target.files.length > 0) window.parseExcelFile(e.target.files[0]); }
+        window.handleAusgabenUpload = function(e) { if(e.target.files.length > 0) window.parseAusgabenFile(e.target.files[0]); }
 
-        function recalcDaySums(dayObj) {
+        window.recalcDaySums = function(dayObj) {
             let b = 0, c = 0;
             if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
                 const sal = dayObj.expensesDetail.salaries;
@@ -1754,17 +1547,32 @@
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
-        // --- SMARTER TAGESMAPPEN-SCANNER ---
-        function parseExcelFile(file) {
-            const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-            const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
+        window.parseExcelFile = function(file) {
+            // Json direkt-Import erlauben als Fallback
+            if (file.name.endsWith('.json')) {
+                const r = new FileReader();
+                r.onload = e => {
+                    try {
+                        const d = JSON.parse(e.target.result);
+                        let arr = d.data || d;
+                        if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
+                        window.dbDays = arr;
+                        localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+                        window.saveYearToCloud();
+                        window.renderAll();
+                        window.showToast("JSON Importiert", "Backup wurde direkt eingespielt.");
+                    } catch(err) { window.showToast("Fehler", "JSON ungültig.", false); }
+                };
+                r.readAsText(file);
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    tempImportBuffer = [];
+                    window.tempImportBuffer = [];
                     let skippedCount = 0;
 
                     const dateRegex = /^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/;
@@ -1780,21 +1588,17 @@
 
                         if (!sheetYear) {
                             const monthInt = parseInt(month, 10);
-                            if (monthInt >= 9 && monthInt <= 12) { 
-                                sheetYear = "2024"; 
-                            } else { 
-                                sheetYear = "2025"; 
-                            }
+                            if (monthInt >= 9 && monthInt <= 12) { sheetYear = "2024"; } 
+                            else { sheetYear = "2025"; }
                         }
 
-                        if (profileYearFilter !== 'all' && sheetYear !== profileYearFilter) {
+                        if (window.currentYear !== 'all' && sheetYear !== window.currentYear) {
                             skippedCount++;
                             return;
                         }
 
                         const fullGermanDate = `${day}.${month}.${sheetYear}`;
                         const isoDate = `${sheetYear}-${month}-${day}`;
-
                         const ws = workbook.Sheets[sheetName];
                         const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
@@ -1842,7 +1646,7 @@
                             }
                         }
 
-                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - appSettings.changeMoney : 0; 
+                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - window.appSettings.changeMoney : 0; 
                         const calculatedTotalRevenue = actualBarRevenue + revCard;
 
                         let inAusgabenSection = false;
@@ -1897,104 +1701,87 @@
                                 let isCard = false;
                                 let remarkStr = (remarkCol !== -1 && row[remarkCol]) ? String(row[remarkCol]).toLowerCase() : row.join(" ").toLowerCase();
                                 
-                                if (remarkStr.includes("karte") || remarkStr.includes("überweisung")) {
-                                    isCard = true;
-                                }
+                                if (remarkStr.includes("karte") || remarkStr.includes("überweisung")) { isCard = true; }
 
                                 extractedExpenses.push({
-                                    name: name,
-                                    bar: isCard ? 0 : Math.abs(amount),
-                                    card: isCard ? Math.abs(amount) : 0,
-                                    tax: 0 
+                                    name: name, bar: isCard ? 0 : Math.abs(amount), card: isCard ? Math.abs(amount) : 0, tax: 0 
                                 });
                             }
                         }
 
                         let exSalaries = {};
-                        appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+                        window.appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
                         let exGeneral = [];
 
                         extractedExpenses.forEach(exp => {
                             let ln = exp.name.toLowerCase();
                             if (ln.includes("gehalt") || ln.includes("lohn") || ln.includes("vorschuss")) {
                                 let matched = false;
-                                for (let emp of appSettings.employees) {
-                                    if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige_Aushilfen") {
+                                for (let emp of window.appSettings.employees) {
+                                    if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige / Aushilfen") {
                                         exSalaries[emp].bar += exp.bar;
                                         exSalaries[emp].card += exp.card;
                                         matched = true;
                                         break;
                                     }
                                 }
-                                if (!matched && exSalaries["Ehemalige_Aushilfen"]) {
-                                    exSalaries["Ehemalige_Aushilfen"].bar += exp.bar;
-                                    exSalaries["Ehemalige_Aushilfen"].card += exp.card;
+                                if (!matched && exSalaries["Ehemalige / Aushilfen"]) {
+                                    exSalaries["Ehemalige / Aushilfen"].bar += exp.bar;
+                                    exSalaries["Ehemalige / Aushilfen"].card += exp.card;
                                 }
                             } else {
                                 exGeneral.push(exp);
                             }
                         });
 
-
-                        let existingDay = dbDays.find(d => d.date === isoDate);
+                        let existingDay = window.dbDays.find(d => d.date === isoDate);
                         let dayObj;
 
                         if (existingDay) {
                             dayObj = JSON.parse(JSON.stringify(existingDay));
                             dayObj.revenue = { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard };
-                            
                             if (!dayObj.expensesDetail) {
                                 dayObj.expensesDetail = { salaries: {}, general: [] };
-                                appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
+                                window.appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
-
                             Object.keys(exSalaries).forEach(empKey => {
                                 if (!dayObj.expensesDetail.salaries[empKey]) dayObj.expensesDetail.salaries[empKey] = {bar:0, card:0};
                                 dayObj.expensesDetail.salaries[empKey].bar += exSalaries[empKey].bar;
                                 dayObj.expensesDetail.salaries[empKey].card += exSalaries[empKey].card;
                             });
-                            
                             exGeneral.forEach(nx => {
                                 const exists = dayObj.expensesDetail.general.find(g => g.name === nx.name && g.bar === nx.bar && g.card === nx.card);
                                 if (!exists) dayObj.expensesDetail.general.push(nx);
                             });
-
-                            recalcDaySums(dayObj);
+                            window.recalcDaySums(dayObj);
                         } else {
                             dayObj = {
-                                date: isoDate,
-                                germanDate: fullGermanDate,
+                                date: isoDate, germanDate: fullGermanDate,
                                 revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
-                                expensesDetail: {
-                                    salaries: exSalaries,
-                                    general: exGeneral
-                                },
+                                expensesDetail: { salaries: exSalaries, general: exGeneral },
                                 note: "Mappen-Import"
                             };
-                            recalcDaySums(dayObj);
+                            window.recalcDaySums(dayObj);
                         }
-
-                        tempImportBuffer.push(dayObj);
+                        window.tempImportBuffer.push(dayObj);
                     });
 
-                    if (tempImportBuffer.length === 0) { 
-                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert.`, false);
-                        else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                    if (window.tempImportBuffer.length === 0) { 
+                        if (skippedCount > 0) window.showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert (Anderes Jahr).`, false);
+                        else window.showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
                         return; 
                     }
-                    if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
+                    if (skippedCount > 0) window.showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
                     
-                    importSortDesc = true;
-                    tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
-                    
-                    renderImportPreview();
-                } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
+                    window.importSortDesc = true;
+                    window.tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                    window.renderImportPreview();
+                } catch (err) { window.showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // --- EXCEL PARSER (2: AUSGABEN IMPORT MIT UMSATZSTEUER) ---
-        function parseAusgabenFile(file) {
+        window.parseAusgabenFile = function(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -2003,12 +1790,9 @@
                     const ws = workbook.Sheets[workbook.SheetNames[0]]; 
                     const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-                    if (rawJson.length < 2) { showToast("Fehler", "Datei scheint leer zu sein.", false); return; }
+                    if (rawJson.length < 2) { window.showToast("Fehler", "Datei scheint leer zu sein.", false); return; }
 
                     const headers = rawJson[0];
-                    const activeProfile = dbProfiles.find(p => p.id === activeProfileId);
-                    const profileYearFilter = activeProfile && activeProfile.year ? activeProfile.year : 'all';
-                    
                     const dateIdx = headers.findIndex(h => h && /buchungsdatum|datum der kontobewegung|rechnungsdatum/i.test(String(h).trim()));
                     const nameIdx = headers.findIndex(h => h && /lieferanten|senders\/empfängers|kundenname|verwendungszweck|artikel/i.test(String(h).trim()));
                     const amountIdx = headers.findIndex(h => h && /gesamtbetrag|^betrag$/i.test(String(h).trim()));
@@ -2017,7 +1801,7 @@
                     const taxIdx = headers.findIndex(h => h && /ust.-satz|steuersatz|mwst/i.test(String(h).trim()));
 
                     if (dateIdx === -1 || amountIdx === -1) {
-                        showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
+                        window.showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
                     }
 
                     const expensesByDate = {};
@@ -2036,14 +1820,11 @@
 
                         if (!rowYear) {
                             const monthInt = parseInt(month, 10);
-                            if (monthInt >= 9 && monthInt <= 12) { 
-                                rowYear = "2024"; 
-                            } else { 
-                                rowYear = "2025"; 
-                            }
+                            if (monthInt >= 9 && monthInt <= 12) { rowYear = "2024"; } 
+                            else { rowYear = "2025"; }
                         }
                         
-                        if (profileYearFilter !== 'all' && rowYear !== profileYearFilter) {
+                        if (window.currentYear !== 'all' && rowYear !== window.currentYear) {
                             skippedCount++;
                             continue; 
                         }
@@ -2083,113 +1864,96 @@
                         if (taxRate !== 7 && taxRate !== 19) taxRate = 0;
 
                         if (!expensesByDate[isoDate]) expensesByDate[isoDate] = [];
-                        expensesByDate[isoDate].push({
-                            name: supplier,
-                            bar: isCard ? 0 : amount,
-                            card: isCard ? amount : 0,
-                            tax: taxRate
-                        });
+                        expensesByDate[isoDate].push({ name: supplier, bar: isCard ? 0 : amount, card: isCard ? amount : 0, tax: taxRate });
                     }
 
-                    tempImportBuffer = [];
+                    window.tempImportBuffer = [];
 
                     Object.keys(expensesByDate).forEach(isoDate => {
                         const newExpenses = expensesByDate[isoDate];
-                        let existingDay = dbDays.find(d => d.date === isoDate);
+                        let existingDay = window.dbDays.find(d => d.date === isoDate);
 
                         if (existingDay) {
                             let dayCopy = JSON.parse(JSON.stringify(existingDay));
                             if(!dayCopy.expensesDetail) {
                                 dayCopy.expensesDetail = { salaries: {}, general: [] };
-                                appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
+                                window.appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
-                            
                             dayCopy.expensesDetail.general.push(...newExpenses);
-                            
-                            recalcDaySums(dayCopy);
-                            tempImportBuffer.push(dayCopy);
+                            window.recalcDaySums(dayCopy);
+                            window.tempImportBuffer.push(dayCopy);
                         } else {
                             let exSalaries = {};
-                            appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+                            window.appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
 
                             let newDay = {
-                                date: isoDate,
-                                germanDate: formatGermanDate(isoDate),
+                                date: isoDate, germanDate: window.formatGermanDate(isoDate),
                                 revenue: { total: 0, bar: 0, card: 0 },
-                                expensesDetail: {
-                                    salaries: exSalaries,
-                                    general: newExpenses
-                                },
+                                expensesDetail: { salaries: exSalaries, general: newExpenses },
                                 note: "Ausgaben Import"
                             };
-                            recalcDaySums(newDay);
-                            tempImportBuffer.push(newDay);
+                            window.recalcDaySums(newDay);
+                            window.tempImportBuffer.push(newDay);
                         }
                     });
 
-                    if (tempImportBuffer.length === 0) {
-                        if (skippedCount > 0) showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
-                        else showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
+                    if (window.tempImportBuffer.length === 0) {
+                        if (skippedCount > 0) window.showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
+                        else window.showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
                     } else {
-                        if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
-                        
-                        importSortDesc = true;
-                        tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
-                        
-                        renderImportPreview();
+                        if (skippedCount > 0) window.showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
+                        window.importSortDesc = true;
+                        window.tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                        window.renderImportPreview();
                     }
-
                 } catch (err) { 
                     console.error(err);
-                    showToast("Fehler", "Ausgaben konnten nicht gelesen werden.", false); 
+                    window.showToast("Fehler", "Ausgaben konnten nicht gelesen werden.", false); 
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // --- IMPORT VORSCHAU: LÖSCHEN & SORTIEREN ---
-        function toggleImportSort() {
-            if (tempImportBuffer.length === 0) return;
-            
-            importSortDesc = !importSortDesc;
-            tempImportBuffer.sort((a, b) => {
-                if (importSortDesc) return b.date.localeCompare(a.date);
+        window.toggleImportSort = function() {
+            if (window.tempImportBuffer.length === 0) return;
+            window.importSortDesc = !window.importSortDesc;
+            window.tempImportBuffer.sort((a, b) => {
+                if (window.importSortDesc) return b.date.localeCompare(a.date);
                 return a.date.localeCompare(b.date);
             });
-            
-            renderImportPreview();
+            window.renderImportPreview();
         }
 
-        function removePreviewItem(dateToRemove) {
-            tempImportBuffer = tempImportBuffer.filter(day => day.date !== dateToRemove);
-            if (tempImportBuffer.length === 0) {
+        window.removePreviewItem = function(dateToRemove) {
+            window.tempImportBuffer = window.tempImportBuffer.filter(day => day.date !== dateToRemove);
+            if (window.tempImportBuffer.length === 0) {
                 document.getElementById('import-preview-container').classList.add('hidden');
-                showToast("Vorschau leer", "Alle Einträge wurden aus dem Import entfernt.");
+                window.showToast("Vorschau leer", "Alle Einträge wurden aus dem Import entfernt.");
             } else {
-                renderImportPreview();
+                window.renderImportPreview();
             }
         }
 
-        function renderImportPreview() {
+        window.renderImportPreview = function() {
             const tbody = document.getElementById('import-preview-tbody');
             tbody.innerHTML = '';
-            document.getElementById('preview-count-text').textContent = tempImportBuffer.length;
+            document.getElementById('preview-count-text').textContent = window.tempImportBuffer.length;
             
             const sortIcon = document.getElementById('import-sort-icon');
             if (sortIcon) {
-                sortIcon.className = importSortDesc ? "fa-solid fa-arrow-down ml-1 text-stone-400" : "fa-solid fa-arrow-up ml-1 text-stone-400";
+                sortIcon.className = window.importSortDesc ? "fa-solid fa-arrow-down ml-1 text-stone-400" : "fa-solid fa-arrow-up ml-1 text-stone-400";
             }
 
-            tempImportBuffer.forEach(day => {
+            window.tempImportBuffer.forEach(day => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="border-b border-stone-100 hover:bg-stone-50 transition-colors">
                         <td class="p-3 font-bold text-stone-900">${day.germanDate}</td>
-                        <td class="p-3 text-right">${formatCurrency(day.revenue.bar)}</td>
-                        <td class="p-3 text-right">${formatCurrency(day.revenue.card)}</td>
-                        <td class="p-3 text-right text-emerald-600 font-bold">${formatCurrency(day.revenue.total)}</td>
-                        <td class="p-3 text-right text-red-500 font-bold">${formatCurrency(day.expensesSum.total)}</td>
-                        <td class="p-3 text-right font-black text-emerald-600">${formatCurrency(day.profit)}</td>
-                        <td class="p-3 text-right font-black text-[#C5A85C]">${formatCurrency(day.tuete)}</td>
+                        <td class="p-3 text-right">${window.formatCurrency(day.revenue.bar)}</td>
+                        <td class="p-3 text-right">${window.formatCurrency(day.revenue.card)}</td>
+                        <td class="p-3 text-right text-emerald-600 font-bold">${window.formatCurrency(day.revenue.total)}</td>
+                        <td class="p-3 text-right text-red-500 font-bold">${window.formatCurrency(day.expensesSum.total)}</td>
+                        <td class="p-3 text-right font-black text-emerald-600">${window.formatCurrency(day.profit)}</td>
+                        <td class="p-3 text-right font-black text-[#C5A85C]">${window.formatCurrency(day.tuete)}</td>
                         <td class="p-3 text-center">
                             <button type="button" onclick="removePreviewItem('${day.date}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors cursor-pointer" title="Aus Import entfernen">
                                 <i class="fa-solid fa-trash-can pointer-events-none"></i>
@@ -2202,40 +1966,39 @@
             document.getElementById('import-preview-container').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function discardBuffer() {
-            tempImportBuffer = [];
+        window.discardBuffer = function() {
+            window.tempImportBuffer = [];
             document.getElementById('import-preview-container').classList.add('hidden');
-            showToast("Verworfen", "Temporäre Daten gelöscht.");
+            window.showToast("Verworfen", "Temporäre Daten gelöscht.");
         }
 
-        function commitBuffer() {
-            if (loggedInUser === 'inhaber') { showToast("Fehler", "Keine Schreibrechte", false); return; }
+        window.commitBuffer = function() {
+            if (window.loggedInUser === 'inhaber') { window.showToast("Fehler", "Keine Schreibrechte", false); return; }
             let ins = 0, upd = 0;
-            tempImportBuffer.forEach(day => {
-                const idx = dbDays.findIndex(d => d.date === day.date);
-                if (idx !== -1) { dbDays[idx] = day; upd++; } else { dbDays.push(day); ins++; }
+            window.tempImportBuffer.forEach(day => {
+                const idx = window.dbDays.findIndex(d => d.date === day.date);
+                if (idx !== -1) { window.dbDays[idx] = day; upd++; } else { window.dbDays.push(day); ins++; }
             });
-            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-            showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
-            tempImportBuffer = [];
+            window.dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+            window.showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
+            window.tempImportBuffer = [];
             document.getElementById('import-preview-container').classList.add('hidden');
             
-            if(activeProfileId) saveToJSONBin(); // Speichert intern jetzt in Firebase!
+            window.saveYearToCloud();
             
-            renderAll();
-            switchTab('dashboard');
+            window.renderAll();
+            window.switchTab('dashboard');
         }
 
-        // --- DASHBOARD RENDER & HELPER ---
-        function setupFilterDefaultDates() {
+        window.setupFilterDefaultDates = function() {
             const now = new Date();
             const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
             document.getElementById('filter-from').value = `${y}-${m}-01`;
             document.getElementById('filter-to').value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
         }
 
-        function applyPresetDates() {
+        window.applyPresetDates = function() {
             const val = document.getElementById('filter-preset').value;
             const now = new Date(), y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
             if (val === 'all') { document.getElementById('filter-from').value = ''; document.getElementById('filter-to').value = ''; }
@@ -2248,10 +2011,10 @@
                 document.getElementById('filter-from').value = pastDate.toISOString().split('T')[0];
                 document.getElementById('filter-to').value = now.toISOString().split('T')[0];
             }
-            renderAll();
+            window.renderAll();
         }
 
-        function applyHistPresetDates() {
+        window.applyHistPresetDates = function() {
             const val = document.getElementById('hist-filter-preset').value;
             const fromInput = document.getElementById('hist-filter-from');
             const toInput = document.getElementById('hist-filter-to');
@@ -2273,20 +2036,20 @@
                 fromInput.value = `${y}-01-01`;
                 toInput.value = `${y}-12-31`;
             }
-            renderHistory();
+            window.renderHistory();
         }
 
-        function getFilteredDays() {
+        window.getFilteredDays = function() {
             const from = document.getElementById('filter-from').value, to = document.getElementById('filter-to').value;
-            return dbDays.filter(d => (!from || d.date >= from) && (!to || d.date <= to));
+            return window.dbDays.filter(d => (!from || d.date >= from) && (!to || d.date <= to));
         }
 
-        function getFilteredHistoryDays() {
+        window.getFilteredHistoryDays = function() {
             const q = document.getElementById('hist-search').value.toLowerCase();
             const from = document.getElementById('hist-filter-from').value;
             const to = document.getElementById('hist-filter-to').value;
             
-            return dbDays.filter(d => {
+            return window.dbDays.filter(d => {
                 const matchesSearch = d.germanDate.includes(q) || (d.note && d.note.toLowerCase().includes(q));
                 const matchesFrom = !from || d.date >= from;
                 const matchesTo = !to || d.date <= to;
@@ -2294,11 +2057,11 @@
             });
         }
 
-        function renderAll() {
-            if (!loggedInUser) return;
-            const filtered = getFilteredDays();
+        window.renderAll = function() {
+            if (!window.loggedInUser) return;
+            const filtered = window.getFilteredDays();
 
-            if (dbDays.length === 0) {
+            if (window.dbDays.length === 0) {
                 document.getElementById('dashboard-empty').classList.remove('hidden');
                 document.getElementById('dashboard-active').classList.add('hidden');
             } else {
@@ -2306,7 +2069,7 @@
                 document.getElementById('dashboard-active').classList.remove('hidden');
             }
 
-            if (activeTab === 'dashboard') {
+            if (window.activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
                 
                 document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
@@ -2328,13 +2091,13 @@
                             document.querySelectorAll('.dash-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
                                     let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
-                                    el.textContent = formatCurrency(cur + val);
+                                    el.textContent = window.formatCurrency(cur + val);
                                 }
                             });
                             document.querySelectorAll('.pdf-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
                                     let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
-                                    el.textContent = formatCurrency(cur + val);
+                                    el.textContent = window.formatCurrency(cur + val);
                                 }
                             });
                         });
@@ -2350,20 +2113,19 @@
                     }
                 });
                 
-                document.getElementById('kpi-revenue').textContent = formatCurrency(r);
-                document.getElementById('kpi-expenses').textContent = formatCurrency(e);
-                document.getElementById('kpi-profit').textContent = formatCurrency(p);
-                document.getElementById('kpi-tuete').textContent = formatCurrency(t);
+                document.getElementById('kpi-revenue').textContent = window.formatCurrency(r);
+                document.getElementById('kpi-expenses').textContent = window.formatCurrency(e);
+                document.getElementById('kpi-profit').textContent = window.formatCurrency(p);
+                document.getElementById('kpi-tuete').textContent = window.formatCurrency(t);
                 
-                drawTrendChart(filtered, 'trend-chart-container');
-                drawDistributionChart(tax0, tax7, tax19);
-            } else if (activeTab === 'historie') {
-                renderHistory();
+                window.drawTrendChart(filtered, 'trend-chart-container');
+                window.drawDistributionChart(tax0, tax7, tax19);
+            } else if (window.activeTab === 'historie') {
+                window.renderHistory();
             }
         }
 
-        // --- CHART LOGIK ---
-        function drawTrendChart(data, containerId) {
+        window.drawTrendChart = function(data, containerId) {
             const c = document.getElementById(containerId);
             if (!c) return;
             if(data.length === 0) { c.innerHTML='<span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #A8A29E;">Keine Daten</span>'; return; }
@@ -2391,7 +2153,7 @@
             </svg>`;
         }
 
-        function drawDistributionChart(tax0, tax7, tax19) {
+        window.drawDistributionChart = function(tax0, tax7, tax19) {
             const total = tax0 + tax7 + tax19;
             const p0 = total > 0 ? ((tax0/total)*100).toFixed(1) : 0;
             const p7 = total > 0 ? ((tax7/total)*100).toFixed(1) : 0;
@@ -2400,25 +2162,24 @@
             document.getElementById('pie-chart-container').innerHTML = `
                 <div class="w-full flex flex-col gap-2">
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200">
-                        <span>Ohne / 0%</span> <span class="text-stone-900">${formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
+                        <span>Ohne / 0%</span> <span class="text-stone-900">${window.formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
                     </div>
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
+                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${window.formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
                     </div>
                     <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-blue-50 p-2 rounded-lg border border-blue-200">
-                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
+                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${window.formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
                     </div>
                 </div>
             `;
-            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${formatCurrency(total)}</div>`;
+            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${window.formatCurrency(total)}</div>`;
         }
 
-        // --- HISTORIE RENDERN ---
-        function renderHistory() {
+        window.renderHistory = function() {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
             
-            let filtered = getFilteredHistoryDays();
+            let filtered = window.getFilteredHistoryDays();
             filtered.sort((a,b) => b.date.localeCompare(a.date));
 
             if(filtered.length === 0) {
@@ -2426,18 +2187,18 @@
                  return;
             }
 
-            const isReadOnly = loggedInUser === 'inhaber';
+            const isReadOnly = window.loggedInUser === 'inhaber';
 
             filtered.forEach(d => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="border-b border-stone-100">
                         <td class="p-4 font-bold">${d.germanDate}</td>
-                        <td class="p-4 text-right">${formatCurrency(d.revenue.bar)}</td>
-                        <td class="p-4 text-right">${formatCurrency(d.revenue.card)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.revenue.total)}</td>
-                        <td class="p-4 text-right text-red-500 font-bold">${formatCurrency(d.expensesSum.total)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.profit)}</td>
-                        <td class="p-4 text-right text-[#C5A85C] font-black">${formatCurrency(d.tuete)}</td>
+                        <td class="p-4 text-right">${window.formatCurrency(d.revenue.bar)}</td>
+                        <td class="p-4 text-right">${window.formatCurrency(d.revenue.card)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${window.formatCurrency(d.revenue.total)}</td>
+                        <td class="p-4 text-right text-red-500 font-bold">${window.formatCurrency(d.expensesSum.total)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${window.formatCurrency(d.profit)}</td>
+                        <td class="p-4 text-right text-[#C5A85C] font-black">${window.formatCurrency(d.tuete)}</td>
                         <td class="p-4 text-center">
                             ${isReadOnly ? '<span class="text-[10px] text-stone-400 font-bold uppercase">Gesperrt</span>' : `
                             <div class="flex items-center justify-center gap-2">
@@ -2451,81 +2212,79 @@
             });
         }
 
-        // --- BUTTON FUNKTIONEN ---
-        function quickEditDay(dateStr) {
+        window.quickEditDay = function(dateStr) {
             try {
-                switchTab('eingabe');
+                window.switchTab('eingabe');
                 const dateInput = document.getElementById('entry-date');
                 if (dateInput) {
                     dateInput.value = dateStr;
-                    handleEntryDateChange();
+                    window.handleEntryDateChange();
                 }
             } catch(e) {
                 console.error("Bearbeitungsfehler:", e);
-                showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
+                window.showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
             }
         }
 
-        function deleteSingleDay(d) {
-            showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
+        window.deleteSingleDay = function(d) {
+            window.showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
                 try {
-                    dbDays = dbDays.filter(x => x.date !== d);
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                    showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
-                    if(activeProfileId) saveToJSONBin();
-                    renderAll();
+                    window.dbDays = window.dbDays.filter(x => x.date !== d);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+                    window.showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
+                    window.saveYearToCloud();
+                    window.renderAll();
                 } catch(e) {
-                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
+                    window.showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
                 }
             });
         }
 
-        function clearDatabase() {
-            if (dbDays.length === 0) {
-                showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
+        window.clearDatabase = function() {
+            if (window.dbDays.length === 0) {
+                window.showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
                 return;
             }
 
-            const filtered = getFilteredHistoryDays();
+            const filtered = window.getFilteredHistoryDays();
             
             if (filtered.length === 0) {
-                 showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
+                 window.showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
                  return;
             }
 
-            const isFullyFiltered = filtered.length === dbDays.length;
+            const isFullyFiltered = filtered.length === window.dbDays.length;
             
             let title = isFullyFiltered ? "Alles Löschen?" : "Gefilterte Löschen?";
             let desc = isFullyFiltered 
-                ? "Sicher, dass ALLE Daten in diesem Profil dauerhaft entfernt werden sollen?" 
+                ? "Sicher, dass ALLE Daten in diesem Jahr dauerhaft entfernt werden sollen?" 
                 : `Sicher, dass die ${filtered.length} angezeigten Tage dauerhaft gelöscht werden sollen?`;
 
-            showConfirmModal(title, desc, () => {
+            window.showConfirmModal(title, desc, () => {
                 if (isFullyFiltered) {
-                    dbDays = []; 
+                    window.dbDays = []; 
                 } else {
                     const datesToRemove = new Set(filtered.map(d => d.date));
-                    dbDays = dbDays.filter(d => !datesToRemove.has(d.date));
+                    window.dbDays = window.dbDays.filter(d => !datesToRemove.has(d.date));
                 }
                 
-                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                showToast("Erledigt", "Daten wurden erfolgreich gelöscht.");
-                if(activeProfileId) saveToJSONBin();
-                renderAll();
+                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(window.dbDays));
+                window.showToast("Erledigt", "Daten wurden erfolgreich gelöscht.");
+                window.saveYearToCloud();
+                window.renderAll();
             });
         }
 
-        // --- PDF EXPORT LOGIK MIT MONATS-GRUPPIERUNG ---
-        function generatePDFReport() {
-            const filtered = getFilteredDays();
+        window.generatePDFReport = function() {
+            const filtered = window.getFilteredDays();
             if (filtered.length === 0) {
-                showToast("Fehler", "Keine Daten im aktuellen Zeitraum zum Exportieren.", false);
+                window.showToast("Fehler", "Keine Daten im aktuellen Zeitraum zum Exportieren.", false);
                 return;
             }
 
             const isMonthly = document.getElementById('pdf-monthly-grouping').checked;
 
-            showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
+            window.showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
             const element = document.getElementById('pdf-export-container');
             
             element.style.display = 'block';
@@ -2538,9 +2297,9 @@
             const from = document.getElementById('filter-from').value;
             const to = document.getElementById('filter-to').value;
             let rangeText = "Gesamte Historie";
-            if (from && to) rangeText = `${formatGermanDate(from)} bis ${formatGermanDate(to)}`;
-            else if (from) rangeText = `Ab ${formatGermanDate(from)}`;
-            else if (to) rangeText = `Bis ${formatGermanDate(to)}`;
+            if (from && to) rangeText = `${window.formatGermanDate(from)} bis ${window.formatGermanDate(to)}`;
+            else if (from) rangeText = `Ab ${window.formatGermanDate(from)}`;
+            else if (to) rangeText = `Bis ${window.formatGermanDate(to)}`;
             
             document.getElementById('pdf-date-range').textContent = isMonthly ? rangeText + " (Monatliche Gruppierung)" : rangeText;
             const sel = document.getElementById('filter-preset');
@@ -2548,14 +2307,14 @@
 
             let r=0, e=0, p=0, t=0;
             filtered.forEach(d => { r+=d.revenue.total; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; });
-            document.getElementById('pdf-kpi-rev').textContent = formatCurrency(r);
-            document.getElementById('pdf-kpi-exp').textContent = formatCurrency(e);
-            document.getElementById('pdf-kpi-prof').textContent = formatCurrency(p);
-            document.getElementById('pdf-kpi-tuete').textContent = formatCurrency(t);
+            document.getElementById('pdf-kpi-rev').textContent = window.formatCurrency(r);
+            document.getElementById('pdf-kpi-exp').textContent = window.formatCurrency(e);
+            document.getElementById('pdf-kpi-prof').textContent = window.formatCurrency(p);
+            document.getElementById('pdf-kpi-tuete').textContent = window.formatCurrency(t);
 
             if (!isMonthly) {
                 document.getElementById('pdf-trend-wrapper').style.display = 'block';
-                drawTrendChart(filtered, 'pdf-trend-chart-container');
+                window.drawTrendChart(filtered, 'pdf-trend-chart-container');
             } else {
                 document.getElementById('pdf-trend-wrapper').style.display = 'none'; 
             }
@@ -2591,12 +2350,12 @@
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr style="background-color: #FAFAFA;">
                             <td style="font-weight: 800;">${mName}</td>
-                            <td>${formatCurrency(data.bar)}</td>
-                            <td>${formatCurrency(data.card)}</td>
-                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(data.total)}</td>
-                            <td style="color: #EF4444;">${formatCurrency(data.exp)}</td>
-                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(data.profit)}</td>
-                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(data.tuete)}</td>
+                            <td>${window.formatCurrency(data.bar)}</td>
+                            <td>${window.formatCurrency(data.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${window.formatCurrency(data.total)}</td>
+                            <td style="color: #EF4444;">${window.formatCurrency(data.exp)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${window.formatCurrency(data.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${window.formatCurrency(data.tuete)}</td>
                         </tr>
                     `);
                 });
@@ -2609,12 +2368,12 @@
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr>
                             <td>${d.germanDate}</td>
-                            <td>${formatCurrency(d.revenue.bar)}</td>
-                            <td>${formatCurrency(d.revenue.card)}</td>
-                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(d.revenue.total)}</td>
-                            <td style="color: #EF4444;">${formatCurrency(d.expensesSum.total)}</td>
-                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(d.profit)}</td>
-                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(d.tuete)}</td>
+                            <td>${window.formatCurrency(d.revenue.bar)}</td>
+                            <td>${window.formatCurrency(d.revenue.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${window.formatCurrency(d.revenue.total)}</td>
+                            <td style="color: #EF4444;">${window.formatCurrency(d.expensesSum.total)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${window.formatCurrency(d.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${window.formatCurrency(d.tuete)}</td>
                         </tr>
                     `);
                 });
@@ -2623,20 +2382,20 @@
             setTimeout(() => {
                 const opt = {
                     margin:       10, 
-                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${new Date().getTime()}.pdf`,
+                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${window.currentYear}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 html2pdf().set(opt).from(element).save().then(() => {
-                    showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
+                    window.showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
                     element.style.display = 'none';
                     document.body.style.overflow = 'hidden';
                     document.documentElement.style.overflow = 'hidden';
                 }).catch(err => {
                     console.error("PDF Error:", err);
-                    showToast("Fehler", "PDF konnte nicht generiert werden.", false);
+                    window.showToast("Fehler", "PDF konnte nicht generiert werden.", false);
                     element.style.display = 'none';
                     document.body.style.overflow = 'hidden';
                     document.documentElement.style.overflow = 'hidden';
@@ -2644,8 +2403,8 @@
             }, 200); 
         }
 
-        function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
-        function formatCurrency(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
+        window.formatGermanDate = function(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
+        window.formatCurrency = function(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
     </script>
 </body>
 </html>
