@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -22,7 +23,7 @@
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FIREBASE COMPAT (Ohne Auth!) -->
+    <!-- FIREBASE COMPAT (Nur Firestore, OHNE Authentifizierung) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -552,50 +553,69 @@
             <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
             <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                     
-                    <!-- UPLOAD BEREICHE -->
-                    <div class="flex flex-col gap-6">
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
-                                    <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Tagesmappen Import</h3>
-                                </div>
+                    <!-- UPLOAD BEREICHE (Jetzt 3 Spalten auf großen Bildschirmen) -->
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
+                                <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
                             </div>
-                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
-                                 class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
-                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="handleExcelUpload(event)">
-                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
-                                <p class="font-bold text-stone-800 text-xs">Umsätze, Mappen & JSON hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Datum richtet sich nach ausgewähltem Cloud-Jahr</p>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Mappen-Import</h3>
                             </div>
                         </div>
-
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
-                                    <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Ausgaben-Export</h3>
-                                </div>
-                            </div>
-                            <div id="drop-zone-ausgaben" onclick="document.getElementById('excel-ausgaben-input').click()" 
-                                 class="flex-1 border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer transition-colors flex flex-col justify-center">
-                                <input type="file" id="excel-ausgaben-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleAusgabenUpload(event)">
-                                <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
-                                <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk Export hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Filtert automatisch exakte Duplikate heraus!</p>
-                            </div>
+                        <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                             class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="excel-input" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">Umsatz/Excel Mappen</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest Bar, Karte & Gehalt aus.</p>
                         </div>
                     </div>
 
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
+                                <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Ausgaben-CSV</h3>
+                            </div>
+                        </div>
+                        <div id="drop-zone-ausgaben" onclick="document.getElementById('excel-ausgaben-input').click()" 
+                             class="flex-1 border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="excel-ausgaben-input" accept=".csv, .xlsx" class="hidden" onchange="handleAusgabenUpload(event)">
+                            <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Mit Duplikat-Schutz!</p>
+                        </div>
+                    </div>
+
+                    <!-- NEU: DEDIZIERTER JSON BACKUP IMPORT -->
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200 flex-shrink-0">
+                                <i class="fa-solid fa-database text-blue-500 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Backup (.json)</h3>
+                            </div>
+                        </div>
+                        <div id="drop-zone-json" onclick="document.getElementById('json-input').click()" 
+                             class="flex-1 border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-blue-50/30 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="json-input" accept=".json" class="hidden" onchange="handleJsonUpload(event)">
+                            <i class="fa-solid fa-file-code text-3xl text-blue-400/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">System-Backup Import</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Tage werden automatisch dem <br>richtigen Jahr (z.B. 2024) zugeordnet!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 w-full">
                     <!-- FIREBASE CLOUD MANAGER & ADMIN SETTINGS -->
-                    <div class="flex flex-col gap-6 w-full">
-                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
+                    <div class="flex flex-col md:flex-row gap-6 w-full">
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between flex-1">
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-2">
@@ -629,7 +649,7 @@
                         </div>
 
                         <!-- System-Einstellungen (Admin Only) -->
-                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
+                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full flex-1">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
                                 <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Systemeinstellungen</h4>
@@ -661,7 +681,6 @@
                             </button>
                         </div>
                     </div>
-
                 </div>
 
                 <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
@@ -836,18 +855,18 @@
     <script>
         // === 1. DEINE ECHTE CONFIG ===
         const firebaseConfig = {
-            apiKey: "AIzaSyBnTC9OhnWsHE6QL3CwpEPnkAWrmFxFPCw",
-            authDomain: "gastrofibu.firebaseapp.com",
-            databaseURL: "https://gastrofibu-default-rtdb.firebaseio.com",
-            projectId: "gastrofibu",
-            storageBucket: "gastrofibu.firebasestorage.app",
-            messagingSenderId: "193576941075",
-            appId: "1:193576941075:web:7c1ce52629229f7e87f1e6",
-            measurementId: "G-3R67PDW4EZ"
-        };
+    apiKey: "AIzaSyDTBNshYI5eng6NHn5yfSXG8wG2-7MPQOs",
+    authDomain: "gastrobuchhaltung.firebaseapp.com",
+    databaseURL: "https://gastrobuchhaltung-default-rtdb.firebaseio.com",
+    projectId: "gastrobuchhaltung",
+    storageBucket: "gastrobuchhaltung.firebasestorage.app",
+    messagingSenderId: "665630321892",
+    appId: "1:665630321892:web:b939ad62c6a1bfafa650f1",
+    measurementId: "G-6HQ1NQSJ5X"
+  };
         // ===========================================
 
-        // Firebase Initialisierung
+        // Firebase Initialisierung (Nur Firestore Database)
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -1141,7 +1160,9 @@
 
             try {
                 setDbStatus('connecting');
-                await db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(pickedDate).set(dayObj);
+                // Errechnet automatisch das Jahr aus dem eingestellten Datum
+                const targetYear = pickedDate.substring(0, 4);
+                await db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(pickedDate).set(dayObj);
                 showToast("Live Gespeichert", `Tag ${formatGermanDate(pickedDate)} erfolgreich in Cloud verbucht.`);
                 setDbStatus('connected');
                 renderAll();
@@ -1163,11 +1184,16 @@
             let count = 0;
 
             tempImportBuffer.forEach(day => {
-                const docRef = db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(day.date);
+                // SMART ROUTING: Schiebt den Tag vollautomatisch in das Jahr, das in SEINEM Datum steht (z.B. 2024)!
+                const targetYear = day.date.substring(0, 4); 
+                const docRef = db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(day.date);
                 batch.set(docRef, day);
                 
-                const idx = dbDays.findIndex(d => d.date === day.date);
-                if (idx !== -1) { dbDays[idx] = day; } else { dbDays.push(day); }
+                // Lokal nur einfügen, wenn es zu dem Jahr gehört, das wir uns gerade in der App ansehen
+                if (targetYear === currentYear) {
+                    const idx = dbDays.findIndex(d => d.date === day.date);
+                    if (idx !== -1) { dbDays[idx] = day; } else { dbDays.push(day); }
+                }
                 count++;
             });
 
@@ -1175,7 +1201,7 @@
                 await batch.commit(); 
                 
                 dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-                showToast("Cloud Importiert", `${count} Tage live in Firebase überschrieben.`);
+                showToast("Cloud Importiert", `${count} Tage live (aufgeteilt nach Jahren) in Firebase gespeichert.`);
                 tempImportBuffer = [];
                 document.getElementById('import-preview-container').classList.add('hidden');
                 
@@ -1404,6 +1430,8 @@
             if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
             const dropzone2 = document.getElementById('drop-zone-ausgaben');
             if (dropzone2) { dropzone2.style.pointerEvents = "none"; dropzone2.style.opacity = "0.5"; }
+            const dropzone3 = document.getElementById('drop-zone-json');
+            if (dropzone3) { dropzone3.style.pointerEvents = "none"; dropzone3.style.opacity = "0.5"; }
             
             const inputs = document.querySelectorAll('input, select, textarea');
             inputs.forEach(i => {
@@ -1587,10 +1615,19 @@
             ['dragenter', 'dragover'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.add('bg-red-100'); }));
             ['dragleave', 'drop'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.remove('bg-red-100'); }));
             dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseAusgabenFile(e.dataTransfer.files[0]); });
+
+            // Dropzone für JSON
+            const dz3 = document.getElementById('drop-zone-json');
+            if (dz3) {
+                ['dragenter', 'dragover'].forEach(name => dz3.addEventListener(name, e => { e.preventDefault(); dz3.classList.add('bg-blue-100'); }));
+                ['dragleave', 'drop'].forEach(name => dz3.addEventListener(name, e => { e.preventDefault(); dz3.classList.remove('bg-blue-100'); }));
+                dz3.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseJsonFile(e.dataTransfer.files[0]); });
+            }
         }
         
         function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
         function handleAusgabenUpload(e) { if(e.target.files.length > 0) parseAusgabenFile(e.target.files[0]); }
+        function handleJsonUpload(e) { if(e.target.files.length > 0) parseJsonFile(e.target.files[0]); }
 
         function recalcDaySums(dayObj) {
             let b = 0, c = 0;
@@ -1611,32 +1648,35 @@
             dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
         }
 
-        function parseExcelFile(file) {
-            if (file.name.endsWith('.json')) {
-                const r = new FileReader();
-                r.onload = e => {
-                    try {
-                        const d = JSON.parse(e.target.result);
-                        let arr = d.data || d;
-                        if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
-                        
-                        // JSON in Puffer
-                        tempImportBuffer = [];
-                        arr.forEach(day => {
-                            recalcDaySums(day);
-                            tempImportBuffer.push(day);
-                        });
-                        
-                        importSortDesc = true;
-                        tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
-                        renderImportPreview();
-                        showToast("JSON Ausgelesen", "Bitte prüfe die Daten und klicke auf Übernehmen.");
-                    } catch(err) { showToast("Fehler", "JSON ungültig.", false); }
-                };
-                r.readAsText(file);
+        // --- JSON IMPORT FUNKTION ---
+        function parseJsonFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showToast("Falsches Format", "Bitte lade hier nur .json Backups hoch.", false);
                 return;
             }
+            const r = new FileReader();
+            r.onload = e => {
+                try {
+                    const d = JSON.parse(e.target.result);
+                    let arr = d.data || d;
+                    if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
+                    
+                    tempImportBuffer = [];
+                    arr.forEach(day => {
+                        recalcDaySums(day);
+                        tempImportBuffer.push(day);
+                    });
+                    
+                    importSortDesc = true;
+                    tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                    renderImportPreview();
+                    showToast("Backup Ausgelesen", `Gefunden: ${arr.length} Tage. Bitte klicke auf 'Übernehmen'.`);
+                } catch(err) { showToast("Fehler", "JSON ungültig oder beschädigt.", false); }
+            };
+            r.readAsText(file);
+        }
 
+        function parseExcelFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1929,7 +1969,7 @@
                     Object.keys(expensesByDate).forEach(isoDate => {
                         let newExpenses = expensesByDate[isoDate];
                         
-                        // 1. Schützt vor Duplikaten, die innerhalb der hochgeladenen Datei selbst doppelt vorkommen
+                        // 1. Schützt vor Duplikaten in der Datei selbst
                         const uniqueNew = [];
                         newExpenses.forEach(nx => {
                             const isDupInFile = uniqueNew.some(u => u.name === nx.name && u.bar === nx.bar && u.card === nx.card && u.tax === nx.tax);
@@ -1946,14 +1986,11 @@
                                 appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
 
-                            // 2. Schützt vor Duplikaten: Checkt ob exakt diese Ausgabe in diesem Tag schon existiert
+                            // 2. Schützt vor Duplikaten in der Datenbank
                             let addedCount = 0;
                             newExpenses.forEach(nx => {
                                 const isDuplicate = dayCopy.expensesDetail.general.some(g =>
-                                    g.name.toLowerCase() === nx.name.toLowerCase() && 
-                                    g.bar === nx.bar && 
-                                    g.card === nx.card && 
-                                    g.tax === nx.tax
+                                    g.name === nx.name && g.bar === nx.bar && g.card === nx.card && g.tax === nx.tax
                                 );
                                 if (!isDuplicate) {
                                     dayCopy.expensesDetail.general.push(nx);
