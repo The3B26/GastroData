@@ -22,7 +22,7 @@
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FIREBASE COMPAT -->
+    <!-- FIREBASE COMPAT (Ohne Auth) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -186,7 +186,7 @@
         <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center my-auto">
             <div class="flex justify-center mb-6">
                 <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
-                    <img src="image.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
+                    <img src="image.PNG" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
                     <div id="fallback-logo" class="hidden w-full h-full flex items-center justify-center bg-stone-50">
                         <span class="gold-title text-2xl font-black text-[#C5A85C]">3B</span>
                     </div>
@@ -433,8 +433,8 @@
                                     </div>
                                 </div>
                                 <div class="pt-4 w-full">
-                                    <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest">
-                                        Speichern <i class="fa-solid fa-save ml-2"></i>
+                                    <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest flex justify-center items-center gap-2">
+                                        <span>Live Speichern</span> <i class="fa-solid fa-cloud-arrow-up"></i>
                                     </button>
                                 </div>
                             </div>
@@ -488,11 +488,22 @@
                             <i class="fa-solid fa-layer-group text-stone-500"></i>
                             <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <input type="text" id="hist-search" placeholder="Datum oder Notiz suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto">
-                            <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs">
-                                <i class="fa-solid fa-trash-can mr-2"></i> Angezeigte löschen
-                            </button>
+                        <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto flex-wrap">
+                            <input type="text" id="hist-search" placeholder="Datum oder Notiz suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto flex-1">
+                            <div class="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                                
+                                <button type="button" id="btn-export-backup" onclick="downloadFilteredBackup()" class="btn-dark bg-stone-800 hover:bg-stone-900 w-full sm:w-auto py-3 px-4 text-xs flex-1 border border-[#C5A85C]/30" title="Lädt die gefilterten Tage als JSON-Backup herunter">
+                                    <i class="fa-solid fa-download mr-2 text-[#C5A85C]"></i> Backup laden
+                                </button>
+
+                                <button type="button" onclick="deleteAllgemeinerEinkauf()" class="btn-dark bg-orange-500 hover:bg-orange-600 w-full sm:w-auto py-3 px-4 text-xs flex-1" title="Entfernt nur die Position 'Allgemeiner Einkauf' aus den angezeigten Tagen">
+                                    <i class="fa-solid fa-broom mr-2"></i> "Allg. Einkauf" löschen
+                                </button>
+
+                                <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs flex-1">
+                                    <i class="fa-solid fa-trash-can mr-2"></i> Tage löschen
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -541,67 +552,87 @@
             <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
             <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                     
-                    <!-- UPLOAD BEREICHE -->
-                    <div class="flex flex-col gap-6">
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
-                                    <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Tagesmappen Import</h3>
-                                </div>
+                    <!-- UPLOAD BEREICHE (3 Spalten) -->
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
+                                <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
                             </div>
-                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
-                                 class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
-                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="handleExcelUpload(event)">
-                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
-                                <p class="font-bold text-stone-800 text-xs">Umsätze & Mappen hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Datum richtet sich nach ausgewähltem Cloud-Jahr</p>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Mappen-Import</h3>
                             </div>
                         </div>
-
-                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
-                                    <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Ausgaben-Export</h3>
-                                </div>
-                            </div>
-                            <div id="drop-zone-ausgaben" onclick="document.getElementById('excel-ausgaben-input').click()" 
-                                 class="flex-1 border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer transition-colors flex flex-col justify-center">
-                                <input type="file" id="excel-ausgaben-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleAusgabenUpload(event)">
-                                <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
-                                <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk Export hochladen</p>
-                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest USt., Datum & Lieferant sicher aus</p>
-                            </div>
+                        <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                             class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="excel-input" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">Umsatz/Excel Mappen</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest Bar, Karte & Gehalt aus.</p>
                         </div>
                     </div>
 
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
+                                <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Ausgaben-CSV</h3>
+                            </div>
+                        </div>
+                        <div id="drop-zone-ausgaben" onclick="document.getElementById('excel-ausgaben-input').click()" 
+                             class="flex-1 border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="excel-ausgaben-input" accept=".csv, .xlsx" class="hidden" onchange="handleAusgabenUpload(event)">
+                            <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Mit Duplikat-Schutz!</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200 flex-shrink-0">
+                                <i class="fa-solid fa-database text-blue-500 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Backup (.json)</h3>
+                            </div>
+                        </div>
+                        <div id="drop-zone-json" onclick="document.getElementById('json-input').click()" 
+                             class="flex-1 border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-blue-50/30 cursor-pointer transition-colors flex flex-col justify-center">
+                            <input type="file" id="json-input" accept=".json" class="hidden" onchange="handleJsonUpload(event)">
+                            <i class="fa-solid fa-file-code text-3xl text-blue-400/70 mb-2"></i>
+                            <p class="font-bold text-stone-800 text-xs">System-Backup Import</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Tage werden automatisch dem <br>richtigen Jahr (z.B. 2024) zugeordnet!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 w-full">
                     <!-- FIREBASE CLOUD MANAGER & ADMIN SETTINGS -->
-                    <div class="flex flex-col gap-6 w-full">
-                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
+                    <div class="flex flex-col md:flex-row gap-6 w-full">
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between flex-1">
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
-                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Cloud Manager</h4>
+                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Cloud Sync</h4>
                                     </div>
-                                    <button type="button" onclick="downloadBackup()" class="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer" title="Lokales Backup laden">
-                                        <i class="fa-solid fa-download"></i> Backup
-                                    </button>
+                                    <span class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold border border-emerald-200">
+                                        <i class="fa-solid fa-bolt"></i> Einzel-Tage aktiv
+                                    </span>
                                 </div>
-                                <p class="text-xs text-stone-500 font-medium">Aktives Geschäftsjahr auswählen.</p>
+                                <p class="text-xs text-stone-500 font-medium leading-relaxed">
+                                    Speichern, Ändern und Löschen passiert ab sofort <b>in Echtzeit pro Tag</b>.
+                                </p>
                             </div>
                             
                             <div class="space-y-3 w-full mt-4">
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Aktives Geschäftsjahr</label>
-                                    <select id="firebase-year-select" class="modern-input text-sm py-2 bg-stone-50" onchange="changeCloudYear()">
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Aktives Geschäftsjahr wechseln</label>
+                                    <select id="firebase-year-select" class="modern-input text-sm py-2 bg-stone-50 border-stone-300 shadow-sm" onchange="changeCloudYear()">
                                         <option value="2026" selected>2026</option>
                                         <option value="2025">2025</option>
                                         <option value="2024">2024</option>
@@ -609,25 +640,21 @@
                                     </select>
                                 </div>
                                 
-                                <button type="button" onclick="loadYearFromCloud(currentYear)" class="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-cloud-arrow-down"></i> Aus Cloud neu laden
-                                </button>
-                                <!-- ID hinzugefügt, um den Button bei Inhabern auszublenden -->
-                                <button type="button" id="btn-save-cloud" onclick="saveYearToCloud()" class="w-full py-3 btn-gold text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i> Jahr in Cloud sichern
+                                <button type="button" onclick="loadYearFromCloud(currentYear)" class="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2 transition-colors">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Ansicht neu laden
                                 </button>
                             </div>
                         </div>
 
                         <!-- System-Einstellungen (Admin Only) -->
-                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
+                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full flex-1">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
                                 <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Systemeinstellungen</h4>
                             </div>
-                            <p class="text-xs text-stone-500 font-medium">Dynamische Variablen & PINs</p>
+                            <p class="text-[10px] text-stone-500 font-bold mb-4">Hier verwaltest du PINs, Mitarbeiter und Wechselgeld.</p>
                             
-                            <div class="space-y-3 mt-4">
+                            <div class="space-y-3 mt-2">
                                 <div>
                                     <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Wechselgeld Abzug (€)</label>
                                     <input type="number" id="cfg-wechselgeld" placeholder="150" class="modern-input text-sm py-2">
@@ -647,12 +674,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold">
-                                Einstellungen Speichern <i class="fa-solid fa-floppy-disk ml-1"></i>
+                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold flex justify-center items-center gap-2">
+                                System-Settings Sichern <i class="fa-solid fa-cloud-arrow-up text-[#C5A85C]"></i>
                             </button>
                         </div>
                     </div>
-
                 </div>
 
                 <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
@@ -663,8 +689,8 @@
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
                             <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
-                            <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center">
-                                <i class="fa-solid fa-check mr-2"></i> (<span id="preview-count-text">0</span>) Übernehmen
+                            <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition-colors">
+                                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> (<span id="preview-count-text">0</span>) Live in Cloud pushen
                             </button>
                         </div>
                     </div>
@@ -742,7 +768,6 @@
 
     <!-- ================= PDF EXPORT TEMPLATE ================= -->
     <div id="pdf-export-container">
-        <!-- Template unverändert zur Gewährleistung des gewohnten Designs -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #C5A85C; display: flex; align-items: center; justify-content: center; background-color: #FAFAFA;">
@@ -838,7 +863,7 @@
   };
         // ===================================
 
-        // Firebase Initialisierung
+        // Firebase Initialisierung (Nur Firestore Database, kein Auth!)
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -849,7 +874,6 @@
         let tempImportBuffer = [];
         let enteredPin = ""; 
         let currentYear = "2026"; 
-        
         let importSortDesc = true; 
 
         let appSettings = {
@@ -857,6 +881,7 @@
             employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
         };
 
+        // Die PINs werden lokal verwaltet (da es keine E-Mail/Passwort Auth mehr gibt)
         let adminPin = localStorage.getItem('gastro_admin_pin') || "1991";
         let readPin = localStorage.getItem('gastro_read_pin') || "2024";
 
@@ -884,6 +909,89 @@
             renderExpenseRows([]);
         };
 
+        // --- PIN FUNKTIONEN (Die gefehlt haben!) ---
+        function pressPin(num) {
+            if (enteredPin.length < 4) {
+                enteredPin += num;
+                updatePinDots();
+                if (enteredPin.length === 4) setTimeout(checkPin, 200);
+            }
+        }
+
+        function clearPin() { 
+            enteredPin = ""; 
+            updatePinDots(); 
+        }
+
+        function backspacePin() { 
+            enteredPin = enteredPin.slice(0, -1); 
+            updatePinDots(); 
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
+            dots.forEach((dot, index) => {
+                if (index < enteredPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function checkPin() {
+            const dotsContainer = document.getElementById('pin-dots-container');
+            const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
+            
+            dots.forEach(d => d.style.borderColor = '#10B981');
+            
+            if (enteredPin === adminPin) {
+                loggedInUser = "buchhaltung";
+                completeLogin();
+            } else if (enteredPin === readPin) {
+                loggedInUser = "inhaber";
+                completeLogin();
+            } else {
+                dotsContainer.classList.add('shake-animation');
+                dots.forEach(d => d.style.borderColor = '#EF4444');
+                showToast("Falsche PIN", "Zugriff verweigert.", false);
+                setTimeout(() => { 
+                    dotsContainer.classList.remove('shake-animation'); 
+                    dots.forEach(d => d.style.borderColor = 'var(--gold)');
+                    clearPin(); 
+                }, 400);
+            }
+        }
+
+        function completeLogin() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-portal').classList.remove('hidden');
+            document.getElementById('app-portal').classList.add('flex');
+            document.getElementById('bottom-tab-bar').classList.remove('hidden');
+
+            if (loggedInUser === 'inhaber') {
+                document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
+                document.getElementById('admin-sys-config').classList.add('hidden');
+                document.getElementById('btn-export-backup').classList.add('hidden'); 
+                disableWritePermissions();
+            } else {
+                document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
+                document.getElementById('admin-sys-config').classList.remove('hidden');
+                document.getElementById('btn-export-backup').classList.remove('hidden'); 
+            }
+
+            showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
+            switchTab('dashboard');
+            loadYearFromCloud(currentYear); 
+        }
+
+        function logout() {
+            loggedInUser = null;
+            document.getElementById('app-portal').classList.add('hidden');
+            document.getElementById('app-portal').classList.remove('flex');
+            document.getElementById('bottom-tab-bar').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            clearPin();
+            showToast("Abgemeldet", "System sicher gesperrt.");
+        }
+
         // --- FIREBASE CLOUD FUNKTIONEN ---
 
         function changeCloudYear() {
@@ -896,67 +1004,43 @@
         async function loadYearFromCloud(year) {
             setDbStatus('connecting');
             showToast("Lade Cloud...", `Daten für das Jahr ${year} werden synchronisiert.`);
+            dbDays = [];
             
             try {
-                // Liest direkt aus der Datenbank, Ordner "restaurant_daten"
-                const docRef = db.collection('restaurant_daten').doc(year);
-                const snap = await docRef.get();
+                // 1. Lade Globale Einstellungen für das Jahr
+                const yearDoc = await db.collection('restaurant_daten').doc(year).get();
+                if (yearDoc.exists && yearDoc.data().settings) {
+                    appSettings = yearDoc.data().settings;
+                    initAdminSettingsUI();
+                    buildDynamicEmployeeUI();
+                }
+
+                // 2. Lade alle Tage (Dokumente) aus der Unter-Sammlung "tage"
+                const daysSnapshot = await db.collection('restaurant_daten').doc(year).collection('tage').get();
                 
-                if (snap.exists) {
-                    const docData = snap.data();
-                    dbDays = docData.data || [];
-                    if(docData.settings) {
-                        appSettings = docData.settings;
-                        initAdminSettingsUI();
-                        buildDynamicEmployeeUI();
-                    }
+                daysSnapshot.forEach((doc) => {
+                    dbDays.push(doc.data());
+                });
+
+                if (dbDays.length > 0) {
                     dbDays = migrateToDynamicSalaries(dbDays);
+                    dbDays.sort((a,b) => b.date.localeCompare(a.date));
                     localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                    showToast("Erfolg", `Geschäftsjahr ${year} aus der Cloud geladen.`);
+                    showToast("Erfolg", `${dbDays.length} Tage aus ${year} geladen.`);
                 } else {
-                    dbDays = [];
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify([]));
-                    showToast("Hinweis", `Noch keine Daten für ${year} in der Cloud.`);
+                    showToast("Hinweis", `Noch keine Tagesdaten für ${year} vorhanden.`);
                 }
                 
                 setDbStatus('connected');
                 renderAll();
             } catch(e) { 
-                console.error(e);
+                console.error("Cloud Error:", e);
                 setDbStatus('disconnected');
                 showToast("Cloud-Fehler", "Fehler beim Laden der Daten.", false); 
             }
         }
 
-        async function saveYearToCloud() {
-            if (loggedInUser === 'inhaber') { 
-                showToast("Fehler", "Keine Cloud-Schreibrechte als Inhaber.", false); 
-                return; 
-            }
-            
-            setDbStatus('connecting');
-            showToast("Sichere in Cloud...", "Daten werden hochgeladen.");
-
-            try {
-                // Speichert direkt in die Datenbank, Ordner "restaurant_daten"
-                const docRef = db.collection('restaurant_daten').doc(currentYear);
-                const payload = {
-                    timestamp: new Date().toISOString(),
-                    settings: appSettings,
-                    data: dbDays
-                };
-                
-                await docRef.set(payload);
-                setDbStatus('connected');
-                showToast("Gesichert", `Daten für ${currentYear} sicher in Firebase gespeichert.`);
-            } catch(e) { 
-                console.error(e);
-                setDbStatus('disconnected');
-                showToast("Speicherfehler", "Konnte nicht in Firebase speichern.", false); 
-            }
-        }
-
-        // --- RESTLICHE GLOBALE FUNKTIONEN ---
+        // --- EINSTELLUNGEN ---
         function migrateToDynamicSalaries(daysArray) {
             daysArray.forEach(d => {
                 if (d.expensesDetail && d.expensesDetail.salaries && d.expensesDetail.salaries.adam !== undefined) {
@@ -973,12 +1057,55 @@
         }
 
         function initAdminSettingsUI() {
-            document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
-            document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
-            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+            if(document.getElementById('cfg-wechselgeld')) document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
+            if(document.getElementById('cfg-employees')) document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
+            if(document.getElementById('hint-wechselgeld')) document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
         }
 
-        function saveSystemSettings() {
+        function buildDynamicEmployeeUI() {
+            const dashContainer = document.getElementById('dash-salaries-container');
+            const entryContainer = document.getElementById('entry-salaries-container');
+            const pdfContainer = document.getElementById('pdf-salaries-container');
+
+            if(dashContainer) dashContainer.innerHTML = ''; 
+            if(entryContainer) entryContainer.innerHTML = ''; 
+            if (pdfContainer) pdfContainer.innerHTML = '';
+
+            appSettings.employees.forEach((emp) => {
+                if(dashContainer) {
+                    dashContainer.insertAdjacentHTML('beforeend', `
+                        <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${emp}</span>
+                            <div class="text-lg sm:text-xl font-black text-stone-900 mt-1 dash-sal-val" data-emp="${emp}">0,00 €</div>
+                        </div>
+                    `);
+                }
+
+                if(entryContainer) {
+                    entryContainer.insertAdjacentHTML('beforeend', `
+                        <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dyn-sal-row">
+                            <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">${emp}</label>
+                            <input type="hidden" class="dyn-sal-name" value="${emp}">
+                            <div class="flex gap-2">
+                                <div class="relative w-full"><input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-sal-bar modern-input py-2 pl-3 pr-6 text-sm"><i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i></div>
+                                <div class="relative w-full"><input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-sal-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200"><i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i></div>
+                            </div>
+                        </div>
+                    `);
+                }
+
+                if (pdfContainer) {
+                    pdfContainer.insertAdjacentHTML('beforeend', `
+                        <div style="flex: 1 1 18%; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #E7E5E4;">
+                            <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">${emp}</p>
+                            <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" class="pdf-sal-val" data-emp="${emp}">0,00 €</p>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        async function saveSystemSettings() {
             if (loggedInUser !== 'buchhaltung') return;
 
             const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
@@ -1001,389 +1128,24 @@
             localStorage.setItem('gastro_app_settings', JSON.stringify(appSettings));
             document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
             
+            try {
+                await db.collection('restaurant_daten').doc(currentYear).set({ settings: appSettings }, { merge: true });
+                showToast("Gesichert", "System-Einstellungen in Firebase aktualisiert.");
+            } catch (e) {
+                showToast("Fehler", "Settings konnten nicht in die Cloud gespeichert werden.", false);
+            }
+
             buildDynamicEmployeeUI();
             renderAll();
-            showToast("Sicherheit & System aktualisiert", "Deine neuen Einstellungen wurden gespeichert.");
         }
 
-        function buildDynamicEmployeeUI() {
-            const dashContainer = document.getElementById('dash-salaries-container');
-            const entryContainer = document.getElementById('entry-salaries-container');
-            const pdfContainer = document.getElementById('pdf-salaries-container');
-
-            dashContainer.innerHTML = '';
-            entryContainer.innerHTML = '';
-            if (pdfContainer) pdfContainer.innerHTML = '';
-
-            appSettings.employees.forEach((emp) => {
-                dashContainer.insertAdjacentHTML('beforeend', `
-                    <div class="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${emp}</span>
-                        <div class="text-lg sm:text-xl font-black text-stone-900 mt-1 dash-sal-val" data-emp="${emp}">0,00 €</div>
-                    </div>
-                `);
-
-                entryContainer.insertAdjacentHTML('beforeend', `
-                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dyn-sal-row">
-                        <label class="block text-[10px] font-bold text-stone-800 uppercase mb-2">${emp}</label>
-                        <input type="hidden" class="dyn-sal-name" value="${emp}">
-                        <div class="flex gap-2">
-                            <div class="relative w-full">
-                                <input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-sal-bar modern-input py-2 pl-3 pr-6 text-sm">
-                                <i class="fa-solid fa-coins absolute right-2 top-3 text-stone-300 text-xs"></i>
-                            </div>
-                            <div class="relative w-full">
-                                <input type="number" step="0.01" min="0" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-sal-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                                <i class="fa-regular fa-credit-card absolute right-2 top-3 text-blue-300 text-xs"></i>
-                            </div>
-                        </div>
-                    </div>
-                `);
-
-                if (pdfContainer) {
-                    pdfContainer.insertAdjacentHTML('beforeend', `
-                        <div style="flex: 1 1 18%; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #E7E5E4;">
-                            <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">${emp}</p>
-                            <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" class="pdf-sal-val" data-emp="${emp}">0,00 €</p>
-                        </div>
-                    `);
-                }
-            });
-        }
-
-        function downloadBackup() {
-            if (dbDays.length === 0) {
-                showToast("Fehler", "Keine Daten zum Sichern vorhanden.", false);
-                return;
-            }
-            const payload = {
-                timestamp: new Date().toISOString(),
-                settings: appSettings,
-                data: dbDays
-            };
-            const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `GastroFinance_Backup_${currentYear}_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast("Backup erstellt", "Datei wurde heruntergeladen.");
-        }
-
-        function setDbStatus(state) {
-            const dotOut = document.getElementById('db-status-dot'); 
-            const textOut = document.getElementById('db-status-text'); 
-            const dotIn = document.getElementById('db-status-dot-inner'); 
-            const textIn = document.getElementById('db-status-text-inner'); 
-
-            const resetClasses = "w-2.5 h-2.5 rounded-full transition-colors duration-300 ";
-            const resetText = "text-[9px] font-extrabold uppercase tracking-widest ";
-
-            if (state === 'connected') {
-                const dotCls = resetClasses + "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]";
-                const txtCls = resetText + "text-emerald-600";
-                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Verbunden"; }
-                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Verbunden"; }
-            } else if (state === 'connecting') {
-                const dotCls = resetClasses + "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse";
-                const txtCls = resetText + "text-orange-600";
-                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Lädt..."; }
-                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Lädt..."; }
-            } else {
-                const dotCls = resetClasses + "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
-                const txtCls = resetText + "text-red-600";
-                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Offline"; }
-                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Offline"; }
-            }
-        }
-
-        function showConfirmModal(title, desc, confirmCallback) {
-            const modal = document.getElementById('custom-modal');
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-desc').textContent = desc;
-
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            const cancelBtn = document.getElementById('modal-cancel-btn');
-
-            confirmBtn.onclick = function() { modal.classList.add('hidden'); confirmCallback(); };
-            cancelBtn.onclick = function() { modal.classList.add('hidden'); };
-
-            modal.classList.remove('hidden');
-        }
-
-        function showToast(title, message, isSuccess = true) {
-            const toast = document.getElementById('system-toast');
-            document.getElementById('toast-title').textContent = title;
-            document.getElementById('toast-message').textContent = message;
-            
-            const icon = document.getElementById('toast-icon');
-            if (isSuccess) { icon.className = "fa-solid fa-circle-check text-emerald-600 text-2xl"; } 
-            else { icon.className = "fa-solid fa-triangle-exclamation text-red-600 text-2xl"; }
-
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
-        }
-
-        function pressPin(num) {
-            if (enteredPin.length < 4) {
-                enteredPin += num;
-                updatePinDots();
-                if (enteredPin.length === 4) setTimeout(checkPin, 200);
-            }
-        }
-
-        function clearPin() { enteredPin = ""; updatePinDots(); }
-        function backspacePin() { enteredPin = enteredPin.slice(0, -1); updatePinDots(); }
-
-        function updatePinDots() {
-            const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
-            dots.forEach((dot, index) => {
-                if (index < enteredPin.length) dot.classList.add('filled');
-                else dot.classList.remove('filled');
-            });
-        }
-
-        function checkPin() {
-            const dotsContainer = document.getElementById('pin-dots-container');
-
-            if (enteredPin === adminPin) {
-                loggedInUser = "buchhaltung";
-                completeLogin();
-            } else if (enteredPin === readPin) {
-                loggedInUser = "inhaber";
-                completeLogin();
-            } else {
-                dotsContainer.classList.add('shake-animation');
-                showToast("Falsche PIN", "Zugriff verweigert.", false);
-                setTimeout(() => { dotsContainer.classList.remove('shake-animation'); clearPin(); }, 400);
-            }
-        }
-
-        function completeLogin() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-portal').classList.remove('hidden');
-            document.getElementById('app-portal').classList.add('flex');
-            document.getElementById('bottom-tab-bar').classList.remove('hidden');
-
-            if (loggedInUser === 'inhaber') {
-                document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
-                document.getElementById('admin-sys-config').classList.add('hidden');
-                document.getElementById('btn-save-cloud').classList.add('hidden'); // Versteckt Speichern-Button
-                disableWritePermissions();
-            } else {
-                document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
-                document.getElementById('admin-sys-config').classList.remove('hidden');
-                document.getElementById('btn-save-cloud').classList.remove('hidden'); // Zeigt Speichern-Button
-            }
-
-            showToast("System entsperrt", "Willkommen im GastroFinance Portal.");
-            switchTab('dashboard');
-            renderAll();
-            
-            loadYearFromCloud(currentYear); 
-        }
-
-        function logout() {
-            loggedInUser = null;
-            document.getElementById('app-portal').classList.add('hidden');
-            document.getElementById('app-portal').classList.remove('flex');
-            document.getElementById('bottom-tab-bar').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            clearPin();
-            showToast("Abgemeldet", "System sicher gesperrt.");
-        }
-
-        function disableWritePermissions() {
-            const dropzone = document.getElementById('drop-zone');
-            if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
-            const dropzone2 = document.getElementById('drop-zone-ausgaben');
-            if (dropzone2) { dropzone2.style.pointerEvents = "none"; dropzone2.style.opacity = "0.5"; }
-            
-            const inputs = document.querySelectorAll('input, select, textarea');
-            inputs.forEach(i => {
-                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping', 'firebase-year-select'].includes(i.id)) {
-                    i.disabled = true;
-                }
-            });
-            const buttons = document.querySelectorAll('form button, #tab-daten button');
-            buttons.forEach(b => {
-                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup') && b.id !== 'btn-save-cloud') b.disabled = true;
-            });
-        }
-
-        function switchTab(tabId) {
-            activeTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-            document.querySelectorAll('#bottom-tab-bar button').forEach(b => {
-                b.classList.remove('tab-active', 'scale-105');
-                b.classList.add('text-stone-400');
-            });
-
-            const btn = document.getElementById(`btn-tab-${tabId}`);
-            if(btn) {
-                btn.classList.add('tab-active', 'scale-105');
-                btn.classList.remove('text-stone-400');
-            }
-            renderAll();
-        }
-
-        function setupPullToRefresh() {
-            let startY = 0;
-            let isPulling = false;
-            const scrollable = document.getElementById('scroll-container');
-            const spinner = document.getElementById('pull-to-refresh-spinner');
-            
-            scrollable.addEventListener('touchstart', e => {
-                if (scrollable.scrollTop <= 0) { 
-                    startY = e.touches[0].pageY; 
-                    isPulling = true; 
-                }
-            }, { passive: true });
-
-            scrollable.addEventListener('touchmove', e => {
-                if (!isPulling) return;
-                const pullDistance = e.touches[0].pageY - startY;
-                if (pullDistance > 60 && scrollable.scrollTop <= 0) {
-                    spinner.style.height = '60px';
-                    spinner.style.opacity = '1';
-                }
-            }, { passive: true });
-
-            scrollable.addEventListener('touchend', () => {
-                if (isPulling) {
-                    if (spinner.style.height === '60px') {
-                        if (loggedInUser !== null) {
-                            loadYearFromCloud(currentYear);
-                        } else {
-                            showToast("Lokal", "Keine Cloud aktiv.");
-                        }
-                    }
-                    setTimeout(() => {
-                        spinner.style.height = '0px';
-                        spinner.style.opacity = '0';
-                    }, 500);
-                    isPulling = false;
-                }
-            }, { passive: true });
-        }
-
-        function renderExpenseRows(generalExpenses = []) {
-            const container = document.getElementById('dynamic-expenses-container');
-            container.innerHTML = '';
-            
-            let expenses = [...generalExpenses];
-            while (expenses.length < 4) {
-                expenses.push({ name: '', bar: '', card: '', tax: 0 });
-            }
-
-            expenses.forEach((exp, index) => {
-                const taxSel = exp.tax || 0;
-                const rowHtml = `
-                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
-                        <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Rewe)" value="${exp.name || ''}">
-                        <div class="flex gap-2 mb-2">
-                            <div class="relative w-full">
-                                <input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.bar || ''}" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm">
-                            </div>
-                            <div class="relative w-full">
-                                <input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.card || ''}" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                            </div>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
-                                <option value="0" ${taxSel == 0 ? 'selected' : ''}>0% Steuer</option>
-                                <option value="7" ${taxSel == 7 ? 'selected' : ''}>7% Steuer (Lebensm.)</option>
-                                <option value="19" ${taxSel == 19 ? 'selected' : ''}>19% Steuer (Dienstl.)</option>
-                            </select>
-                            ${index >= 4 ? `<button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', rowHtml);
-            });
-            calculateLiveFormula();
-        }
-
-        function addDynamicExpenseRow() {
-            const container = document.getElementById('dynamic-expenses-container');
-            const rowCount = container.querySelectorAll('.dynamic-expense-row').length + 1;
-            const rowHtml = `
-                <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
-                    <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Ausgabe ${rowCount})">
-                    <div class="flex gap-2 mb-2">
-                        <div class="relative w-full">
-                            <input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm">
-                        </div>
-                        <div class="relative w-full">
-                            <input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200">
-                        </div>
-                    </div>
-                    <div class="flex gap-2 items-center">
-                        <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
-                            <option value="0">0% Steuer</option>
-                            <option value="7">7% Steuer (Lebensm.)</option>
-                            <option value="19">19% Steuer (Dienstl.)</option>
-                        </select>
-                        <button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', rowHtml);
-        }
-
-        function calculateLiveFormula() {
-            const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
-            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
-            
-            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
-            const totalRevenue = actualBar + cardRev; 
-
-            let expSumBar = 0;
-            let expSumCard = 0;
-
-            document.querySelectorAll('.dyn-sal-row').forEach(row => {
-                expSumBar += parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
-                expSumCard += parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
-            });
-
-            document.querySelectorAll('.dynamic-expense-row').forEach(row => {
-                expSumBar += parseFloat(row.querySelector('.dyn-bar').value) || 0;
-                expSumCard += parseFloat(row.querySelector('.dyn-card').value) || 0;
-            });
-
-            const combinedExpenses = expSumBar + expSumCard;
-            const profit = totalRevenue - combinedExpenses;
-            const tuete = actualBar - expSumBar;
-
-            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
-            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
-            
-            document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
-            document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
-
-            document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
-            document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
-            
-            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
-            document.getElementById('calc-preview-tuete').style.color = tuete >= 0 ? "var(--gold)" : "#EF4444";
-        }
-
+        // --- MANUELLE EINGABE ---
         function handleEntryDateChange() {
             const pickedDate = document.getElementById('entry-date').value;
             const existingDay = dbDays.find(d => d.date === pickedDate);
 
-            document.getElementById('entry-rev-bar').value = '';
-            document.getElementById('entry-rev-card').value = '';
-            
-            document.querySelectorAll('.dyn-sal-row').forEach(row => {
-                row.querySelector('.dyn-sal-bar').value = '';
-                row.querySelector('.dyn-sal-card').value = '';
-            });
+            document.getElementById('entry-rev-bar').value = ''; document.getElementById('entry-rev-card').value = '';
+            document.querySelectorAll('.dyn-sal-row').forEach(row => { row.querySelector('.dyn-sal-bar').value = ''; row.querySelector('.dyn-sal-card').value = ''; });
 
             if (existingDay) {
                 if (existingDay.revenue.bar > 0 || existingDay.revenue.total > 0) {
@@ -1419,7 +1181,95 @@
             calculateLiveFormula();
         }
 
-        function saveManualEntry() {
+        function renderExpenseRows(generalExpenses = []) {
+            const container = document.getElementById('dynamic-expenses-container');
+            container.innerHTML = '';
+            
+            let expenses = [...generalExpenses];
+            while (expenses.length < 4) { expenses.push({ name: '', bar: '', card: '', tax: 0 }); }
+
+            expenses.forEach((exp, index) => {
+                const taxSel = exp.tax || 0;
+                const rowHtml = `
+                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
+                        <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Rewe)" value="${exp.name || ''}">
+                        <div class="flex gap-2 mb-2">
+                            <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.bar || ''}" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm"></div>
+                            <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.card || ''}" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200"></div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                                <option value="0" ${taxSel == 0 ? 'selected' : ''}>0% Steuer</option>
+                                <option value="7" ${taxSel == 7 ? 'selected' : ''}>7% Steuer (Lebensm.)</option>
+                                <option value="19" ${taxSel == 19 ? 'selected' : ''}>19% Steuer (Dienstl.)</option>
+                            </select>
+                            ${index >= 4 ? `<button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', rowHtml);
+            });
+            calculateLiveFormula();
+        }
+
+        function addDynamicExpenseRow() {
+            const container = document.getElementById('dynamic-expenses-container');
+            const rowCount = container.querySelectorAll('.dynamic-expense-row').length + 1;
+            const rowHtml = `
+                <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
+                    <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Ausgabe ${rowCount})">
+                    <div class="flex gap-2 mb-2">
+                        <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm"></div>
+                        <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200"></div>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                            <option value="0">0% Steuer</option>
+                            <option value="7">7% Steuer (Lebensm.)</option>
+                            <option value="19">19% Steuer (Dienstl.)</option>
+                        </select>
+                        <button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function calculateLiveFormula() {
+            const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
+            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
+            const totalRevenue = actualBar + cardRev; 
+
+            let expSumBar = 0, expSumCard = 0;
+
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                expSumBar += parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
+                expSumCard += parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
+            });
+
+            document.querySelectorAll('.dynamic-expense-row').forEach(row => {
+                expSumBar += parseFloat(row.querySelector('.dyn-bar').value) || 0;
+                expSumCard += parseFloat(row.querySelector('.dyn-card').value) || 0;
+            });
+
+            const combinedExpenses = expSumBar + expSumCard;
+            const profit = totalRevenue - combinedExpenses;
+            const tuete = actualBar - expSumBar;
+
+            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
+            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
+            document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
+            document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
+
+            document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
+            document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
+            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
+            document.getElementById('calc-preview-tuete').style.color = tuete >= 0 ? "var(--gold)" : "#EF4444";
+        }
+
+        async function saveManualEntry() {
             if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
 
             const pickedDate = document.getElementById('entry-date').value;
@@ -1430,17 +1280,15 @@
             const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0; 
             const totalRevenue = actualBar + cardRev; 
 
-            let expSumBar = 0;
-            let expSumCard = 0;
-
+            let expSumBar = 0, expSumCard = 0;
             let exSalaries = {};
+
             document.querySelectorAll('.dyn-sal-row').forEach(row => {
                 const name = row.querySelector('.dyn-sal-name').value;
                 const b = parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
                 const c = parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
                 exSalaries[name] = { bar: b, card: c };
-                expSumBar += b;
-                expSumCard += c;
+                expSumBar += b; expSumCard += c;
             });
 
             let genExpenses = [];
@@ -1452,8 +1300,7 @@
                 
                 if (name || b !== 0 || c !== 0) {
                     genExpenses.push({ name: name, bar: b, card: c, tax: t });
-                    expSumBar += b;
-                    expSumCard += c;
+                    expSumBar += b; expSumCard += c;
                 }
             });
 
@@ -1463,29 +1310,40 @@
                 date: pickedDate,
                 germanDate: formatGermanDate(pickedDate),
                 revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
-                expensesDetail: {
-                    salaries: exSalaries,
-                    general: genExpenses
-                },
+                expensesDetail: { salaries: exSalaries, general: genExpenses },
                 expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
                 profit: totalRevenue - totalExpenses,
                 tuete: actualBar - expSumBar,
                 note: "Manuelle Buchung"
             };
 
-            const idx = dbDays.findIndex(d => d.date === pickedDate);
-            if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
+            const targetYear = pickedDate.substring(0, 4);
 
-            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-            
-            showToast("Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
-            saveYearToCloud();
+            try {
+                setDbStatus('connecting');
+                // Dokument in die richtige Unter-Sammlung speichern
+                await db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(pickedDate).set(dayObj);
 
-            renderAll();
-            switchTab('dashboard');
+                // Lokal nur einfügen, wenn es das Jahr ist, das wir gerade in der App betrachten
+                if(targetYear === currentYear) {
+                    const idx = dbDays.findIndex(d => d.date === pickedDate);
+                    if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
+                    dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    renderAll();
+                }
+                
+                showToast("Live Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
+                setDbStatus('connected');
+                switchTab('dashboard');
+            } catch(e) {
+                setDbStatus('disconnected');
+                showToast("Fehler", "Cloud-Speicherung fehlgeschlagen.", false);
+            }
         }
 
+
+        // --- IMPORT LOGIK ---
         function initExcelDropzone() {
             const dz1 = document.getElementById('drop-zone');
             ['dragenter', 'dragover'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.add('bg-stone-100'); }));
@@ -1496,24 +1354,58 @@
             ['dragenter', 'dragover'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.add('bg-red-100'); }));
             ['dragleave', 'drop'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.remove('bg-red-100'); }));
             dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseAusgabenFile(e.dataTransfer.files[0]); });
+
+            // Dropzone für JSON
+            const dz3 = document.getElementById('drop-zone-json');
+            if (dz3) {
+                ['dragenter', 'dragover'].forEach(name => dz3.addEventListener(name, e => { e.preventDefault(); dz3.classList.add('bg-blue-100'); }));
+                ['dragleave', 'drop'].forEach(name => dz3.addEventListener(name, e => { e.preventDefault(); dz3.classList.remove('bg-blue-100'); }));
+                dz3.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseJsonFile(e.dataTransfer.files[0]); });
+            }
         }
         
         function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
         function handleAusgabenUpload(e) { if(e.target.files.length > 0) parseAusgabenFile(e.target.files[0]); }
+        function handleJsonUpload(e) { if(e.target.files.length > 0) parseJsonFile(e.target.files[0]); }
+
+        function parseJsonFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showToast("Falsches Format", "Bitte lade hier nur .json Backups hoch.", false);
+                return;
+            }
+            const r = new FileReader();
+            r.onload = e => {
+                try {
+                    const d = JSON.parse(e.target.result);
+                    let arr = d.data || d;
+                    if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
+                    
+                    tempImportBuffer = [];
+                    arr.forEach(day => {
+                        recalcDaySums(day); // Make sure sums are correct
+                        tempImportBuffer.push(day);
+                    });
+                    
+                    importSortDesc = true;
+                    tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                    renderImportPreview();
+                    showToast("Backup Ausgelesen", `Gefunden: ${arr.length} Tage. Bitte klicke auf 'Übernehmen'.`);
+                } catch(err) { showToast("Fehler", "JSON ungültig oder beschädigt.", false); }
+            };
+            r.readAsText(file);
+        }
 
         function recalcDaySums(dayObj) {
             let b = 0, c = 0;
             if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
                 const sal = dayObj.expensesDetail.salaries;
                 Object.keys(sal).forEach(empKey => {
-                    b += (parseFloat(sal[empKey]?.bar)||0);
-                    c += (parseFloat(sal[empKey]?.card)||0);
+                    b += (parseFloat(sal[empKey]?.bar)||0); c += (parseFloat(sal[empKey]?.card)||0);
                 });
             }
             if (dayObj.expensesDetail && dayObj.expensesDetail.general) {
                 dayObj.expensesDetail.general.forEach(g => {
-                    b += (parseFloat(g.bar) || 0);
-                    c += (parseFloat(g.card) || 0);
+                    b += (parseFloat(g.bar) || 0); c += (parseFloat(g.card) || 0);
                 });
             }
 
@@ -1523,25 +1415,6 @@
         }
 
         function parseExcelFile(file) {
-            // Json direkt-Import erlauben als Fallback
-            if (file.name.endsWith('.json')) {
-                const r = new FileReader();
-                r.onload = e => {
-                    try {
-                        const d = JSON.parse(e.target.result);
-                        let arr = d.data || d;
-                        if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
-                        dbDays = arr;
-                        localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                        saveYearToCloud();
-                        renderAll();
-                        showToast("JSON Importiert", "Backup wurde direkt eingespielt.");
-                    } catch(err) { showToast("Fehler", "JSON ungültig.", false); }
-                };
-                r.readAsText(file);
-                return;
-            }
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1557,11 +1430,8 @@
                         const match = trimmedName.match(dateRegex);
                         if (!match) return; 
 
-                        let day = match[1];
-                        let month = match[2];
-                        let sheetYear = match[3];
+                        let day = match[1], month = match[2], sheetYear = match[3];
 
-                        // NEUE LOGIK: Wenn kein Jahr angegeben ist, nimm das aktuell ausgewählte Jahr im Cloud Manager
                         if (!sheetYear) {
                             sheetYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
                         }
@@ -1635,8 +1505,7 @@
                                 for(let c=0; c<row.length; c++) {
                                     const cellVal = String(row[c] || "").trim().toLowerCase();
                                     if (cellVal === "arikel:" || cellVal === "artikel:" || cellVal === "artikel" || cellVal === "artikel/zweck" || cellVal === "artikel/zweck:") {
-                                        inAusgabenSection = true;
-                                        nameCol = c;
+                                        inAusgabenSection = true; nameCol = c;
                                         for(let c2=c+1; c2<row.length; c2++) {
                                             const h = String(row[c2]||"").toLowerCase();
                                             if(h.includes("brutto") || h.includes("betrag") || h.includes("netto")) amountCol = c2;
@@ -1653,8 +1522,7 @@
                                 const nameCell = String(row[nameCol] || "").trim().toLowerCase();
 
                                 if (nameCell.startsWith("summe") || nameCell.startsWith("einnahme") || nameCell.startsWith("tüte") || nameCell.startsWith("gewinn") || nameCell === "art:") {
-                                    inAusgabenSection = false;
-                                    continue;
+                                    inAusgabenSection = false; continue;
                                 }
 
                                 const name = String(row[nameCol] || "").trim();
@@ -1693,15 +1561,11 @@
                                 let matched = false;
                                 for (let emp of appSettings.employees) {
                                     if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige / Aushilfen") {
-                                        exSalaries[emp].bar += exp.bar;
-                                        exSalaries[emp].card += exp.card;
-                                        matched = true;
-                                        break;
+                                        exSalaries[emp].bar += exp.bar; exSalaries[emp].card += exp.card; matched = true; break;
                                     }
                                 }
                                 if (!matched && exSalaries["Ehemalige / Aushilfen"]) {
-                                    exSalaries["Ehemalige / Aushilfen"].bar += exp.bar;
-                                    exSalaries["Ehemalige / Aushilfen"].card += exp.card;
+                                    exSalaries["Ehemalige / Aushilfen"].bar += exp.bar; exSalaries["Ehemalige / Aushilfen"].card += exp.card;
                                 }
                             } else {
                                 exGeneral.push(exp);
@@ -1788,11 +1652,8 @@
                         const rawDateMatch = String(row[dateIdx]).match(/(\d{2})\.(\d{2})(?:\.(\d{4}))?/);
                         if(!rawDateMatch) continue;
 
-                        let day = rawDateMatch[1];
-                        let month = rawDateMatch[2];
-                        let rowYear = rawDateMatch[3];
+                        let day = rawDateMatch[1], month = rawDateMatch[2], rowYear = rawDateMatch[3];
 
-                        // NEUE LOGIK: Wenn kein Jahr angegeben ist, nimm das aktuell ausgewählte Jahr im Cloud Manager
                         if (!rowYear) {
                             rowYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
                         }
@@ -1841,9 +1702,18 @@
                     }
 
                     tempImportBuffer = [];
+                    let totalSkippedDups = 0;
 
                     Object.keys(expensesByDate).forEach(isoDate => {
-                        const newExpenses = expensesByDate[isoDate];
+                        let newExpenses = expensesByDate[isoDate];
+                        
+                        const uniqueNew = [];
+                        newExpenses.forEach(nx => {
+                            const isDupInFile = uniqueNew.some(u => u.name === nx.name && u.bar === nx.bar && u.card === nx.card && u.tax === nx.tax);
+                            if (!isDupInFile) uniqueNew.push(nx);
+                        });
+                        newExpenses = uniqueNew;
+
                         let existingDay = dbDays.find(d => d.date === isoDate);
 
                         if (existingDay) {
@@ -1852,9 +1722,27 @@
                                 dayCopy.expensesDetail = { salaries: {}, general: [] };
                                 appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
                             }
-                            dayCopy.expensesDetail.general.push(...newExpenses);
-                            recalcDaySums(dayCopy);
-                            tempImportBuffer.push(dayCopy);
+
+                            let addedCount = 0;
+                            newExpenses.forEach(nx => {
+                                const isDuplicate = dayCopy.expensesDetail.general.some(g =>
+                                    g.name.toLowerCase() === nx.name.toLowerCase() && 
+                                    g.bar === nx.bar && 
+                                    g.card === nx.card && 
+                                    g.tax === nx.tax
+                                );
+                                if (!isDuplicate) {
+                                    dayCopy.expensesDetail.general.push(nx);
+                                    addedCount++;
+                                } else {
+                                    totalSkippedDups++;
+                                }
+                            });
+
+                            if (addedCount > 0) {
+                                recalcDaySums(dayCopy);
+                                tempImportBuffer.push(dayCopy);
+                            }
                         } else {
                             let exSalaries = {};
                             appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
@@ -1871,10 +1759,12 @@
                     });
 
                     if (tempImportBuffer.length === 0) {
-                        if (skippedCount > 0) showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
+                        if (totalSkippedDups > 0) showToast("Hinweis", `Kein Import: Alle Ausgaben waren exakte Duplikate (${totalSkippedDups} ignoriert).`, false);
+                        else if (skippedCount > 0) showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
                         else showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
                     } else {
-                        if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
+                        if (totalSkippedDups > 0) showToast("Duplikat-Schutz aktiv", `${totalSkippedDups} Ausgaben ignoriert, da sie schon in der Datenbank stehen.`);
+                        else if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
                         importSortDesc = true;
                         tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
                         renderImportPreview();
@@ -1945,25 +1835,260 @@
             showToast("Verworfen", "Temporäre Daten gelöscht.");
         }
 
-        function commitBuffer() {
+        async function commitBuffer() {
             if (loggedInUser === 'inhaber') { showToast("Fehler", "Keine Schreibrechte", false); return; }
-            let ins = 0, upd = 0;
+            if (tempImportBuffer.length === 0) return;
+
+            setDbStatus('connecting');
+            showToast("Cloud Batch Upload...", "Sichere Tage in der Datenbank.");
+
+            const batch = db.batch();
+            let count = 0;
+
             tempImportBuffer.forEach(day => {
-                const idx = dbDays.findIndex(d => d.date === day.date);
-                if (idx !== -1) { dbDays[idx] = day; upd++; } else { dbDays.push(day); ins++; }
+                // SMART ROUTING: Schiebt den Tag vollautomatisch in das Jahr, das in SEINEM Datum steht (z.B. 2024)!
+                const targetYear = day.date.substring(0, 4); 
+                const docRef = db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(day.date);
+                batch.set(docRef, day);
+                
+                // Lokal nur einfügen, wenn es zu dem Jahr gehört, das wir uns gerade in der App ansehen
+                if (targetYear === currentYear) {
+                    const idx = dbDays.findIndex(d => d.date === day.date);
+                    if (idx !== -1) { dbDays[idx] = day; } else { dbDays.push(day); }
+                }
+                count++;
             });
-            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
-            localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-            showToast("Importiert", `${ins} neu, ${upd} überschrieben.`);
-            tempImportBuffer = [];
-            document.getElementById('import-preview-container').classList.add('hidden');
-            
-            saveYearToCloud();
-            
-            renderAll();
-            switchTab('dashboard');
+
+            try {
+                await batch.commit(); 
+                dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                showToast("Cloud Importiert", `${count} Tage live (aufgeteilt nach Jahren) in Firebase gespeichert.`);
+                tempImportBuffer = [];
+                document.getElementById('import-preview-container').classList.add('hidden');
+                setDbStatus('connected');
+                renderAll();
+                switchTab('dashboard');
+            } catch(e) {
+                console.error("Batch Error", e);
+                setDbStatus('disconnected');
+                showToast("Fehler", "Upload fehlgeschlagen.", false);
+            }
         }
 
+
+        // --- HISTORIE & LÖSCHEN ---
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            
+            let filtered = getFilteredHistoryDays();
+            filtered.sort((a,b) => b.date.localeCompare(a.date));
+
+            if(filtered.length === 0) {
+                 tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="8" class="p-6 text-center text-stone-400 font-semibold text-sm">Keine Einträge für diesen Zeitraum gefunden.</td></tr>`);
+                 return;
+            }
+
+            const isReadOnly = loggedInUser === 'inhaber';
+
+            filtered.forEach(d => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-stone-100">
+                        <td class="p-4 font-bold">${d.germanDate}</td>
+                        <td class="p-4 text-right">${formatCurrency(d.revenue.bar)}</td>
+                        <td class="p-4 text-right">${formatCurrency(d.revenue.card)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.revenue.total)}</td>
+                        <td class="p-4 text-right text-red-500 font-bold">${formatCurrency(d.expensesSum.total)}</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.profit)}</td>
+                        <td class="p-4 text-right text-[#C5A85C] font-black">${formatCurrency(d.tuete)}</td>
+                        <td class="p-4 text-center">
+                            ${isReadOnly ? '<span class="text-[10px] text-stone-400 font-bold uppercase">Gesperrt</span>' : `
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="quickEditDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-stone-100 active:bg-stone-200 active:scale-95 rounded-lg text-stone-600"><i class="fa-solid fa-pen-to-square pointer-events-none"></i></button>
+                                <button type="button" onclick="deleteSingleDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-red-50 active:bg-red-100 active:scale-95 text-red-500 rounded-lg"><i class="fa-solid fa-trash-can pointer-events-none"></i></button>
+                            </div>
+                            `}
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        function quickEditDay(dateStr) {
+            try {
+                switchTab('eingabe');
+                const dateInput = document.getElementById('entry-date');
+                if (dateInput) {
+                    dateInput.value = dateStr;
+                    handleEntryDateChange();
+                }
+            } catch(e) {
+                console.error("Bearbeitungsfehler:", e);
+                showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
+            }
+        }
+
+        async function deleteSingleDay(d) {
+            showConfirmModal("Löschen?", "Diesen Tag dauerhaft aus der Cloud entfernen?", async () => {
+                try {
+                    setDbStatus('connecting');
+                    const targetYear = d.substring(0, 4);
+                    await db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(d).delete();
+                    
+                    dbDays = dbDays.filter(x => x.date !== d);
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+
+                    showToast("Live Gelöscht", "Eintrag erfolgreich aus Cloud entfernt.");
+                    setDbStatus('connected');
+                    renderAll();
+                } catch(e) {
+                    setDbStatus('disconnected');
+                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
+                }
+            });
+        }
+
+        async function clearDatabase() {
+            if (dbDays.length === 0) {
+                showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
+                return;
+            }
+
+            const filtered = getFilteredHistoryDays();
+            
+            if (filtered.length === 0) {
+                 showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
+                 return;
+            }
+
+            const isFullyFiltered = filtered.length === dbDays.length;
+            
+            let title = isFullyFiltered ? "Alles Löschen?" : "Gefilterte Löschen?";
+            let desc = isFullyFiltered 
+                ? "Sicher, dass ALLE angezeigten Daten in der Cloud dauerhaft entfernt werden sollen?" 
+                : `Sicher, dass die ${filtered.length} angezeigten Tage dauerhaft aus der Cloud gelöscht werden sollen?`;
+
+            showConfirmModal(title, desc, async () => {
+                setDbStatus('connecting');
+                showToast("Lösche...", "Tage werden aus der Datenbank entfernt.");
+                
+                const batch = db.batch();
+                const datesToRemove = new Set(filtered.map(d => d.date));
+                
+                datesToRemove.forEach(date => {
+                    const targetYear = date.substring(0, 4);
+                    const docRef = db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(date);
+                    batch.delete(docRef);
+                });
+
+                try {
+                    await batch.commit(); 
+
+                    if (isFullyFiltered) {
+                        dbDays = []; 
+                    } else {
+                        dbDays = dbDays.filter(d => !datesToRemove.has(d.date));
+                    }
+                    
+                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                    showToast("Erledigt", "Daten wurden erfolgreich aus Firebase gelöscht.");
+                    setDbStatus('connected');
+                    renderAll();
+                } catch (e) {
+                    console.error(e);
+                    setDbStatus('disconnected');
+                    showToast("Fehler", "Konnte nicht alles löschen.", false);
+                }
+            });
+        }
+
+        function deleteAllgemeinerEinkauf() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+            const filtered = getFilteredHistoryDays();
+            if (filtered.length === 0) { showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false); return; }
+
+            let removedCount = 0;
+            let affectedDays = [];
+
+            showConfirmModal("Ausgaben bereinigen?", "Sollen alle 'Allgemeiner Einkauf'-Ausgaben in den angezeigten Tagen gelöscht werden?", async () => {
+                setDbStatus('connecting');
+                showToast("Bereinige...", "Datenbank wird gescannt und gepusht.");
+                
+                const batch = db.batch(); 
+
+                filtered.forEach(day => {
+                    if (day.expensesDetail && day.expensesDetail.general) {
+                        const originalLen = day.expensesDetail.general.length;
+                        
+                        day.expensesDetail.general = day.expensesDetail.general.filter(exp => {
+                            return !exp.name.toLowerCase().includes('allgemeiner einkauf');
+                        });
+
+                        const newLen = day.expensesDetail.general.length;
+                        if (newLen < originalLen) {
+                            removedCount += (originalLen - newLen);
+                            affectedDays.push(day);
+                            recalcDaySums(day); 
+                            
+                            const idx = dbDays.findIndex(d => d.date === day.date);
+                            if (idx !== -1) { dbDays[idx] = day; }
+
+                            const targetYear = day.date.substring(0, 4);
+                            const docRef = db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(day.date);
+                            batch.set(docRef, day);
+                        }
+                    }
+                });
+
+                if (removedCount > 0) {
+                    try {
+                        await batch.commit(); 
+                        localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
+                        showToast("Erfolgreich bereinigt", `${removedCount} Positionen aus ${affectedDays.length} Tagen live entfernt.`);
+                        setDbStatus('connected');
+                        renderAll();
+                    } catch(e) {
+                        showToast("Fehler", "Cloud-Update fehlgeschlagen.", false);
+                        setDbStatus('disconnected');
+                    }
+                } else {
+                    setDbStatus('connected');
+                    showToast("Info", "Keine 'Allgemeiner Einkauf'-Ausgaben gefunden.");
+                }
+            });
+        }
+
+        function downloadFilteredBackup() {
+            if (loggedInUser !== 'buchhaltung') { showToast("Fehler", "Nur Admins dürfen Backups erstellen.", false); return; }
+            
+            const filteredDays = getFilteredHistoryDays();
+            if (filteredDays.length === 0) {
+                showToast("Fehler", "Keine Daten im aktuellen Filter zum Sichern vorhanden.", false);
+                return;
+            }
+
+            const payload = {
+                timestamp: new Date().toISOString(),
+                info: "Gefiltertes Backup",
+                settings: appSettings,
+                data: filteredDays
+            };
+            
+            const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `GastroFinance_Backup_${currentYear}_${filteredDays.length}_Tage_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Backup exportiert", `Es wurden ${filteredDays.length} Tage als JSON gesichert.`);
+        }
+
+
+        // --- DASHBOARD & FILTER LOGIK ---
         function setupFilterDefaultDates() {
             const now = new Date();
             const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
@@ -2148,106 +2273,6 @@
             document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${formatCurrency(total)}</div>`;
         }
 
-        function renderHistory() {
-            const tbody = document.getElementById('history-table-body');
-            tbody.innerHTML = '';
-            
-            let filtered = getFilteredHistoryDays();
-            filtered.sort((a,b) => b.date.localeCompare(a.date));
-
-            if(filtered.length === 0) {
-                 tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="8" class="p-6 text-center text-stone-400 font-semibold text-sm">Keine Einträge für diesen Zeitraum gefunden.</td></tr>`);
-                 return;
-            }
-
-            const isReadOnly = loggedInUser === 'inhaber';
-
-            filtered.forEach(d => {
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-stone-100">
-                        <td class="p-4 font-bold">${d.germanDate}</td>
-                        <td class="p-4 text-right">${formatCurrency(d.revenue.bar)}</td>
-                        <td class="p-4 text-right">${formatCurrency(d.revenue.card)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.revenue.total)}</td>
-                        <td class="p-4 text-right text-red-500 font-bold">${formatCurrency(d.expensesSum.total)}</td>
-                        <td class="p-4 text-right text-emerald-600 font-bold">${formatCurrency(d.profit)}</td>
-                        <td class="p-4 text-right text-[#C5A85C] font-black">${formatCurrency(d.tuete)}</td>
-                        <td class="p-4 text-center">
-                            ${isReadOnly ? '<span class="text-[10px] text-stone-400 font-bold uppercase">Gesperrt</span>' : `
-                            <div class="flex items-center justify-center gap-2">
-                                <button type="button" onclick="quickEditDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-stone-100 active:bg-stone-200 active:scale-95 rounded-lg text-stone-600"><i class="fa-solid fa-pen-to-square pointer-events-none"></i></button>
-                                <button type="button" onclick="deleteSingleDay('${d.date}')" class="relative z-20 cursor-pointer p-3 bg-red-50 active:bg-red-100 active:scale-95 text-red-500 rounded-lg"><i class="fa-solid fa-trash-can pointer-events-none"></i></button>
-                            </div>
-                            `}
-                        </td>
-                    </tr>
-                `);
-            });
-        }
-
-        function quickEditDay(dateStr) {
-            try {
-                switchTab('eingabe');
-                const dateInput = document.getElementById('entry-date');
-                if (dateInput) {
-                    dateInput.value = dateStr;
-                    handleEntryDateChange();
-                }
-            } catch(e) {
-                console.error("Bearbeitungsfehler:", e);
-                showToast("Fehler", "Die Bearbeitung konnte nicht geöffnet werden.", false);
-            }
-        }
-
-        function deleteSingleDay(d) {
-            showConfirmModal("Löschen?", "Diesen Tag dauerhaft entfernen?", () => {
-                try {
-                    dbDays = dbDays.filter(x => x.date !== d);
-                    localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                    showToast("Gelöscht", "Eintrag erfolgreich entfernt.");
-                    saveYearToCloud();
-                    renderAll();
-                } catch(e) {
-                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
-                }
-            });
-        }
-
-        function clearDatabase() {
-            if (dbDays.length === 0) {
-                showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
-                return;
-            }
-
-            const filtered = getFilteredHistoryDays();
-            
-            if (filtered.length === 0) {
-                 showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false);
-                 return;
-            }
-
-            const isFullyFiltered = filtered.length === dbDays.length;
-            
-            let title = isFullyFiltered ? "Alles Löschen?" : "Gefilterte Löschen?";
-            let desc = isFullyFiltered 
-                ? "Sicher, dass ALLE Daten in diesem Jahr dauerhaft entfernt werden sollen?" 
-                : `Sicher, dass die ${filtered.length} angezeigten Tage dauerhaft gelöscht werden sollen?`;
-
-            showConfirmModal(title, desc, () => {
-                if (isFullyFiltered) {
-                    dbDays = []; 
-                } else {
-                    const datesToRemove = new Set(filtered.map(d => d.date));
-                    dbDays = dbDays.filter(d => !datesToRemove.has(d.date));
-                }
-                
-                localStorage.setItem('gastro_finance_premium_db', JSON.stringify(dbDays));
-                showToast("Erledigt", "Daten wurden erfolgreich gelöscht.");
-                saveYearToCloud();
-                renderAll();
-            });
-        }
-
         function generatePDFReport() {
             const filtered = getFilteredDays();
             if (filtered.length === 0) {
@@ -2374,6 +2399,135 @@
                     document.documentElement.style.overflow = 'hidden';
                 });
             }, 200); 
+        }
+
+        // --- HILFSFUNKTIONEN UI ---
+        function setDbStatus(state) {
+            const dotOut = document.getElementById('db-status-dot'); const textOut = document.getElementById('db-status-text'); 
+            const dotIn = document.getElementById('db-status-dot-inner'); const textIn = document.getElementById('db-status-text-inner'); 
+
+            const resetClasses = "w-2.5 h-2.5 rounded-full transition-colors duration-300 ";
+            const resetText = "text-[9px] font-extrabold uppercase tracking-widest ";
+
+            if (state === 'connected') {
+                const dotCls = resetClasses + "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]";
+                const txtCls = resetText + "text-emerald-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Verbunden"; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Verbunden"; }
+            } else if (state === 'connecting') {
+                const dotCls = resetClasses + "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse";
+                const txtCls = resetText + "text-orange-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Lädt..."; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Lädt..."; }
+            } else {
+                const dotCls = resetClasses + "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+                const txtCls = resetText + "text-red-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Offline"; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Offline"; }
+            }
+        }
+
+        function showConfirmModal(title, desc, confirmCallback) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-desc').textContent = desc;
+
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            confirmBtn.onclick = function() { modal.classList.add('hidden'); confirmCallback(); };
+            cancelBtn.onclick = function() { modal.classList.add('hidden'); };
+
+            modal.classList.remove('hidden');
+        }
+
+        function showToast(title, message, isSuccess = true) {
+            const toast = document.getElementById('system-toast');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-message').textContent = message;
+            
+            const icon = document.getElementById('toast-icon');
+            if (isSuccess) { icon.className = "fa-solid fa-circle-check text-emerald-600 text-2xl"; } 
+            else { icon.className = "fa-solid fa-triangle-exclamation text-red-600 text-2xl"; }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+        }
+
+        function disableWritePermissions() {
+            const dropzone = document.getElementById('drop-zone');
+            if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
+            const dropzone2 = document.getElementById('drop-zone-ausgaben');
+            if (dropzone2) { dropzone2.style.pointerEvents = "none"; dropzone2.style.opacity = "0.5"; }
+            const dropzone3 = document.getElementById('drop-zone-json');
+            if (dropzone3) { dropzone3.style.pointerEvents = "none"; dropzone3.style.opacity = "0.5"; }
+            
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(i => {
+                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping', 'firebase-year-select'].includes(i.id)) {
+                    i.disabled = true;
+                }
+            });
+            const buttons = document.querySelectorAll('form button, #tab-daten button');
+            buttons.forEach(b => {
+                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup')) b.disabled = true;
+            });
+        }
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('#bottom-tab-bar button').forEach(b => {
+                b.classList.remove('tab-active', 'scale-105');
+                b.classList.add('text-stone-400');
+            });
+
+            const btn = document.getElementById(`btn-tab-${tabId}`);
+            if(btn) {
+                btn.classList.add('tab-active', 'scale-105');
+                btn.classList.remove('text-stone-400');
+            }
+            renderAll();
+        }
+
+        function setupPullToRefresh() {
+            let startY = 0;
+            let isPulling = false;
+            const scrollable = document.getElementById('scroll-container');
+            const spinner = document.getElementById('pull-to-refresh-spinner');
+            
+            scrollable.addEventListener('touchstart', e => {
+                if (scrollable.scrollTop <= 0) { 
+                    startY = e.touches[0].pageY; 
+                    isPulling = true; 
+                }
+            }, { passive: true });
+
+            scrollable.addEventListener('touchmove', e => {
+                if (!isPulling) return;
+                const pullDistance = e.touches[0].pageY - startY;
+                if (pullDistance > 60 && scrollable.scrollTop <= 0) {
+                    spinner.style.height = '60px';
+                    spinner.style.opacity = '1';
+                }
+            }, { passive: true });
+
+            scrollable.addEventListener('touchend', () => {
+                if (isPulling) {
+                    if (spinner.style.height === '60px') {
+                        if (loggedInUser !== null) {
+                            loadYearFromCloud(currentYear);
+                        }
+                    }
+                    setTimeout(() => {
+                        spinner.style.height = '0px';
+                        spinner.style.opacity = '0';
+                    }, 500);
+                    isPulling = false;
+                }
+            }, { passive: true });
         }
 
         function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
