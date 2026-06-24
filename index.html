@@ -895,17 +895,20 @@
                     await auth.signInWithEmailAndPassword('inhaber@gastro.app', pwd);
                     // Wenn erfolgreich, greift onAuthStateChanged
                     return;
-                } catch (e2) {
-                    // Beide Versuche gescheitert -> PIN ist falsch
-                    dotsContainer.classList.add('shake-animation');
-                    dots.forEach(d => d.style.borderColor = '#EF4444'); // Kurz rot
-                    showToast("Falsche PIN", "Zugriff verweigert.", false);
-                    setTimeout(() => { 
-                        dotsContainer.classList.remove('shake-animation'); 
-                        dots.forEach(d => d.style.borderColor = 'var(--gold)');
-                        clearPin(); 
-                    }, 400);
-                }
+                        } catch (e2) {
+            // DIESE ZEILE HINZUFÜGEN FÜRS HANDY:
+            alert("Firebase Fehler: " + e1.code + " | " + e2.code);
+            
+            // Beide Versuche gescheitert -> PIN ist falsch
+            dotsContainer.classList.add('shake-animation');
+            dots.forEach(d => d.style.borderColor = '#EF4444'); // Kurz rot
+            showToast("Falsche PIN", "Zugriff verweigert.", false);
+            setTimeout(() => { 
+                dotsContainer.classList.remove('shake-animation'); 
+                dots.forEach(d => d.style.borderColor = 'var(--gold)');
+                clearPin(); 
+            }, 400);
+        }
             }
         }
 
