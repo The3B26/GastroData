@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -22,7 +23,7 @@
     <!-- html2pdf für PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FIREBASE COMPAT (Auth & Firestore) -->
+    <!-- FIREBASE COMPAT -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -179,7 +180,6 @@
 
     <!-- ================= LOGIN SCREEN ================= -->
     <div id="login-screen" class="fixed inset-0 z-[150] bg-[#FAF9F6] flex flex-col items-center justify-center w-full h-[100dvh] px-4 overflow-y-auto">
-        
         <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center my-auto">
             <div class="flex justify-center mb-6">
                 <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
@@ -239,8 +239,8 @@
 
             <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-stone-100">
                 <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadYearFromCloud(currentYear)" title="Cloud Status">
-                    <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] transition-colors duration-300"></div>
-                    <span id="db-status-text-inner" class="text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest">Verbunden</span>
+                    <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-colors duration-300"></div>
+                    <span id="db-status-text-inner" class="text-[9px] font-extrabold text-red-600 uppercase tracking-widest">Offline</span>
                 </div>
                 <button type="button" onclick="logout()" class="p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-600 transition-all text-sm border border-stone-200 cursor-pointer" title="Sicher abmelden">
                     <i class="fa-solid fa-power-off"></i>
@@ -489,7 +489,6 @@
                             <input type="text" id="hist-search" placeholder="Datum oder Notiz suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto flex-1">
                             <div class="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap">
                                 
-                                <!-- NEUER BACKUP BUTTON (Nur für Admins sichtbar) -->
                                 <button type="button" id="btn-export-backup" onclick="downloadFilteredBackup()" class="btn-dark bg-stone-800 hover:bg-stone-900 w-full sm:w-auto py-3 px-4 text-xs flex-1 border border-[#C5A85C]/30" title="Lädt die gefilterten Tage als JSON-Backup herunter">
                                     <i class="fa-solid fa-download mr-2 text-[#C5A85C]"></i> Backup laden
                                 </button>
@@ -840,10 +839,10 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // OFFLINE PERSISTENCE AKTIVIEREN (Die Magie für Funklöcher)
-        db.enablePersistence().catch(function(err) {
-            console.log("Offline Modus Info: ", err.code);
-        });
+        // TEMPORÄR DEAKTIVIERT FÜR FEHLERSUCHE (Wegen möglicher lokaler Datei-Sperre auf iPhones)
+        // db.enablePersistence().catch(function(err) {
+        //     console.log("Offline Modus Info: ", err.code);
+        // });
 
         // GLOBALE VARIABLEN
         let dbDays = [];
@@ -882,33 +881,28 @@
             // Optisches Feedback: Kurz grün
             dots.forEach(d => d.style.borderColor = '#10B981');
             
-            const pwd = enteredPin + "The3BSpow!";
+            const pwd = enteredPin + "GastroApp!";
 
             try {
                 // Versuch 1: Wir versuchen, den Admin einzuloggen
                 await auth.signInWithEmailAndPassword('admin@gastro.app', pwd);
-                // Wenn erfolgreich, greift onAuthStateChanged
                 return;
             } catch (e1) {
                 try {
                     // Versuch 2: Vielleicht war es die Inhaber-PIN?
                     await auth.signInWithEmailAndPassword('inhaber@gastro.app', pwd);
-                    // Wenn erfolgreich, greift onAuthStateChanged
                     return;
-                        } catch (e2) {
-            // DIESE ZEILE HINZUFÜGEN FÜRS HANDY:
-            alert("Firebase Fehler: " + e1.code + " | " + e2.code);
-            
-            // Beide Versuche gescheitert -> PIN ist falsch
-            dotsContainer.classList.add('shake-animation');
-            dots.forEach(d => d.style.borderColor = '#EF4444'); // Kurz rot
-            showToast("Falsche PIN", "Zugriff verweigert.", false);
-            setTimeout(() => { 
-                dotsContainer.classList.remove('shake-animation'); 
-                dots.forEach(d => d.style.borderColor = 'var(--gold)');
-                clearPin(); 
-            }, 400);
-        }
+                } catch (e2) {
+                    // Beide Versuche gescheitert -> PIN ist falsch
+                    dotsContainer.classList.add('shake-animation');
+                    dots.forEach(d => d.style.borderColor = '#EF4444'); // Kurz rot
+                    showToast("Falsche PIN", "Zugriff verweigert.", false);
+                    setTimeout(() => { 
+                        dotsContainer.classList.remove('shake-animation'); 
+                        dots.forEach(d => d.style.borderColor = 'var(--gold)');
+                        clearPin(); 
+                    }, 400);
+                }
             }
         }
 
@@ -1001,6 +995,9 @@
                 renderAll();
             } catch(e) { 
                 console.error("Cloud Error:", e);
+                // DIESER ALERT ZEIGT DIR DEN GENAUEN FEHLER AUF DEM HANDY:
+                alert("DATENBANK-FEHLER: " + e.message + " (Code: " + e.code + ")");
+                
                 setDbStatus('disconnected');
                 showToast("Fehler", "Daten konnten nicht geladen werden.", false); 
             }
@@ -1090,6 +1087,7 @@
                 switchTab('dashboard');
             } catch(e) {
                 setDbStatus('disconnected');
+                alert("DATENBANK-FEHLER (Speichern): " + e.message);
                 showToast("Fehler", "Cloud-Speicherung fehlgeschlagen.", false);
             }
         }
@@ -2296,7 +2294,7 @@
             setTimeout(() => {
                 const opt = {
                     margin:       10, 
-                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${currentYear}_${new Date().getTime()}.pdf`,
+                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
