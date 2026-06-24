@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GastroFinance - The 3B Buchhaltung</title>
+    
+    <!-- PWA / Homescreen Icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="image.png">
+    <link rel="icon" type="image/png" href="image.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;650;750;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS für Excel Import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf für PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- FIREBASE COMPAT (Auth & Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --gold: #C5A85C;
+            --charcoal: #1C1917;
+            --emerald: #10B981;
+            --glass: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(197, 168, 92, 0.25);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden; 
+            background-color: #FAF9F6;
+            color: var(--charcoal);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #scroll-container {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; 
+            padding-bottom: 150px; 
+        }
+
+        .gold-title { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+
+        .glass-card {
+            background: var(--glass);
+            border: 1.5px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border-radius: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .modern-input {
+            background: #FFFFFF;
+            border: 1.5px solid rgba(28, 25, 23, 0.15);
+            border-radius: 12px;
+            padding: 14px 12px;
+            color: var(--charcoal);
+            font-size: 16px !important; 
+            font-weight: 600;
+            width: 100%;
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .modern-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(197, 168, 92, 0.15);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #C5A85C 0%, #A3853F 100%);
+            color: #FFFFFF;
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-gold:active { transform: scale(0.98); }
+
+        .btn-dark {
+            background: #1C1917;
+            color: #FFFFFF;
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+        }
+        .btn-dark:active { transform: scale(0.98); }
+
+        .tab-active {
+            background: #1C1917 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .numpad-btn {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: rgba(28, 25, 23, 0.04);
+            border: 1.5px solid rgba(197, 168, 92, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            user-select: none;
+            cursor: pointer;
+        }
+        .numpad-btn:active { background: rgba(197, 168, 92, 0.2); transform: scale(0.92); }
+
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            transition: all 0.15s ease;
+        }
+        .pin-dot.filled { background-color: var(--gold); box-shadow: 0 0 8px var(--gold); }
+
+        .shake-animation { animation: shake 0.35s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        #pull-to-refresh-spinner {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #pdf-export-container {
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 210mm; 
+            min-height: 297mm;
+            background-color: white;
+            color: #1C1917;
+            padding: 15mm;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            z-index: 10; 
+        }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+        .pdf-table th { background-color: #F6F3EB; padding: 8px; text-align: right; border-bottom: 2px solid #E7E5E4; font-weight: 800; font-size: 10px; text-transform: uppercase; }
+        .pdf-table th:first-child { text-align: left; }
+        .pdf-table td { padding: 8px; text-align: right; border-bottom: 1px solid #F5F5F4; }
+        .pdf-table td:first-child { text-align: left; font-weight: 600; }
+        .pdf-table tr { page-break-inside: avoid; } 
+    </style>
+</head>
+<body class="relative">
+
+    <!-- ================= LOGIN SCREEN ================= -->
+    <div id="login-screen" class="fixed inset-0 z-[150] bg-[#FAF9F6] flex flex-col items-center justify-center w-full h-[100dvh] px-4 overflow-y-auto">
+        
+        <div class="glass-card p-6 sm:p-10 w-full max-w-sm text-center flex flex-col items-center my-auto">
+            <div class="flex justify-center mb-6">
+                <div class="w-28 h-28 flex items-center justify-center overflow-hidden bg-white rounded-full shadow-md border-2 border-[#C5A85C]">
+                    <img src="image.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden')" class="w-full h-full object-cover">
+                    <div id="fallback-logo" class="hidden w-full h-full flex items-center justify-center bg-stone-50">
+                        <span class="gold-title text-2xl font-black text-[#C5A85C]">3B</span>
+                    </div>
+                </div>
+            </div>
+
+            <h1 class="gold-title text-2xl font-extrabold text-stone-900 mb-1">GastroFinance</h1>
+            <p class="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-6">Sicherer System Login</p>
+            
+            <div class="flex gap-4 mb-6" id="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-y-4 gap-x-6 justify-items-center mb-2 relative z-50">
+                <button type="button" onclick="pressPin('1')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">1</span></button>
+                <button type="button" onclick="pressPin('2')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">2</span></button>
+                <button type="button" onclick="pressPin('3')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">3</span></button>
+                <button type="button" onclick="pressPin('4')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">4</span></button>
+                <button type="button" onclick="pressPin('5')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">5</span></button>
+                <button type="button" onclick="pressPin('6')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">6</span></button>
+                <button type="button" onclick="pressPin('7')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">7</span></button>
+                <button type="button" onclick="pressPin('8')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">8</span></button>
+                <button type="button" onclick="pressPin('9')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">9</span></button>
+                
+                <button type="button" onclick="clearPin()" class="w-16 h-16 flex items-center justify-center text-xs font-bold text-stone-500 hover:text-stone-900 cursor-pointer">Löschen</button>
+                <button type="button" onclick="pressPin('0')" class="numpad-btn"><span class="text-2xl font-bold text-stone-800">0</span></button>
+                <button type="button" onclick="backspacePin()" class="w-16 h-16 flex items-center justify-center text-stone-500 hover:text-stone-900 cursor-pointer">
+                    <i class="fa-solid fa-delete-left text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= APP PORTAL ================= -->
+    <div id="app-portal" class="hidden flex flex-col h-[100dvh] w-full relative bg-[#FAF9F6] z-50">
+        
+        <header class="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 glass-card w-full m-4 max-w-[calc(100%-32px)] mx-auto z-20 bg-white/95">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full overflow-hidden border border-[#C5A85C]/35 bg-white p-0.5 flex-shrink-0">
+                    <img src="image.png" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%23C5A85C\' stroke-width=\'4\'/><text x=\'50\' y=\'60\' font-size=\'32\' font-weight=\'bold\' fill=\'%23C5A85C\' text-anchor=\'middle\'>3B</text></svg>'" class="w-full h-full object-cover rounded-full">
+                </div>
+                <div>
+                    <h1 class="gold-title text-base font-bold text-stone-900 leading-tight">The 3B - GastroFinance</h1>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="text-[10px] text-stone-500 font-bold" id="user-role-display">Rolle: Buchhaltung</span>
+                        <span class="text-[10px] text-stone-500 font-bold px-2 py-0.5 bg-stone-100 rounded-md" id="active-year-display">Jahr: 2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-stone-100">
+                <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200 cursor-pointer active:scale-95 transition-all" onclick="loadYearFromCloud(currentYear)" title="Cloud Status">
+                    <div id="db-status-dot-inner" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] transition-colors duration-300"></div>
+                    <span id="db-status-text-inner" class="text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest">Verbunden</span>
+                </div>
+                <button type="button" onclick="logout()" class="p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-600 transition-all text-sm border border-stone-200 cursor-pointer" title="Sicher abmelden">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="scroll-container" class="flex-1 w-full px-4 sm:px-6 relative z-10">
+            <div id="pull-to-refresh-spinner" class="w-full flex justify-center items-center gap-2.5 text-stone-600 font-bold text-sm bg-stone-50/80 shadow-sm rounded-xl mb-4">
+                <i class="fa-solid fa-arrows-rotate animate-spin text-[#C5A85C]"></i>
+                <span>Cloud Sync...</span>
+            </div>
+
+            <!-- ===== TAB 1: DASHBOARD ===== -->
+            <section id="tab-dashboard" class="tab-content space-y-6 w-full max-w-full">
+                <div class="glass-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-[#C5A85C] text-base"></i>
+                        <span class="font-bold text-sm text-stone-700 uppercase tracking-wider">Zeitfenster</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
+                        <select id="filter-preset" onchange="applyPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm">
+                            <option value="all">Gesamte Historie</option>
+                            <option value="this-month" selected>Dieser Monat</option>
+                            <option value="last-30">Letzte 30 Tage</option>
+                        </select>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Von:</span>
+                            <input type="date" id="filter-from" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-400 text-xs font-bold w-8">Bis:</span>
+                            <input type="date" id="filter-to" onchange="renderAll()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="flex items-center gap-2 text-xs font-bold text-stone-500 cursor-pointer bg-stone-100 py-2 px-3 rounded-xl border border-stone-200">
+                                <input type="checkbox" id="pdf-monthly-grouping" class="accent-[#C5A85C]">
+                                Als Monats-Bericht
+                            </label>
+                            <button type="button" onclick="generatePDFReport()" class="btn-gold flex items-center justify-center gap-2 py-2 px-4 text-xs h-full w-full sm:w-auto">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dashboard-empty" class="hidden text-center py-16 px-4 glass-card max-w-lg mx-auto space-y-4">
+                    <div class="w-16 h-16 bg-[#F6F3EB] rounded-full flex items-center justify-center mx-auto border border-[#C5A85C]/30">
+                        <i class="fa-solid fa-folder-open text-[#C5A85C] text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-stone-900 text-lg">Keine Buchungen gefunden</h3>
+                        <p class="text-stone-500 text-sm mt-1">Erfasse Tageswerte oder importiere Backups/Mappen.</p>
+                    </div>
+                </div>
+
+                <div id="dashboard-active" class="space-y-6 w-full max-w-full">
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
+                            <div class="text-2xl sm:text-3xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Bar (Netto) + Karte</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
+                            <div class="text-2xl sm:text-3xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Alle Ausgaben addiert</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn</span>
+                            <div class="text-2xl sm:text-3xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Umsatz minus Ausgaben</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 bg-white">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Bar Mitnahmen</span>
+                            <div class="text-2xl sm:text-3xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
+                            <div class="flex justify-between items-center mt-3 text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
+                                <span>Bargeld minus Bar Ausgaben</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 w-full">
+                        <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4 border-b border-stone-100 pb-2">
+                            <i class="fa-solid fa-users text-[#C5A85C] mr-2"></i> Mitarbeiter Gehälter im Zeitraum
+                        </h3>
+                        <div id="dash-salaries-container" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                            <!-- JS Fills this -->
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                        <div class="glass-card p-6 lg:col-span-2 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Entwicklungstrend</h3>
+                            <div class="relative h-64 w-full overflow-hidden" id="trend-chart-parent">
+                                <div class="absolute inset-0 w-full h-full" id="trend-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 w-full">
+                            <h3 class="font-extrabold text-stone-900 text-sm uppercase tracking-wider mb-4">Ausgaben nach Steuer</h3>
+                            <div class="relative flex flex-col items-center justify-center w-full">
+                                <div class="h-44 w-full relative flex items-center justify-center" id="pie-chart-container"></div>
+                                <div class="w-full mt-5 space-y-2 text-xs font-semibold" id="pie-chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== TAB 2: MANUELLE ERFASSUNG ===== -->
+            <section id="tab-eingabe" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 sm:p-6 w-full max-w-full">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-stone-50 flex items-center justify-center border border-[#C5A85C]/20">
+                            <i class="fa-solid fa-pen-nib text-xl text-[#C5A85C]"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-base">Tagesbericht pflegen</h3>
+                            <p class="text-xs text-stone-500 font-medium">Berechnung exakt: Bar (Netto) + Karte = Umsatz</p>
+                        </div>
+                    </div>
+
+                    <form id="form-manual-entry" class="space-y-6 w-full">
+                        
+                        <div class="flex flex-col lg:flex-row gap-6 w-full max-w-full">
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-emerald-50/50 border border-emerald-200/40">
+                                <h4 class="text-sm font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200/60 pb-2">
+                                    <i class="fa-solid fa-cash-register mr-1"></i> Einnahmen
+                                </h4>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Datum der Mappe</label>
+                                    <input type="date" id="entry-date" onchange="handleEntryDateChange()" class="modern-input w-full block bg-white">
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Bar (Zahl aus Excel eintragen)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-bar" oninput="calculateLiveFormula()" placeholder="z.B. 600.00" class="modern-input pr-8 w-full block bg-white">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
+                                    <span class="text-[9px] text-stone-400 font-bold block mt-1">Hinweis: <span id="hint-wechselgeld">150</span>€ Wechselgeld werden hiervon intern abgezogen.</span>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Karte (Zahl aus Excel)</label>
+                                    <div class="relative w-full">
+                                        <input type="number" step="0.01" min="0" id="entry-rev-card" oninput="calculateLiveFormula()" placeholder="z.B. 570.00" class="modern-input pr-8 w-full block bg-white">
+                                        <span class="absolute right-4 top-3.5 text-base text-stone-400 font-semibold">€</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 w-full max-w-full space-y-4 p-5 rounded-xl bg-stone-900 text-white flex flex-col justify-between">
+                                <div class="space-y-4 w-full">
+                                    <h4 class="text-sm font-extrabold uppercase tracking-wider text-yellow-500 border-b border-stone-800 pb-2">
+                                        <i class="fa-solid fa-code-branch mr-1"></i> Live-Berechnung
+                                    </h4>
+                                    <div class="space-y-3 w-full">
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Umsatz Summe</span>
+                                                <span class="text-[8px] text-stone-500">Bar (Netto) + Karte</span>
+                                            </div>
+                                            <span class="text-base font-black truncate max-w-[100px] text-right" id="calc-preview-total">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Gewinn</span>
+                                                <span class="text-[8px] text-stone-500">Umsatz - Ausgaben</span>
+                                            </div>
+                                            <span class="text-emerald-400 text-base font-black truncate max-w-[100px] text-right" id="calc-preview-profit">0,00 €</span>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
+                                            <div>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Bar Mitnahmen</span>
+                                                <span class="text-[8px] text-stone-500">Bar (Netto) - Bar Ausg.</span>
+                                            </div>
+                                            <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-4 w-full">
+                                    <button type="button" onclick="saveManualEntry()" class="w-full py-4 btn-gold text-sm font-black uppercase tracking-widest flex justify-center items-center gap-2">
+                                        <span>Live Speichern</span> <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AUSGABEN -->
+                        <div class="w-full bg-red-50/30 border border-red-200/50 rounded-xl p-5">
+                            <h4 class="text-base font-extrabold uppercase tracking-wider text-red-600 border-b border-red-200 pb-3 mb-5 flex justify-between items-center">
+                                <span><i class="fa-solid fa-receipt mr-2"></i> Ausgaben (Detail)</span>
+                                <span class="text-xs bg-red-600 text-white px-3 py-1 rounded-full" id="calc-preview-exp-total">Summe: 0,00 €</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+                                
+                                <div class="space-y-4">
+                                    <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest mb-3"><i class="fa-solid fa-users text-stone-400 mr-1"></i> Mitarbeiter Gehälter</h5>
+                                    <div id="entry-salaries-container" class="space-y-3">
+                                        <!-- JS Fills this -->
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h5 class="text-xs font-bold text-stone-600 uppercase tracking-widest"><i class="fa-solid fa-box-open text-stone-400 mr-1"></i> Sonstige Ausgaben</h5>
+                                        <button type="button" onclick="addDynamicExpenseRow()" class="text-[10px] bg-red-100 hover:bg-red-200 text-red-600 font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer">
+                                            <i class="fa-solid fa-plus"></i> Weitere
+                                        </button>
+                                    </div>
+                                    <div id="dynamic-expenses-container" class="space-y-3">
+                                        <!-- Wird von JS generiert -->
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" id="entry-exp-sumbar">
+                                <input type="hidden" id="entry-exp-sumcard">
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 3: HISTORIE ===== -->
+            <section id="tab-historie" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="glass-card p-4 flex flex-col gap-4 w-full">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-stone-500"></i>
+                            <span class="font-bold text-stone-800 uppercase tracking-wider text-xs">Gespeicherte Tage</span>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto flex-wrap">
+                            <input type="text" id="hist-search" placeholder="Datum oder Notiz suchen..." oninput="renderHistory()" class="modern-input py-2 text-sm w-full sm:w-auto flex-1">
+                            <div class="flex gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                                
+                                <!-- NEUER BACKUP BUTTON (Nur für Admins sichtbar) -->
+                                <button type="button" id="btn-export-backup" onclick="downloadFilteredBackup()" class="btn-dark bg-stone-800 hover:bg-stone-900 w-full sm:w-auto py-3 px-4 text-xs flex-1 border border-[#C5A85C]/30" title="Lädt die gefilterten Tage als JSON-Backup herunter">
+                                    <i class="fa-solid fa-download mr-2 text-[#C5A85C]"></i> Backup laden
+                                </button>
+
+                                <button type="button" onclick="deleteAllgemeinerEinkauf()" class="btn-dark bg-orange-500 hover:bg-orange-600 w-full sm:w-auto py-3 px-4 text-xs flex-1" title="Entfernt nur die Position 'Allgemeiner Einkauf' aus den angezeigten Tagen">
+                                    <i class="fa-solid fa-broom mr-2"></i> "Allg. Einkauf" löschen
+                                </button>
+
+                                <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs flex-1">
+                                    <i class="fa-solid fa-trash-can mr-2"></i> Tage löschen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full border-t border-stone-200 pt-4 mt-2">
+                        <select id="hist-filter-preset" onchange="applyHistPresetDates()" class="modern-input py-2 w-full sm:w-auto text-sm bg-stone-50">
+                            <option value="all" selected>Gesamte Historie anzeigen</option>
+                            <option value="this-week">Diese Woche filtern</option>
+                            <option value="this-month">Diesen Monat filtern</option>
+                            <option value="this-year">Dieses Jahr filtern</option>
+                        </select>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-500 text-xs font-bold w-8">Von:</span>
+                            <input type="date" id="hist-filter-from" onchange="renderHistory()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-stone-500 text-xs font-bold w-8">Bis:</span>
+                            <input type="date" id="hist-filter-to" onchange="renderHistory()" class="modern-input py-2 flex-grow text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card overflow-hidden w-full relative">
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse table-auto min-w-[750px]">
+                            <thead class="sticky top-0 bg-stone-50 shadow-sm z-10">
+                                <tr class="text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-4 whitespace-nowrap border-b border-stone-200">Datum</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar (Netto)</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Karte</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200 text-stone-800">Umsatz Summe</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Ausgaben</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Gewinn</th>
+                                    <th class="p-4 text-right whitespace-nowrap border-b border-stone-200">Bar Mitnahmen</th>
+                                    <th class="p-4 text-center whitespace-nowrap border-b border-stone-200">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-stone-100 text-sm font-semibold">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ===== TAB 4: IMPORT / SETTINGS ===== -->
+            <section id="tab-daten" class="tab-content hidden space-y-6 w-full max-w-full">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                    
+                    <!-- UPLOAD BEREICHE -->
+                    <div class="flex flex-col gap-6">
+                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-[#F6F3EB] flex items-center justify-center border border-[#C5A85C]/30 flex-shrink-0">
+                                    <i class="fa-solid fa-file-excel text-[#C5A85C] text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Tagesmappen Import</h3>
+                                </div>
+                            </div>
+                            <div id="drop-zone" onclick="document.getElementById('excel-input').click()" 
+                                 class="flex-1 border-2 border-dashed border-[#C5A85C]/40 hover:border-[#C5A85C]/80 rounded-2xl p-6 text-center bg-stone-50/50 cursor-pointer transition-colors flex flex-col justify-center">
+                                <input type="file" id="excel-input" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="handleExcelUpload(event)">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
+                                <p class="font-bold text-stone-800 text-xs">Umsätze, Mappen & JSON hochladen</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Datum richtet sich nach ausgewähltem Cloud-Jahr</p>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 space-y-4 w-full h-full flex flex-col">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200 flex-shrink-0">
+                                    <i class="fa-solid fa-file-invoice-dollar text-red-500 text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Ausgaben-Export</h3>
+                                </div>
+                            </div>
+                            <div id="drop-zone-ausgaben" onclick="document.getElementById('excel-ausgaben-input').click()" 
+                                 class="flex-1 border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer transition-colors flex flex-col justify-center">
+                                <input type="file" id="excel-ausgaben-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleAusgabenUpload(event)">
+                                <i class="fa-solid fa-file-csv text-3xl text-red-400/70 mb-2"></i>
+                                <p class="font-bold text-stone-800 text-xs">Lexoffice/SevDesk Export hochladen</p>
+                                <p class="text-[9px] text-stone-500 font-semibold mt-1">Filtert automatisch exakte Duplikate heraus!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIREBASE CLOUD MANAGER & ADMIN SETTINGS -->
+                    <div class="flex flex-col gap-6 w-full">
+                        <div class="glass-card p-6 space-y-4 w-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-cloud text-[#C5A85C] text-xl"></i>
+                                        <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Cloud Sync</h4>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold border border-emerald-200">
+                                        <i class="fa-solid fa-bolt"></i> Einzel-Tage aktiv
+                                    </span>
+                                </div>
+                                <p class="text-xs text-stone-500 font-medium leading-relaxed">
+                                    Speichern, Ändern und Löschen passiert ab sofort <b>in Echtzeit pro Tag</b>.
+                                </p>
+                            </div>
+                            
+                            <div class="space-y-3 w-full mt-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1">Aktives Geschäftsjahr wechseln</label>
+                                    <select id="firebase-year-select" class="modern-input text-sm py-2 bg-stone-50 border-stone-300 shadow-sm" onchange="changeCloudYear()">
+                                        <option value="2026" selected>2026</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2023">2023</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="button" onclick="loadYearFromCloud(currentYear)" class="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs uppercase font-extrabold rounded-xl mt-2 flex items-center justify-center gap-2 transition-colors">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Ansicht neu laden
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- System-Einstellungen (Admin Only) -->
+                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
+                                <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Systemeinstellungen</h4>
+                            </div>
+                            <p class="text-[10px] text-stone-500 font-bold mb-4">Hinweis: Die Zugangs-PINs werden ab sofort sicher direkt in der Firebase Console verwaltet.</p>
+                            
+                            <div class="space-y-3 mt-2">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Wechselgeld Abzug (€)</label>
+                                    <input type="number" id="cfg-wechselgeld" placeholder="150" class="modern-input text-sm py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Mitarbeiter (Komma-getrennt)</label>
+                                    <textarea id="cfg-employees" rows="2" class="modern-input text-xs py-2 leading-relaxed" placeholder="Adam, Mohammed, Karam..."></textarea>
+                                </div>
+                            </div>
+                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold flex justify-center items-center gap-2">
+                                System-Settings Sichern <i class="fa-solid fa-cloud-arrow-up text-[#C5A85C]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="import-preview-container" class="hidden glass-card p-5 border border-emerald-400 w-full overflow-hidden mt-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <div>
+                            <h4 class="font-extrabold text-stone-900 text-sm">Vorschau Import</h4>
+                            <p class="text-[10px] text-stone-500 mt-1" id="preview-filter-hint">Tage werden mit bestehenden Daten gemerged.</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <button type="button" onclick="discardBuffer()" class="btn-dark bg-stone-500 py-3 px-4 text-xs w-full sm:w-auto">Abbrechen</button>
+                            <button type="button" onclick="commitBuffer()" class="btn-emerald bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl text-xs w-full sm:w-auto flex items-center justify-center shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition-colors">
+                                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> (<span id="preview-count-text">0</span>) Live in Cloud pushen
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto w-full block">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-stone-50 border-b border-stone-100 text-[10px] font-extrabold uppercase text-stone-400 tracking-wider">
+                                    <th class="p-3 cursor-pointer hover:text-stone-700 transition-colors select-none" onclick="toggleImportSort()" title="Klicken zum Sortieren">
+                                        Datum/Mappe <i id="import-sort-icon" class="fa-solid fa-arrow-down ml-1 text-stone-400"></i>
+                                    </th>
+                                    <th class="p-3 text-right">Bar (Netto)</th>
+                                    <th class="p-3 text-right">Karte</th>
+                                    <th class="p-3 text-right">Umsatz Summe</th>
+                                    <th class="p-3 text-right">Ausgaben</th>
+                                    <th class="p-3 text-right">Gewinn</th>
+                                    <th class="p-3 text-right">Bar Mitnahmen</th>
+                                    <th class="p-3 text-center">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-preview-tbody" class="divide-y divide-stone-100 text-xs font-semibold"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ================= BOTTOM NAV ================= -->
+    <nav id="bottom-tab-bar" class="hidden fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-md">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl px-2 py-2 flex justify-between items-center shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-stone-200">
+            <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="flex-1 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 text-stone-400 transition-all">
+                <i class="fa-solid fa-chart-pie text-xl"></i>
+                <span class="text-[9px] font-extrabold uppercase">Dashboard</span>
+            </button>
+            <button onclick="switchTab('eingabe')" id="btn-tab-eingabe" class="flex-1 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 text-stone-400 transition-all">
+                <i class="fa-solid fa-keyboard text-xl"></i>
+                <span class="text-[9px] font-extrabold uppercase">Erfassung</span>
+            </button>
+            <button onclick="switchTab('historie')" id="btn-tab-historie" class="flex-1 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 text-stone-400 transition-all">
+                <i class="fa-solid fa-database text-xl"></i>
+                <span class="text-[9px] font-extrabold uppercase">Historie</span>
+            </button>
+            <button onclick="switchTab('daten')" id="btn-tab-daten" class="flex-1 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 text-stone-400 transition-all">
+                <i class="fa-solid fa-cloud text-xl"></i>
+                <span class="text-[9px] font-extrabold uppercase">Import</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ================= TOASTS & MODALS ================= -->
+    <div id="system-toast" class="hidden fixed top-6 right-6 left-6 sm:left-auto z-[120] max-w-sm p-4 rounded-2xl bg-white/95 border border-stone-200 shadow-2xl backdrop-blur-md">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-info-circle text-lg text-[#C5A85C]" id="toast-icon"></i>
+            </div>
+            <div>
+                <h5 class="font-bold text-stone-900 text-sm" id="toast-title">Benachrichtigung</h5>
+                <p class="text-xs text-stone-500 mt-1 font-medium leading-snug" id="toast-message">Erfolgreich geladen.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card max-w-sm w-full p-8 rounded-3xl text-center bg-white border border-stone-200">
+            <h5 class="font-black text-stone-900 mb-3 text-lg" id="modal-title">Aktion</h5>
+            <p class="text-sm text-stone-500 mb-8 font-medium leading-relaxed" id="modal-desc">Bist du sicher?</p>
+            <div class="flex justify-center gap-4">
+                <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-bold cursor-pointer">Abbrechen</button>
+                <button type="button" id="modal-confirm-btn" class="flex-1 py-3 rounded-xl btn-gold text-sm font-bold cursor-pointer">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PDF EXPORT TEMPLATE ================= -->
+    <div id="pdf-export-container">
+        <!-- Template unverändert -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #C5A85C; display: flex; align-items: center; justify-content: center; background-color: #FAFAFA;">
+                    <span style="font-family: 'Cinzel', serif; font-size: 20px; font-weight: bold; color: #C5A85C;">3B</span>
+                </div>
+                <div>
+                    <h1 style="font-family: 'Cinzel', serif; font-size: 20px; font-weight: bold; color: #1C1917; margin: 0;">GastroFinance</h1>
+                    <p style="font-size: 10px; font-weight: bold; color: #78716C; text-transform: uppercase; letter-spacing: 0.1em; margin: 4px 0 0 0;">Betriebswirtschaftliche Auswertung</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <p style="font-size: 10px; font-weight: bold; color: #A8A29E; margin: 0;">Erstellt am:</p>
+                <p style="font-size: 12px; font-weight: 800; color: #1C1917; margin: 2px 0 0 0;" id="pdf-date-created">--</p>
+            </div>
+        </div>
+
+        <div style="background-color: #FAFAFA; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 25px;">
+            <p style="font-size: 9px; font-weight: bold; color: #A8A29E; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 4px 0;">Ausgewerteter Zeitraum</p>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-date-range">--</h2>
+            <p style="font-size: 10px; font-weight: bold; color: #78716C; margin: 4px 0 0 0;">Filter: <span style="color: #C5A85C;" id="pdf-filter-name">--</span></p>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Umsatz Summe</p>
+                <p style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-kpi-rev">0,00 €</p>
+            </div>
+            <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Ausgaben</p>
+                <p style="font-size: 16px; font-weight: 900; color: #EF4444; margin: 0;" id="pdf-kpi-exp">0,00 €</p>
+            </div>
+            <div style="flex: 1; border: 1px solid #E7E5E4; background-color: #FAFAFA; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gewinn</p>
+                <p style="font-size: 16px; font-weight: 900; color: #10B981; margin: 0;" id="pdf-kpi-prof">0,00 €</p>
+            </div>
+            <div style="flex: 1; border: 2px solid rgba(197, 168, 92, 0.3); background-color: rgba(246, 243, 235, 0.3); border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="font-size: 9px; font-weight: bold; color: #A3853F; text-transform: uppercase; margin: 0 0 8px 0;">Bar Mitnahmen</p>
+                <p style="font-size: 16px; font-weight: 900; color: #C5A85C; margin: 0;" id="pdf-kpi-tuete">0,00 €</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
+            <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter im Zeitraum</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container"></div>
+        </div>
+
+        <div id="pdf-trend-wrapper" style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Entwicklungstrend</h3>
+                <div style="font-size: 9px; font-weight: bold; color: #78716C;">
+                    <span style="color: #10B981; margin-right: 10px;">— Umsatz</span>
+                    <span style="color: #EF4444;">- - Ausgaben</span>
+                </div>
+            </div>
+            <div id="pdf-trend-chart-container" style="height: 100px; width: 100%; position: relative;"></div>
+        </div>
+
+        <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px 0;">Detaillierte Auflistung</h3>
+        <table class="pdf-table">
+            <thead>
+                <tr>
+                    <th id="pdf-th-datum">Datum</th>
+                    <th>Bar (Netto)</th>
+                    <th>Karte</th>
+                    <th>Umsatz</th>
+                    <th>Ausgaben</th>
+                    <th>Gewinn</th>
+                    <th>Bar Mitnahmen</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-tbody"></tbody>
+        </table>
+
+        <div style="margin-top: 30px; border-top: 1px solid #E7E5E4; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #A8A29E;">
+            <span>GastroFinance Report Tool</span>
+            <span>Automatisch generiert aus gesicherten Datenbank-Werten.</span>
+        </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        // === 1. HIER DEINE ECHTE CONFIG EINFÜGEN ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyB...",
+            authDomain: "dein-projekt.firebaseapp.com",
+            databaseURL: "https://dein-projekt-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "dein-projekt",
+            storageBucket: "dein-projekt.firebasestorage.app",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+        // ===========================================
+
+        // Firebase Initialisierung
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // OFFLINE PERSISTENCE AKTIVIEREN (Die Magie für Funklöcher)
+        db.enablePersistence().catch(function(err) {
+            console.log("Offline Modus Info: ", err.code);
+        });
+
+        // GLOBALE VARIABLEN
+        let dbDays = [];
+        let loggedInUser = null; 
+        let activeTab = 'dashboard';
+        let tempImportBuffer = [];
+        let enteredPin = ""; 
+        let currentYear = "2026"; 
+        let importSortDesc = true; 
+
+        let appSettings = {
+            changeMoney: 150,
+            employees: ["Adam", "Mohammed", "Karam", "Nourddin", "Ehemalige / Aushilfen"]
+        };
+
+        window.onload = function() {
+            initAdminSettingsUI();
+            buildDynamicEmployeeUI();
+
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            document.getElementById('entry-date').value = yesterday.toISOString().split('T')[0];
+
+            setupFilterDefaultDates();
+            initExcelDropzone();
+            setDbStatus('disconnected'); 
+            setupPullToRefresh();
+            renderExpenseRows([]);
+        };
+
+        // --- NEUE FIREBASE AUTHENTICATION LOGIK (Mit PIN) ---
+        async function checkPin() {
+            const dotsContainer = document.getElementById('pin-dots-container');
+            const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
+            
+            // Optisches Feedback: Kurz grün
+            dots.forEach(d => d.style.borderColor = '#10B981');
+            
+            const pwd = enteredPin + "GastroApp!";
+
+            try {
+                // Versuch 1: Wir versuchen, den Admin einzuloggen
+                await auth.signInWithEmailAndPassword('admin@gastro.app', pwd);
+                // Wenn erfolgreich, greift onAuthStateChanged
+                return;
+            } catch (e1) {
+                try {
+                    // Versuch 2: Vielleicht war es die Inhaber-PIN?
+                    await auth.signInWithEmailAndPassword('inhaber@gastro.app', pwd);
+                    // Wenn erfolgreich, greift onAuthStateChanged
+                    return;
+                } catch (e2) {
+                    // Beide Versuche gescheitert -> PIN ist falsch
+                    dotsContainer.classList.add('shake-animation');
+                    dots.forEach(d => d.style.borderColor = '#EF4444'); // Kurz rot
+                    showToast("Falsche PIN", "Zugriff verweigert.", false);
+                    setTimeout(() => { 
+                        dotsContainer.classList.remove('shake-animation'); 
+                        dots.forEach(d => d.style.borderColor = 'var(--gold)');
+                        clearPin(); 
+                    }, 400);
+                }
+            }
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                if (user.email === 'admin@gastro.app') {
+                    loggedInUser = 'buchhaltung';
+                } else {
+                    loggedInUser = 'inhaber'; // Lesezugriff
+                }
+                completeLogin();
+            } else {
+                // Ausgeloggt
+                loggedInUser = null;
+                document.getElementById('app-portal').classList.add('hidden');
+                document.getElementById('app-portal').classList.remove('flex');
+                document.getElementById('bottom-tab-bar').classList.add('hidden');
+                document.getElementById('login-screen').classList.remove('hidden');
+                clearPin();
+            }
+        });
+
+        function logout() {
+            auth.signOut().then(() => {
+                showToast("Abgemeldet", "System sicher gesperrt.");
+            });
+        }
+
+        function completeLogin() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-portal').classList.remove('hidden');
+            document.getElementById('app-portal').classList.add('flex');
+            document.getElementById('bottom-tab-bar').classList.remove('hidden');
+
+            if (loggedInUser === 'inhaber') {
+                document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
+                document.getElementById('admin-sys-config').classList.add('hidden');
+                document.getElementById('btn-export-backup').classList.add('hidden'); // Backup verstecken
+                disableWritePermissions();
+            } else {
+                document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
+                document.getElementById('admin-sys-config').classList.remove('hidden');
+                document.getElementById('btn-export-backup').classList.remove('hidden'); // Backup zeigen
+            }
+
+            showToast("System entsperrt", "Verbindung zur Cloud hergestellt.");
+            switchTab('dashboard');
+            loadYearFromCloud(currentYear); 
+        }
+
+        // --- NEUE FIREBASE DATENBANK LOGIK (Pro-Tag-Speicherung) ---
+
+        function changeCloudYear() {
+            const select = document.getElementById('firebase-year-select');
+            currentYear = select.value;
+            document.getElementById('active-year-display').textContent = `Jahr: ${currentYear}`;
+            loadYearFromCloud(currentYear);
+        }
+
+        async function loadYearFromCloud(year) {
+            setDbStatus('connecting');
+            dbDays = []; // Lokalen Speicher leeren
+            
+            try {
+                // 1. Lade Globale Einstellungen für das Jahr
+                const yearDoc = await db.collection('restaurant_daten').doc(year).get();
+                if (yearDoc.exists && yearDoc.data().settings) {
+                    appSettings = yearDoc.data().settings;
+                    initAdminSettingsUI();
+                    buildDynamicEmployeeUI();
+                }
+
+                // 2. Lade alle Tage (Dokumente) aus der Unter-Sammlung "tage"
+                const daysSnapshot = await db.collection('restaurant_daten').doc(year).collection('tage').get();
+                
+                daysSnapshot.forEach((doc) => {
+                    dbDays.push(doc.data());
+                });
+
+                dbDays = migrateToDynamicSalaries(dbDays);
+                dbDays.sort((a,b) => b.date.localeCompare(a.date));
+                
+                if(dbDays.length > 0) {
+                    showToast("Erfolg", `${dbDays.length} Tage für das Jahr ${year} geladen.`);
+                } else {
+                    showToast("Info", `Noch keine Daten für ${year} vorhanden.`);
+                }
+                
+                setDbStatus('connected');
+                renderAll();
+            } catch(e) { 
+                console.error("Cloud Error:", e);
+                setDbStatus('disconnected');
+                showToast("Fehler", "Daten konnten nicht geladen werden.", false); 
+            }
+        }
+
+        async function saveSystemSettings() {
+            if (loggedInUser !== 'buchhaltung') return;
+            const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
+            if (!isNaN(wg) && wg >= 0) appSettings.changeMoney = wg;
+
+            const empStr = document.getElementById('cfg-employees').value;
+            if (empStr.trim()) appSettings.employees = empStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+            buildDynamicEmployeeUI();
+            renderAll();
+            
+            // Speichert NUR die Settings im Haupt-Dokument des Jahres
+            try {
+                await db.collection('restaurant_daten').doc(currentYear).set({ settings: appSettings }, { merge: true });
+                showToast("Gesichert", "System-Einstellungen in Firebase aktualisiert.");
+            } catch (e) {
+                showToast("Fehler", "Settings konnten nicht gesichert werden.", false);
+            }
+        }
+
+        async function saveManualEntry() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+
+            const pickedDate = document.getElementById('entry-date').value;
+            if(!pickedDate) { showToast("Fehler", "Bitte wähle ein Datum.", false); return; }
+
+            const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
+            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0; 
+            const totalRevenue = actualBar + cardRev; 
+
+            let expSumBar = 0, expSumCard = 0;
+            let exSalaries = {};
+
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                const name = row.querySelector('.dyn-sal-name').value;
+                const b = parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
+                const c = parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
+                exSalaries[name] = { bar: b, card: c };
+                expSumBar += b; expSumCard += c;
+            });
+
+            let genExpenses = [];
+            document.querySelectorAll('.dynamic-expense-row').forEach(row => {
+                const name = row.querySelector('.dyn-name').value.trim();
+                const b = parseFloat(row.querySelector('.dyn-bar').value) || 0;
+                const c = parseFloat(row.querySelector('.dyn-card').value) || 0;
+                const t = parseInt(row.querySelector('.dyn-tax').value) || 0;
+                
+                if (name || b !== 0 || c !== 0) {
+                    genExpenses.push({ name: name, bar: b, card: c, tax: t });
+                    expSumBar += b; expSumCard += c;
+                }
+            });
+
+            const totalExpenses = expSumBar + expSumCard;
+
+            const dayObj = {
+                date: pickedDate, germanDate: formatGermanDate(pickedDate),
+                revenue: { total: totalRevenue, bar: actualBar, card: cardRev },
+                expensesDetail: { salaries: exSalaries, general: genExpenses },
+                expensesSum: { bar: expSumBar, card: expSumCard, total: totalExpenses },
+                profit: totalRevenue - totalExpenses,
+                tuete: actualBar - expSumBar,
+                note: "Manuelle Buchung"
+            };
+
+            // Lokal eintragen
+            const idx = dbDays.findIndex(d => d.date === pickedDate);
+            if (idx !== -1) { dbDays[idx] = dayObj; } else { dbDays.push(dayObj); }
+            dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+
+            // DIREKT IN FIREBASE ALS EINZEL-DOKUMENT SPEICHERN
+            try {
+                setDbStatus('connecting');
+                // Der Pfad ist nun: restaurant_daten -> 2026 -> tage -> 2026-06-25
+                await db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(pickedDate).set(dayObj);
+                showToast("Live Gespeichert", `Tag ${formatGermanDate(pickedDate)} erfolgreich in Cloud verbucht.`);
+                setDbStatus('connected');
+                renderAll();
+                switchTab('dashboard');
+            } catch(e) {
+                setDbStatus('disconnected');
+                showToast("Fehler", "Cloud-Speicherung fehlgeschlagen.", false);
+            }
+        }
+
+        async function commitBuffer() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Keine Schreibrechte", false); return; }
+            if (tempImportBuffer.length === 0) return;
+
+            setDbStatus('connecting');
+            showToast("Cloud Batch Upload...", "Sichere Tage in der Datenbank.");
+
+            // Da es viele Tage auf einmal sein können, nutzen wir einen Firebase "Batch" (Stapelverarbeitung)
+            const batch = db.batch();
+            let count = 0;
+
+            tempImportBuffer.forEach(day => {
+                // Füge den Tag zum Firebase-Upload-Stapel hinzu
+                const docRef = db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(day.date);
+                batch.set(docRef, day);
+                
+                // Lokal eintragen fürs sofortige Feedback
+                const idx = dbDays.findIndex(d => d.date === day.date);
+                if (idx !== -1) { dbDays[idx] = day; } else { dbDays.push(day); }
+                count++;
+            });
+
+            try {
+                await batch.commit(); // Führt alle Uploads auf einmal sicher aus!
+                
+                dbDays.sort((a,b) => b.date.localeCompare(a.date)); 
+                showToast("Cloud Importiert", `${count} Tage live in Firebase überschrieben.`);
+                tempImportBuffer = [];
+                document.getElementById('import-preview-container').classList.add('hidden');
+                
+                setDbStatus('connected');
+                renderAll();
+                switchTab('dashboard');
+            } catch(e) {
+                console.error("Batch Error", e);
+                setDbStatus('disconnected');
+                showToast("Fehler", "Upload fehlgeschlagen.", false);
+            }
+        }
+
+        async function deleteSingleDay(d) {
+            showConfirmModal("Löschen?", "Diesen Tag dauerhaft aus der Cloud entfernen?", async () => {
+                try {
+                    setDbStatus('connecting');
+                    // Lösche genau dieses eine Dokument aus Firebase
+                    await db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(d).delete();
+                    
+                    // Lokal entfernen
+                    dbDays = dbDays.filter(x => x.date !== d);
+                    showToast("Live Gelöscht", "Eintrag erfolgreich aus Cloud entfernt.");
+                    setDbStatus('connected');
+                    renderAll();
+                } catch(e) {
+                    setDbStatus('disconnected');
+                    showToast("Fehler", "Der Tag konnte nicht gelöscht werden.", false);
+                }
+            });
+        }
+
+        async function clearDatabase() {
+            if (dbDays.length === 0) { showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false); return; }
+            const filtered = getFilteredHistoryDays();
+            if (filtered.length === 0) { showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false); return; }
+
+            const isFullyFiltered = filtered.length === dbDays.length;
+            let title = isFullyFiltered ? "Alles Löschen?" : "Gefilterte Löschen?";
+            let desc = isFullyFiltered 
+                ? "Sicher, dass ALLE angezeigten Daten in der Cloud dauerhaft entfernt werden sollen?" 
+                : `Sicher, dass die ${filtered.length} angezeigten Tage dauerhaft aus der Cloud gelöscht werden sollen?`;
+
+            showConfirmModal(title, desc, async () => {
+                setDbStatus('connecting');
+                showToast("Lösche...", "Tage werden aus der Datenbank entfernt.");
+                
+                const batch = db.batch();
+                const datesToRemove = new Set(filtered.map(d => d.date));
+                
+                // Packe alle Löschbefehle in den Stapel
+                datesToRemove.forEach(date => {
+                    const docRef = db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(date);
+                    batch.delete(docRef);
+                });
+
+                try {
+                    await batch.commit(); // Ausführen
+
+                    if (isFullyFiltered) { dbDays = []; } 
+                    else { dbDays = dbDays.filter(d => !datesToRemove.has(d.date)); }
+                    
+                    showToast("Erledigt", "Daten wurden erfolgreich aus Firebase gelöscht.");
+                    setDbStatus('connected');
+                    renderAll();
+                } catch (e) {
+                    console.error(e);
+                    setDbStatus('disconnected');
+                    showToast("Fehler", "Konnte nicht alles löschen.", false);
+                }
+            });
+        }
+
+        function deleteAllgemeinerEinkauf() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+            const filtered = getFilteredHistoryDays();
+            if (filtered.length === 0) { showToast("Hinweis", "Keine Einträge im aktuellen Filter gefunden.", false); return; }
+
+            let removedCount = 0;
+            let affectedDays = [];
+
+            showConfirmModal("Ausgaben bereinigen?", "Sollen wirklich alle Ausgaben, die 'Allgemeiner Einkauf' im Namen enthalten, aus den hier angezeigten Tagen gelöscht werden?", async () => {
+                setDbStatus('connecting');
+                showToast("Bereinige...", "Datenbank wird gescannt und gepusht.");
+                
+                const batch = db.batch(); // Firebase Batch für gleichzeitiges Update aller veränderten Tage
+
+                filtered.forEach(day => {
+                    if (day.expensesDetail && day.expensesDetail.general) {
+                        const originalLen = day.expensesDetail.general.length;
+                        
+                        day.expensesDetail.general = day.expensesDetail.general.filter(exp => {
+                            return !exp.name.toLowerCase().includes('allgemeiner einkauf');
+                        });
+
+                        const newLen = day.expensesDetail.general.length;
+                        if (newLen < originalLen) {
+                            removedCount += (originalLen - newLen);
+                            affectedDays.push(day);
+                            recalcDaySums(day); // Summen neu berechnen
+                            
+                            // Aktualisiere das Haupt-Array
+                            const idx = dbDays.findIndex(d => d.date === day.date);
+                            if (idx !== -1) { dbDays[idx] = day; }
+
+                            // Lege die neue Version des Tages in den Cloud-Update-Stapel
+                            const docRef = db.collection('restaurant_daten').doc(currentYear).collection('tage').doc(day.date);
+                            batch.set(docRef, day);
+                        }
+                    }
+                });
+
+                if (removedCount > 0) {
+                    try {
+                        await batch.commit(); // Alle geänderten Tage auf einmal in Cloud speichern
+                        showToast("Erfolgreich bereinigt", `${removedCount} Positionen aus ${affectedDays.length} Tagen live entfernt.`);
+                        setDbStatus('connected');
+                        renderAll();
+                    } catch(e) {
+                        showToast("Fehler", "Cloud-Update fehlgeschlagen.", false);
+                        setDbStatus('disconnected');
+                    }
+                } else {
+                    setDbStatus('connected');
+                    showToast("Info", "Keine 'Allgemeiner Einkauf'-Ausgaben gefunden.");
+                }
+            });
+        }
+
+        // --- BACKUP DOWNLOAD (Gefiltert & JSON) ---
+        function downloadFilteredBackup() {
+            if (loggedInUser !== 'buchhaltung') { showToast("Fehler", "Nur Admins dürfen Backups erstellen.", false); return; }
+            
+            const filteredDays = getFilteredHistoryDays();
+            if (filteredDays.length === 0) {
+                showToast("Fehler", "Keine Daten im aktuellen Filter zum Sichern vorhanden.", false);
+                return;
+            }
+
+            // Da das Format identisch zur alten Version ist, können diese Dateien auch problemlos wieder importiert werden!
+            const payload = {
+                timestamp: new Date().toISOString(),
+                info: "Gefiltertes Backup",
+                settings: appSettings,
+                data: filteredDays
+            };
+            
+            const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `GastroFinance_Backup_${currentYear}_${filteredDays.length}_Tage_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Backup exportiert", `Es wurden ${filteredDays.length} Tage als JSON gesichert.`);
+        }
+
+
+        // --- RESTLICHE HILFSFUNKTIONEN ---
+
+        function pressPin(num) {
+            if (enteredPin.length < 4) {
+                enteredPin += num; updatePinDots();
+                if (enteredPin.length === 4) setTimeout(checkPin, 200);
+            }
+        }
+
+        function clearPin() { enteredPin = ""; updatePinDots(); }
+        function backspacePin() { enteredPin = enteredPin.slice(0, -1); updatePinDots(); }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('#pin-dots-container .pin-dot');
+            dots.forEach((dot, index) => {
+                if (index < enteredPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function setDbStatus(state) {
+            const dotOut = document.getElementById('db-status-dot'); const textOut = document.getElementById('db-status-text'); 
+            const dotIn = document.getElementById('db-status-dot-inner'); const textIn = document.getElementById('db-status-text-inner'); 
+
+            const resetClasses = "w-2.5 h-2.5 rounded-full transition-colors duration-300 ";
+            const resetText = "text-[9px] font-extrabold uppercase tracking-widest ";
+
+            if (state === 'connected') {
+                const dotCls = resetClasses + "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]";
+                const txtCls = resetText + "text-emerald-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Verbunden"; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Verbunden"; }
+            } else if (state === 'connecting') {
+                const dotCls = resetClasses + "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse";
+                const txtCls = resetText + "text-orange-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Lädt..."; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Lädt..."; }
+            } else {
+                const dotCls = resetClasses + "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+                const txtCls = resetText + "text-red-600";
+                if(dotOut) { dotOut.className = dotCls; textOut.className = txtCls; textOut.textContent = "Offline"; }
+                if(dotIn) { dotIn.className = dotCls; textIn.className = txtCls; textIn.textContent = "Offline"; }
+            }
+        }
+
+        function showConfirmModal(title, desc, confirmCallback) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-desc').textContent = desc;
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            confirmBtn.onclick = function() { modal.classList.add('hidden'); confirmCallback(); };
+            cancelBtn.onclick = function() { modal.classList.add('hidden'); };
+            modal.classList.remove('hidden');
+        }
+
+        function showToast(title, message, isSuccess = true) {
+            const toast = document.getElementById('system-toast');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-message').textContent = message;
+            const icon = document.getElementById('toast-icon');
+            if (isSuccess) icon.className = "fa-solid fa-circle-check text-emerald-600 text-2xl"; 
+            else icon.className = "fa-solid fa-triangle-exclamation text-red-600 text-2xl"; 
+
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+        }
+
+        function disableWritePermissions() {
+            const dropzone = document.getElementById('drop-zone');
+            if (dropzone) { dropzone.style.pointerEvents = "none"; dropzone.style.opacity = "0.5"; }
+            const dropzone2 = document.getElementById('drop-zone-ausgaben');
+            if (dropzone2) { dropzone2.style.pointerEvents = "none"; dropzone2.style.opacity = "0.5"; }
+            
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(i => {
+                if (!['filter-preset', 'filter-from', 'filter-to', 'hist-search', 'hist-filter-preset', 'hist-filter-from', 'hist-filter-to', 'pdf-monthly-grouping', 'firebase-year-select'].includes(i.id)) {
+                    i.disabled = true;
+                }
+            });
+            const buttons = document.querySelectorAll('form button, #tab-daten button');
+            buttons.forEach(b => {
+                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden')) b.disabled = true;
+            });
+        }
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('#bottom-tab-bar button').forEach(b => {
+                b.classList.remove('tab-active', 'scale-105');
+                b.classList.add('text-stone-400');
+            });
+
+            const btn = document.getElementById(`btn-tab-${tabId}`);
+            if(btn) { btn.classList.add('tab-active', 'scale-105'); btn.classList.remove('text-stone-400'); }
+            renderAll();
+        }
+
+        function setupPullToRefresh() {
+            let startY = 0, isPulling = false;
+            const scrollable = document.getElementById('scroll-container');
+            const spinner = document.getElementById('pull-to-refresh-spinner');
+            
+            scrollable.addEventListener('touchstart', e => { if (scrollable.scrollTop <= 0) { startY = e.touches[0].pageY; isPulling = true; } }, { passive: true });
+            scrollable.addEventListener('touchmove', e => {
+                if (!isPulling) return;
+                const pullDistance = e.touches[0].pageY - startY;
+                if (pullDistance > 60 && scrollable.scrollTop <= 0) { spinner.style.height = '60px'; spinner.style.opacity = '1'; }
+            }, { passive: true });
+            scrollable.addEventListener('touchend', () => {
+                if (isPulling) {
+                    if (spinner.style.height === '60px') {
+                        if (loggedInUser !== null) loadYearFromCloud(currentYear);
+                        else showToast("Lokal", "Keine Cloud aktiv.");
+                    }
+                    setTimeout(() => { spinner.style.height = '0px'; spinner.style.opacity = '0'; }, 500);
+                    isPulling = false;
+                }
+            }, { passive: true });
+        }
+
+        function renderExpenseRows(generalExpenses = []) {
+            const container = document.getElementById('dynamic-expenses-container');
+            container.innerHTML = '';
+            
+            let expenses = [...generalExpenses];
+            while (expenses.length < 4) expenses.push({ name: '', bar: '', card: '', tax: 0 });
+
+            expenses.forEach((exp, index) => {
+                const taxSel = exp.tax || 0;
+                const rowHtml = `
+                    <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
+                        <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Rewe)" value="${exp.name || ''}">
+                        <div class="flex gap-2 mb-2">
+                            <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.bar || ''}" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm"></div>
+                            <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" value="${exp.card || ''}" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200"></div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                                <option value="0" ${taxSel == 0 ? 'selected' : ''}>0% Steuer</option>
+                                <option value="7" ${taxSel == 7 ? 'selected' : ''}>7% Steuer (Lebensm.)</option>
+                                <option value="19" ${taxSel == 19 ? 'selected' : ''}>19% Steuer (Dienstl.)</option>
+                            </select>
+                            ${index >= 4 ? `<button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', rowHtml);
+            });
+            calculateLiveFormula();
+        }
+
+        function addDynamicExpenseRow() {
+            const container = document.getElementById('dynamic-expenses-container');
+            const rowCount = container.querySelectorAll('.dynamic-expense-row').length + 1;
+            const rowHtml = `
+                <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-sm dynamic-expense-row">
+                    <input type="text" class="dyn-name modern-input text-[10px] font-bold text-stone-800 uppercase mb-2 w-full p-1 border-b border-stone-100 rounded-none focus:border-[#C5A85C] bg-transparent" placeholder="Bezeichnung (z.B. Ausgabe ${rowCount})">
+                    <div class="flex gap-2 mb-2">
+                        <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Bar" class="dyn-bar modern-input py-2 pl-3 pr-6 text-sm"></div>
+                        <div class="relative w-full"><input type="number" step="0.01" oninput="calculateLiveFormula()" placeholder="Karte" class="dyn-card modern-input py-2 pl-3 pr-6 text-sm border-blue-200"></div>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select class="dyn-tax modern-input py-1.5 text-[10px] font-bold uppercase w-full bg-stone-50">
+                            <option value="0">0% Steuer</option>
+                            <option value="7">7% Steuer (Lebensm.)</option>
+                            <option value="19">19% Steuer (Dienstl.)</option>
+                        </select>
+                        <button type="button" onclick="this.parentElement.parentElement.remove(); calculateLiveFormula();" class="bg-red-50 text-red-500 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function calculateLiveFormula() {
+            const rawBar = parseFloat(document.getElementById('entry-rev-bar').value) || 0;
+            const cardRev = parseFloat(document.getElementById('entry-rev-card').value) || 0;
+            
+            const actualBar = rawBar > 0 ? rawBar - appSettings.changeMoney : 0;
+            const totalRevenue = actualBar + cardRev; 
+
+            let expSumBar = 0, expSumCard = 0;
+
+            document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                expSumBar += parseFloat(row.querySelector('.dyn-sal-bar').value) || 0;
+                expSumCard += parseFloat(row.querySelector('.dyn-sal-card').value) || 0;
+            });
+
+            document.querySelectorAll('.dynamic-expense-row').forEach(row => {
+                expSumBar += parseFloat(row.querySelector('.dyn-bar').value) || 0;
+                expSumCard += parseFloat(row.querySelector('.dyn-card').value) || 0;
+            });
+
+            const combinedExpenses = expSumBar + expSumCard;
+            const profit = totalRevenue - combinedExpenses;
+            const tuete = actualBar - expSumBar;
+
+            document.getElementById('calc-preview-total').textContent = formatCurrency(totalRevenue);
+            document.getElementById('calc-preview-exp-total').textContent = "Summe: " + formatCurrency(combinedExpenses);
+            document.getElementById('entry-exp-sumbar').value = expSumBar !== 0 ? expSumBar.toFixed(2) : '';
+            document.getElementById('entry-exp-sumcard').value = expSumCard !== 0 ? expSumCard.toFixed(2) : '';
+
+            document.getElementById('calc-preview-profit').textContent = formatCurrency(profit);
+            document.getElementById('calc-preview-profit').style.color = profit >= 0 ? "var(--emerald)" : "#EF4444";
+            document.getElementById('calc-preview-tuete').textContent = formatCurrency(tuete);
+            document.getElementById('calc-preview-tuete').style.color = tuete >= 0 ? "var(--gold)" : "#EF4444";
+        }
+
+        function handleEntryDateChange() {
+            const pickedDate = document.getElementById('entry-date').value;
+            const existingDay = dbDays.find(d => d.date === pickedDate);
+
+            document.getElementById('entry-rev-bar').value = ''; document.getElementById('entry-rev-card').value = '';
+            document.querySelectorAll('.dyn-sal-row').forEach(row => { row.querySelector('.dyn-sal-bar').value = ''; row.querySelector('.dyn-sal-card').value = ''; });
+
+            if (existingDay) {
+                if (existingDay.revenue.bar > 0 || existingDay.revenue.total > 0) {
+                    document.getElementById('entry-rev-bar').value = existingDay.revenue.bar + appSettings.changeMoney;
+                }
+                document.getElementById('entry-rev-card').value = existingDay.revenue.card > 0 ? existingDay.revenue.card : '';
+
+                let loadedGenerals = [];
+                if (existingDay.expensesDetail) {
+                    const sal = existingDay.expensesDetail.salaries || {};
+                    loadedGenerals = existingDay.expensesDetail.general || [];
+                    document.querySelectorAll('.dyn-sal-row').forEach(row => {
+                        const name = row.querySelector('.dyn-sal-name').value;
+                        if (sal[name]) { row.querySelector('.dyn-sal-bar').value = sal[name].bar || ''; row.querySelector('.dyn-sal-card').value = sal[name].card || ''; }
+                    });
+                } else {
+                    if(existingDay.expensesSum.bar || existingDay.expensesSum.card) {
+                        loadedGenerals.push({ name: "Alte Summe", bar: existingDay.expensesSum.bar, card: existingDay.expensesSum.card, tax: 0 });
+                    }
+                }
+                renderExpenseRows(loadedGenerals);
+                showToast("Geladen", `Tag ${formatGermanDate(pickedDate)} existiert bereits.`);
+            } else {
+                renderExpenseRows([]);
+            }
+            calculateLiveFormula();
+        }
+
+        function initExcelDropzone() {
+            const dz1 = document.getElementById('drop-zone');
+            ['dragenter', 'dragover'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.add('bg-stone-100'); }));
+            ['dragleave', 'drop'].forEach(name => dz1.addEventListener(name, e => { e.preventDefault(); dz1.classList.remove('bg-stone-100'); }));
+            dz1.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseExcelFile(e.dataTransfer.files[0]); });
+            
+            const dz2 = document.getElementById('drop-zone-ausgaben');
+            ['dragenter', 'dragover'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.add('bg-red-100'); }));
+            ['dragleave', 'drop'].forEach(name => dz2.addEventListener(name, e => { e.preventDefault(); dz2.classList.remove('bg-red-100'); }));
+            dz2.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length > 0) parseAusgabenFile(e.dataTransfer.files[0]); });
+        }
+        
+        function handleExcelUpload(e) { if(e.target.files.length > 0) parseExcelFile(e.target.files[0]); }
+        function handleAusgabenUpload(e) { if(e.target.files.length > 0) parseAusgabenFile(e.target.files[0]); }
+
+        function recalcDaySums(dayObj) {
+            let b = 0, c = 0;
+            if (dayObj.expensesDetail && dayObj.expensesDetail.salaries) {
+                const sal = dayObj.expensesDetail.salaries;
+                Object.keys(sal).forEach(empKey => {
+                    b += (parseFloat(sal[empKey]?.bar)||0); c += (parseFloat(sal[empKey]?.card)||0);
+                });
+            }
+            if (dayObj.expensesDetail && dayObj.expensesDetail.general) {
+                dayObj.expensesDetail.general.forEach(g => {
+                    b += (parseFloat(g.bar) || 0); c += (parseFloat(g.card) || 0);
+                });
+            }
+
+            dayObj.expensesSum = { bar: b, card: c, total: b + c };
+            dayObj.profit = (parseFloat(dayObj.revenue.total) || 0) - dayObj.expensesSum.total;
+            dayObj.tuete = (parseFloat(dayObj.revenue.bar) || 0) - dayObj.expensesSum.bar;
+        }
+
+        function parseExcelFile(file) {
+            if (file.name.endsWith('.json')) {
+                const r = new FileReader();
+                r.onload = e => {
+                    try {
+                        const d = JSON.parse(e.target.result);
+                        let arr = d.data || d;
+                        if (!Array.isArray(arr)) throw new Error("JSON Format nicht erkannt");
+                        
+                        // JSON in Puffer
+                        tempImportBuffer = [];
+                        arr.forEach(day => {
+                            recalcDaySums(day);
+                            tempImportBuffer.push(day);
+                        });
+                        
+                        importSortDesc = true;
+                        tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                        renderImportPreview();
+                        showToast("JSON Ausgelesen", "Bitte prüfe die Daten und klicke auf Übernehmen.");
+                    } catch(err) { showToast("Fehler", "JSON ungültig.", false); }
+                };
+                r.readAsText(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    tempImportBuffer = [];
+                    let skippedCount = 0;
+
+                    const dateRegex = /^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/;
+
+                    workbook.SheetNames.forEach(sheetName => {
+                        const trimmedName = sheetName.trim();
+                        const match = trimmedName.match(dateRegex);
+                        if (!match) return; 
+
+                        let day = match[1], month = match[2], sheetYear = match[3];
+
+                        if (!sheetYear) {
+                            sheetYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
+                        }
+
+                        if (currentYear !== 'all' && sheetYear !== currentYear) {
+                            skippedCount++;
+                            return;
+                        }
+
+                        const fullGermanDate = `${day}.${month}.${sheetYear}`;
+                        const isoDate = `${sheetYear}-${month}-${day}`;
+                        const ws = workbook.Sheets[sheetName];
+                        const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                        let revBarRaw = 0, revCard = 0;
+                        let wechselgeldRowIdx = -1;
+                        
+                        for (let r = 0; r < rawJson.length; r++) {
+                            if (!rawJson[r]) continue;
+                            for (let c = 0; c < rawJson[r].length; c++) {
+                                if (String(rawJson[r][c] || "").trim().toLowerCase().includes("wechselgeld") || 
+                                    String(rawJson[r][c] || "").trim().toLowerCase().includes("wechelgeld")) { 
+                                    wechselgeldRowIdx = r; break; 
+                                }
+                            }
+                            if (wechselgeldRowIdx !== -1) break;
+                        }
+
+                        for (let r = 0; r < rawJson.length; r++) {
+                            const row = rawJson[r];
+                            if (!row || row.length === 0) continue;
+                            for (let c = 0; c < row.length; c++) {
+                                const rawCellVal = row[c];
+                                if (rawCellVal === undefined || rawCellVal === null) continue;
+                                const cellVal = String(rawCellVal).trim().toLowerCase();
+                                if (!cellVal) continue;
+
+                                const getValueDirectlyToRight = (startCol) => {
+                                    for (let nextCol = startCol + 1; nextCol < row.length; nextCol++) {
+                                        const rawVal = String(row[nextCol] || "").trim();
+                                        if (rawVal === "") continue;
+                                        const parsed = parseFloat(rawVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                                        if (!isNaN(parsed)) return parsed;
+                                    }
+                                    return 0;
+                                };
+
+                                if (cellVal === "bar" || cellVal === "bar:") {
+                                    if (wechselgeldRowIdx !== -1 && Math.abs(r - wechselgeldRowIdx) <= 4) { revBarRaw = getValueDirectlyToRight(c); }
+                                    else if (wechselgeldRowIdx === -1 && r > 10) { revBarRaw = getValueDirectlyToRight(c); }
+                                }
+                                else if (cellVal === "karte" || cellVal === "karte:") {
+                                    if (wechselgeldRowIdx !== -1 && Math.abs(r - wechselgeldRowIdx) <= 4) { revCard = getValueDirectlyToRight(c); }
+                                    else if (wechselgeldRowIdx === -1 && r > 10) { revCard = getValueDirectlyToRight(c); }
+                                }
+                            }
+                        }
+
+                        const actualBarRevenue = revBarRaw > 0 ? revBarRaw - appSettings.changeMoney : 0; 
+                        const calculatedTotalRevenue = actualBarRevenue + revCard;
+
+                        let inAusgabenSection = false;
+                        let nameCol = -1, amountCol = -1, remarkCol = -1;
+                        let extractedExpenses = [];
+
+                        for (let r = 0; r < rawJson.length; r++) {
+                            const row = rawJson[r];
+                            if (!row || row.length === 0) continue;
+
+                            if (!inAusgabenSection) {
+                                for(let c=0; c<row.length; c++) {
+                                    const cellVal = String(row[c] || "").trim().toLowerCase();
+                                    if (cellVal === "arikel:" || cellVal === "artikel:" || cellVal === "artikel" || cellVal === "artikel/zweck" || cellVal === "artikel/zweck:") {
+                                        inAusgabenSection = true; nameCol = c;
+                                        for(let c2=c+1; c2<row.length; c2++) {
+                                            const h = String(row[c2]||"").toLowerCase();
+                                            if(h.includes("brutto") || h.includes("betrag") || h.includes("netto")) amountCol = c2;
+                                            if(h.includes("bemerkung")) remarkCol = c2;
+                                        }
+                                        break;
+                                    }
+                                }
+                                continue;
+                            }
+
+                            if (inAusgabenSection) {
+                                if (nameCol === -1) nameCol = 0;
+                                const nameCell = String(row[nameCol] || "").trim().toLowerCase();
+
+                                if (nameCell.startsWith("summe") || nameCell.startsWith("einnahme") || nameCell.startsWith("tüte") || nameCell.startsWith("gewinn") || nameCell === "art:") {
+                                    inAusgabenSection = false; continue;
+                                }
+
+                                const name = String(row[nameCol] || "").trim();
+                                if (!name) continue;
+
+                                let amountRaw = amountCol !== -1 ? row[amountCol] : undefined;
+                                if (amountRaw === undefined || amountRaw === null || amountRaw === "") {
+                                    for(let c=nameCol+1; c<row.length; c++) {
+                                        if (row[c] !== undefined && row[c] !== null && String(row[c]).trim() !== "") {
+                                            amountRaw = row[c]; break;
+                                        }
+                                    }
+                                }
+                                
+                                const amount = parseFloat(String(amountRaw).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                                if (amount === 0) continue;
+
+                                let isCard = false;
+                                let remarkStr = (remarkCol !== -1 && row[remarkCol]) ? String(row[remarkCol]).toLowerCase() : row.join(" ").toLowerCase();
+                                
+                                if (remarkStr.includes("karte") || remarkStr.includes("überweisung")) { isCard = true; }
+
+                                extractedExpenses.push({
+                                    name: name, bar: isCard ? 0 : Math.abs(amount), card: isCard ? Math.abs(amount) : 0, tax: 0 
+                                });
+                            }
+                        }
+
+                        let exSalaries = {};
+                        appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+                        let exGeneral = [];
+
+                        extractedExpenses.forEach(exp => {
+                            let ln = exp.name.toLowerCase();
+                            if (ln.includes("gehalt") || ln.includes("lohn") || ln.includes("vorschuss")) {
+                                let matched = false;
+                                for (let emp of appSettings.employees) {
+                                    if (ln.includes(emp.toLowerCase()) && emp !== "Ehemalige / Aushilfen") {
+                                        exSalaries[emp].bar += exp.bar; exSalaries[emp].card += exp.card; matched = true; break;
+                                    }
+                                }
+                                if (!matched && exSalaries["Ehemalige / Aushilfen"]) {
+                                    exSalaries["Ehemalige / Aushilfen"].bar += exp.bar; exSalaries["Ehemalige / Aushilfen"].card += exp.card;
+                                }
+                            } else {
+                                exGeneral.push(exp);
+                            }
+                        });
+
+                        let existingDay = dbDays.find(d => d.date === isoDate);
+                        let dayObj;
+
+                        if (existingDay) {
+                            dayObj = JSON.parse(JSON.stringify(existingDay));
+                            dayObj.revenue = { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard };
+                            if (!dayObj.expensesDetail) {
+                                dayObj.expensesDetail = { salaries: {}, general: [] };
+                                appSettings.employees.forEach(emp => dayObj.expensesDetail.salaries[emp] = {bar:0, card:0});
+                            }
+                            Object.keys(exSalaries).forEach(empKey => {
+                                if (!dayObj.expensesDetail.salaries[empKey]) dayObj.expensesDetail.salaries[empKey] = {bar:0, card:0};
+                                dayObj.expensesDetail.salaries[empKey].bar += exSalaries[empKey].bar;
+                                dayObj.expensesDetail.salaries[empKey].card += exSalaries[empKey].card;
+                            });
+                            exGeneral.forEach(nx => {
+                                const exists = dayObj.expensesDetail.general.find(g => g.name === nx.name && g.bar === nx.bar && g.card === nx.card);
+                                if (!exists) dayObj.expensesDetail.general.push(nx);
+                            });
+                            recalcDaySums(dayObj);
+                        } else {
+                            dayObj = {
+                                date: isoDate, germanDate: fullGermanDate,
+                                revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
+                                expensesDetail: { salaries: exSalaries, general: exGeneral },
+                                note: "Mappen-Import"
+                            };
+                            recalcDaySums(dayObj);
+                        }
+                        tempImportBuffer.push(dayObj);
+                    });
+
+                    if (tempImportBuffer.length === 0) { 
+                        if (skippedCount > 0) showToast("Filter aktiv", `Alle ${skippedCount} Mappen ignoriert (Anderes Jahr).`, false);
+                        else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
+                        return; 
+                    }
+                    if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
+                    
+                    importSortDesc = true;
+                    tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                    renderImportPreview();
+                } catch (err) { showToast("Fehler", "Excel-Parsing fehlgeschlagen.", false); console.error(err); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseAusgabenFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const ws = workbook.Sheets[workbook.SheetNames[0]]; 
+                    const rawJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                    if (rawJson.length < 2) { showToast("Fehler", "Datei scheint leer zu sein.", false); return; }
+
+                    const headers = rawJson[0];
+                    const dateIdx = headers.findIndex(h => h && /buchungsdatum|datum der kontobewegung|rechnungsdatum/i.test(String(h).trim()));
+                    const nameIdx = headers.findIndex(h => h && /lieferanten|senders\/empfängers|kundenname|verwendungszweck|artikel/i.test(String(h).trim()));
+                    const amountIdx = headers.findIndex(h => h && /gesamtbetrag|^betrag$/i.test(String(h).trim()));
+                    const bankIdx = headers.findIndex(h => h && /kontobewegungen|kontonummer|konto des senders/i.test(String(h).trim()));
+                    const stornoIdx = headers.findIndex(h => h && /storno/i.test(String(h).trim()));
+                    const taxIdx = headers.findIndex(h => h && /ust.-satz|steuersatz|mwst/i.test(String(h).trim()));
+
+                    if (dateIdx === -1 || amountIdx === -1) {
+                        showToast("Fehler", "Spalten 'Datum' oder 'Betrag' nicht gefunden. Prüfe die Datei.", false); return;
+                    }
+
+                    const expensesByDate = {};
+                    let skippedCount = 0;
+
+                    for (let i = 1; i < rawJson.length; i++) {
+                        const row = rawJson[i];
+                        if (!row || row.length === 0 || !row[dateIdx]) continue;
+
+                        const rawDateMatch = String(row[dateIdx]).match(/(\d{2})\.(\d{2})(?:\.(\d{4}))?/);
+                        if(!rawDateMatch) continue;
+
+                        let day = rawDateMatch[1], month = rawDateMatch[2], rowYear = rawDateMatch[3];
+
+                        if (!rowYear) {
+                            rowYear = currentYear !== 'all' ? currentYear : new Date().getFullYear().toString();
+                        }
+                        
+                        if (currentYear !== 'all' && rowYear !== currentYear) {
+                            skippedCount++;
+                            continue; 
+                        }
+
+                        const isoDate = `${rowYear}-${month}-${day}`;
+
+                        let isStorno = false;
+                        if (stornoIdx !== -1 && row[stornoIdx]) {
+                            if (String(row[stornoIdx]).trim().toLowerCase() === 'ja') isStorno = true;
+                        }
+
+                        const amountStr = String(row[amountIdx]).replace(',', '.');
+                        let amount = parseFloat(amountStr) || 0;
+                        if(amount === 0) continue; 
+                        
+                        amount = Math.abs(amount);
+                        if (isStorno) amount = -amount;
+
+                        let supplier = (nameIdx !== -1 && row[nameIdx]) ? String(row[nameIdx]).trim() : "Unbekannte Ausgabe";
+                        if (isStorno) supplier += " (Storno)";
+                        
+                        let isCard = false;
+                        if (bankIdx !== -1 && row[bankIdx]) {
+                            const bVal = String(row[bankIdx]).trim().toLowerCase();
+                            if (bVal !== '' && bVal !== 'nein' && bVal !== 'bar' && bVal !== 'false') isCard = true;
+                        }
+
+                        let taxRate = 0;
+                        if (taxIdx !== -1 && row[taxIdx] !== undefined) {
+                            let tStr = String(row[taxIdx]).replace('%', '').replace(',', '.').trim();
+                            let tVal = parseFloat(tStr);
+                            if (!isNaN(tVal)) {
+                                if (tVal > 0 && tVal < 1) taxRate = Math.round(tVal * 100); 
+                                else if (tVal >= 1) taxRate = Math.round(tVal); 
+                            }
+                        }
+                        if (taxRate !== 7 && taxRate !== 19) taxRate = 0;
+
+                        if (!expensesByDate[isoDate]) expensesByDate[isoDate] = [];
+                        expensesByDate[isoDate].push({ name: supplier, bar: isCard ? 0 : amount, card: isCard ? amount : 0, tax: taxRate });
+                    }
+
+                    tempImportBuffer = [];
+                    let totalSkippedDups = 0;
+
+                    Object.keys(expensesByDate).forEach(isoDate => {
+                        let newExpenses = expensesByDate[isoDate];
+                        
+                        const uniqueNew = [];
+                        newExpenses.forEach(nx => {
+                            const isDupInFile = uniqueNew.some(u => u.name === nx.name && u.bar === nx.bar && u.card === nx.card && u.tax === nx.tax);
+                            if (!isDupInFile) uniqueNew.push(nx);
+                        });
+                        newExpenses = uniqueNew;
+
+                        let existingDay = dbDays.find(d => d.date === isoDate);
+
+                        if (existingDay) {
+                            let dayCopy = JSON.parse(JSON.stringify(existingDay));
+                            if(!dayCopy.expensesDetail) {
+                                dayCopy.expensesDetail = { salaries: {}, general: [] };
+                                appSettings.employees.forEach(emp => dayCopy.expensesDetail.salaries[emp] = {bar:0, card:0});
+                            }
+
+                            let addedCount = 0;
+                            newExpenses.forEach(nx => {
+                                const isDuplicate = dayCopy.expensesDetail.general.some(g =>
+                                    g.name === nx.name && g.bar === nx.bar && g.card === nx.card && g.tax === nx.tax
+                                );
+                                if (!isDuplicate) {
+                                    dayCopy.expensesDetail.general.push(nx);
+                                    addedCount++;
+                                } else {
+                                    totalSkippedDups++;
+                                }
+                            });
+
+                            if (addedCount > 0) {
+                                recalcDaySums(dayCopy);
+                                tempImportBuffer.push(dayCopy);
+                            }
+                        } else {
+                            let exSalaries = {};
+                            appSettings.employees.forEach(emp => exSalaries[emp] = {bar:0, card:0});
+
+                            let newDay = {
+                                date: isoDate, germanDate: formatGermanDate(isoDate),
+                                revenue: { total: 0, bar: 0, card: 0 },
+                                expensesDetail: { salaries: exSalaries, general: newExpenses },
+                                note: "Ausgaben Import"
+                            };
+                            recalcDaySums(newDay);
+                            tempImportBuffer.push(newDay);
+                        }
+                    });
+
+                    if (tempImportBuffer.length === 0) {
+                        if (totalSkippedDups > 0) showToast("Hinweis", `Kein Import: Alle Ausgaben waren exakte Duplikate (${totalSkippedDups} ignoriert).`, false);
+                        else if (skippedCount > 0) showToast("Hinweis", `${skippedCount} Ausgaben ignoriert (Falsches Jahr).`, false);
+                        else showToast("Hinweis", "Keine gültigen Ausgaben gefunden.", false);
+                    } else {
+                        if (totalSkippedDups > 0) showToast("Duplikat-Schutz aktiv", `${totalSkippedDups} Ausgaben ignoriert, da sie schon in der Datenbank stehen.`);
+                        else if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Ausgaben ignoriert (Anderes Jahr).`);
+                        importSortDesc = true;
+                        tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
+                        renderImportPreview();
+                    }
+                } catch (err) { 
+                    console.error(err);
+                    showToast("Fehler", "Ausgaben konnten nicht gelesen werden.", false); 
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function toggleImportSort() {
+            if (tempImportBuffer.length === 0) return;
+            importSortDesc = !importSortDesc;
+            tempImportBuffer.sort((a, b) => {
+                if (importSortDesc) return b.date.localeCompare(a.date);
+                return a.date.localeCompare(b.date);
+            });
+            renderImportPreview();
+        }
+
+        function removePreviewItem(dateToRemove) {
+            tempImportBuffer = tempImportBuffer.filter(day => day.date !== dateToRemove);
+            if (tempImportBuffer.length === 0) {
+                document.getElementById('import-preview-container').classList.add('hidden');
+                showToast("Vorschau leer", "Alle Einträge wurden aus dem Import entfernt.");
+            } else {
+                renderImportPreview();
+            }
+        }
+
+        function renderImportPreview() {
+            const tbody = document.getElementById('import-preview-tbody');
+            tbody.innerHTML = '';
+            document.getElementById('preview-count-text').textContent = tempImportBuffer.length;
+            
+            const sortIcon = document.getElementById('import-sort-icon');
+            if (sortIcon) {
+                sortIcon.className = importSortDesc ? "fa-solid fa-arrow-down ml-1 text-stone-400" : "fa-solid fa-arrow-up ml-1 text-stone-400";
+            }
+
+            tempImportBuffer.forEach(day => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                        <td class="p-3 font-bold text-stone-900">${day.germanDate}</td>
+                        <td class="p-3 text-right">${formatCurrency(day.revenue.bar)}</td>
+                        <td class="p-3 text-right">${formatCurrency(day.revenue.card)}</td>
+                        <td class="p-3 text-right text-emerald-600 font-bold">${formatCurrency(day.revenue.total)}</td>
+                        <td class="p-3 text-right text-red-500 font-bold">${formatCurrency(day.expensesSum.total)}</td>
+                        <td class="p-3 text-right font-black text-emerald-600">${formatCurrency(day.profit)}</td>
+                        <td class="p-3 text-right font-black text-[#C5A85C]">${formatCurrency(day.tuete)}</td>
+                        <td class="p-3 text-center">
+                            <button type="button" onclick="removePreviewItem('${day.date}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors cursor-pointer" title="Aus Import entfernen">
+                                <i class="fa-solid fa-trash-can pointer-events-none"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            document.getElementById('import-preview-container').classList.remove('hidden');
+            document.getElementById('import-preview-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function discardBuffer() {
+            tempImportBuffer = [];
+            document.getElementById('import-preview-container').classList.add('hidden');
+            showToast("Verworfen", "Temporäre Daten gelöscht.");
+        }
+
+        function setupFilterDefaultDates() {
+            const now = new Date();
+            const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filter-from').value = `${y}-${m}-01`;
+            document.getElementById('filter-to').value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+        }
+
+        function applyPresetDates() {
+            const val = document.getElementById('filter-preset').value;
+            const now = new Date(), y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
+            if (val === 'all') { document.getElementById('filter-from').value = ''; document.getElementById('filter-to').value = ''; }
+            else if (val === 'this-month') {
+                document.getElementById('filter-from').value = `${y}-${m}-01`;
+                document.getElementById('filter-to').value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+            } else if (val === 'last-30') {
+                const pastDate = new Date();
+                pastDate.setDate(now.getDate() - 30);
+                document.getElementById('filter-from').value = pastDate.toISOString().split('T')[0];
+                document.getElementById('filter-to').value = now.toISOString().split('T')[0];
+            }
+            renderAll();
+        }
+
+        function applyHistPresetDates() {
+            const val = document.getElementById('hist-filter-preset').value;
+            const fromInput = document.getElementById('hist-filter-from');
+            const toInput = document.getElementById('hist-filter-to');
+            const now = new Date(), y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
+
+            if (val === 'all') { fromInput.value = ''; toInput.value = ''; } 
+            else if (val === 'this-week') {
+                const dayOfWeek = now.getDay() || 7; 
+                const firstDate = new Date(now); firstDate.setDate(now.getDate() - dayOfWeek + 1);
+                const lastDate = new Date(now); lastDate.setDate(now.getDate() - dayOfWeek + 7);
+                fromInput.value = firstDate.toISOString().split('T')[0];
+                toInput.value = lastDate.toISOString().split('T')[0];
+            } 
+            else if (val === 'this-month') {
+                fromInput.value = `${y}-${m}-01`;
+                toInput.value = `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+            } 
+            else if (val === 'this-year') {
+                fromInput.value = `${y}-01-01`;
+                toInput.value = `${y}-12-31`;
+            }
+            renderHistory();
+        }
+
+        function getFilteredDays() {
+            const from = document.getElementById('filter-from').value, to = document.getElementById('filter-to').value;
+            return dbDays.filter(d => (!from || d.date >= from) && (!to || d.date <= to));
+        }
+
+        function getFilteredHistoryDays() {
+            const q = document.getElementById('hist-search').value.toLowerCase();
+            const from = document.getElementById('hist-filter-from').value;
+            const to = document.getElementById('hist-filter-to').value;
+            
+            return dbDays.filter(d => {
+                const matchesSearch = d.germanDate.includes(q) || (d.note && d.note.toLowerCase().includes(q));
+                const matchesFrom = !from || d.date >= from;
+                const matchesTo = !to || d.date <= to;
+                return matchesSearch && matchesFrom && matchesTo;
+            });
+        }
+
+        function renderAll() {
+            if (!loggedInUser) return;
+            const filtered = getFilteredDays();
+
+            if (dbDays.length === 0) {
+                document.getElementById('dashboard-empty').classList.remove('hidden');
+                document.getElementById('dashboard-active').classList.add('hidden');
+            } else {
+                document.getElementById('dashboard-empty').classList.add('hidden');
+                document.getElementById('dashboard-active').classList.remove('hidden');
+            }
+
+            if (activeTab === 'dashboard') {
+                let r=0, c=0, e=0, p=0, t=0;
+                
+                document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
+                if (document.querySelectorAll('.pdf-sal-val')) {
+                    document.querySelectorAll('.pdf-sal-val').forEach(el => el.textContent = '0,00 €');
+                }
+
+                let tax0 = 0, tax7 = 0, tax19 = 0;
+
+                filtered.forEach(d => { 
+                    r+=d.revenue.total; c+=d.revenue.card; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; 
+                    
+                    if(d.expensesDetail && d.expensesDetail.salaries) {
+                        const sal = d.expensesDetail.salaries;
+                        Object.keys(sal).forEach(empKey => {
+                            const val = (parseFloat(sal[empKey]?.bar)||0) + (parseFloat(sal[empKey]?.card)||0);
+                            tax0 += val; 
+                            
+                            document.querySelectorAll('.dash-sal-val').forEach(el => {
+                                if (el.getAttribute('data-emp') === empKey) {
+                                    let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
+                                    el.textContent = formatCurrency(cur + val);
+                                }
+                            });
+                            document.querySelectorAll('.pdf-sal-val').forEach(el => {
+                                if (el.getAttribute('data-emp') === empKey) {
+                                    let cur = parseFloat(el.textContent.replace(/[^\d,-]/g, '').replace(',','.')) || 0;
+                                    el.textContent = formatCurrency(cur + val);
+                                }
+                            });
+                        });
+                    }
+
+                    if(d.expensesDetail && d.expensesDetail.general) {
+                        d.expensesDetail.general.forEach(g => {
+                            const v = (parseFloat(g.bar)||0) + (parseFloat(g.card)||0);
+                            if (g.tax == 7) tax7 += v;
+                            else if (g.tax == 19) tax19 += v;
+                            else tax0 += v;
+                        });
+                    }
+                });
+                
+                document.getElementById('kpi-revenue').textContent = formatCurrency(r);
+                document.getElementById('kpi-expenses').textContent = formatCurrency(e);
+                document.getElementById('kpi-profit').textContent = formatCurrency(p);
+                document.getElementById('kpi-tuete').textContent = formatCurrency(t);
+                
+                drawTrendChart(filtered, 'trend-chart-container');
+                drawDistributionChart(tax0, tax7, tax19);
+            } else if (activeTab === 'historie') {
+                renderHistory();
+            }
+        }
+
+        function drawTrendChart(data, containerId) {
+            const c = document.getElementById(containerId);
+            if (!c) return;
+            if(data.length === 0) { c.innerHTML='<span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #A8A29E;">Keine Daten</span>'; return; }
+            
+            const isPdf = containerId === 'pdf-trend-chart-container';
+            const w = isPdf ? 750 : (c.clientWidth || 700); 
+            const h = isPdf ? 100 : (c.clientHeight || 150); 
+            const pad = 30;
+            
+            const rev = data.map(d => d.revenue.total), exp = data.map(d => d.expensesSum.total);
+            const mx = Math.max(...rev, ...exp, 500);
+            const step = (w - pad*2) / Math.max(data.length - 1, 1);
+
+            let rP = [], eP = [];
+            const sortedData = [...data].sort((a,b) => a.date.localeCompare(b.date));
+
+            sortedData.forEach((d, i) => {
+                rP.push(`${pad + i*step},${h - pad - (d.revenue.total/mx)*(h - pad*2)}`);
+                eP.push(`${pad + i*step},${h - pad - (d.expensesSum.total/mx)*(h - pad*2)}`);
+            });
+
+            c.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;">
+                <path d="M ${rP.join(' L ')}" fill="none" stroke="#10B981" stroke-width="3"/>
+                <path d="M ${eP.join(' L ')}" fill="none" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,4"/>
+            </svg>`;
+        }
+
+        function drawDistributionChart(tax0, tax7, tax19) {
+            const total = tax0 + tax7 + tax19;
+            const p0 = total > 0 ? ((tax0/total)*100).toFixed(1) : 0;
+            const p7 = total > 0 ? ((tax7/total)*100).toFixed(1) : 0;
+            const p19 = total > 0 ? ((tax19/total)*100).toFixed(1) : 0;
+
+            document.getElementById('pie-chart-container').innerHTML = `
+                <div class="w-full flex flex-col gap-2">
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200">
+                        <span>Ohne / 0%</span> <span class="text-stone-900">${formatCurrency(tax0)} <span class="text-[9px] text-stone-400">(${p0}%)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                        <span>Lebensm. (7%)</span> <span class="text-emerald-700">${formatCurrency(tax7)} <span class="text-[9px] text-emerald-400">(${p7}%)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold text-stone-700 bg-blue-50 p-2 rounded-lg border border-blue-200">
+                        <span>Dienstl. (19%)</span> <span class="text-blue-700">${formatCurrency(tax19)} <span class="text-[9px] text-blue-400">(${p19}%)</span></span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('pie-chart-legend').innerHTML = `<div class="text-center mt-2 text-[10px] text-stone-400">Gesamte erfasste Ausgaben: ${formatCurrency(total)}</div>`;
+        }
+
+        function generatePDFReport() {
+            const filtered = getFilteredDays();
+            if (filtered.length === 0) {
+                showToast("Fehler", "Keine Daten im aktuellen Zeitraum zum Exportieren.", false);
+                return;
+            }
+
+            const isMonthly = document.getElementById('pdf-monthly-grouping').checked;
+
+            showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
+            const element = document.getElementById('pdf-export-container');
+            
+            element.style.display = 'block';
+            document.body.style.overflow = 'visible';
+            document.documentElement.style.overflow = 'visible';
+
+            const now = new Date();
+            document.getElementById('pdf-date-created').textContent = `${now.toLocaleDateString('de-DE')} - ${now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})} Uhr`;
+
+            const from = document.getElementById('filter-from').value;
+            const to = document.getElementById('filter-to').value;
+            let rangeText = "Gesamte Historie";
+            if (from && to) rangeText = `${formatGermanDate(from)} bis ${formatGermanDate(to)}`;
+            else if (from) rangeText = `Ab ${formatGermanDate(from)}`;
+            else if (to) rangeText = `Bis ${formatGermanDate(to)}`;
+            
+            document.getElementById('pdf-date-range').textContent = isMonthly ? rangeText + " (Monatliche Gruppierung)" : rangeText;
+            const sel = document.getElementById('filter-preset');
+            document.getElementById('pdf-filter-name').textContent = sel.options[sel.selectedIndex].text;
+
+            let r=0, e=0, p=0, t=0;
+            filtered.forEach(d => { r+=d.revenue.total; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; });
+            document.getElementById('pdf-kpi-rev').textContent = formatCurrency(r);
+            document.getElementById('pdf-kpi-exp').textContent = formatCurrency(e);
+            document.getElementById('pdf-kpi-prof').textContent = formatCurrency(p);
+            document.getElementById('pdf-kpi-tuete').textContent = formatCurrency(t);
+
+            if (!isMonthly) {
+                document.getElementById('pdf-trend-wrapper').style.display = 'block';
+                drawTrendChart(filtered, 'pdf-trend-chart-container');
+            } else {
+                document.getElementById('pdf-trend-wrapper').style.display = 'none'; 
+            }
+
+            const tbody = document.getElementById('pdf-tbody');
+            tbody.innerHTML = '';
+            
+            if (isMonthly) {
+                document.getElementById('pdf-th-datum').textContent = 'Monat';
+                
+                const monthlyData = {};
+                filtered.forEach(d => {
+                    const monthKey = d.date.substring(0, 7); 
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { bar:0, card:0, total:0, exp:0, profit:0, tuete:0 };
+                    }
+                    monthlyData[monthKey].bar += d.revenue.bar;
+                    monthlyData[monthKey].card += d.revenue.card;
+                    monthlyData[monthKey].total += d.revenue.total;
+                    monthlyData[monthKey].exp += d.expensesSum.total;
+                    monthlyData[monthKey].profit += d.profit;
+                    monthlyData[monthKey].tuete += d.tuete;
+                });
+
+                const sortedMonths = Object.keys(monthlyData).sort((a,b) => b.localeCompare(a));
+                const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+
+                sortedMonths.forEach(m => {
+                    const parts = m.split('-');
+                    const mName = monthNames[parseInt(parts[1])-1] + " " + parts[0];
+                    const data = monthlyData[m];
+                    
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr style="background-color: #FAFAFA;">
+                            <td style="font-weight: 800;">${mName}</td>
+                            <td>${formatCurrency(data.bar)}</td>
+                            <td>${formatCurrency(data.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(data.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(data.exp)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(data.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(data.tuete)}</td>
+                        </tr>
+                    `);
+                });
+
+            } else {
+                document.getElementById('pdf-th-datum').textContent = 'Datum';
+                const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+                sorted.forEach(d => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${d.germanDate}</td>
+                            <td>${formatCurrency(d.revenue.bar)}</td>
+                            <td>${formatCurrency(d.revenue.card)}</td>
+                            <td style="font-weight: 800; color: #1C1917;">${formatCurrency(d.revenue.total)}</td>
+                            <td style="color: #EF4444;">${formatCurrency(d.expensesSum.total)}</td>
+                            <td style="font-weight: 800; color: #10B981;">${formatCurrency(d.profit)}</td>
+                            <td style="font-weight: 800; color: #C5A85C;">${formatCurrency(d.tuete)}</td>
+                        </tr>
+                    `);
+                });
+            }
+
+            setTimeout(() => {
+                const opt = {
+                    margin:       10, 
+                    filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${currentYear}_${new Date().getTime()}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(element).save().then(() => {
+                    showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
+                    element.style.display = 'none';
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                }).catch(err => {
+                    console.error("PDF Error:", err);
+                    showToast("Fehler", "PDF konnte nicht generiert werden.", false);
+                    element.style.display = 'none';
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                });
+            }, 200); 
+        }
+
+        function formatGermanDate(s) { const p=s.split('-'); return p.length===3 ? `${p[2]}.${p[1]}.${p[0]}` : s; }
+        function formatCurrency(v) { return v.toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
+    </script>
+</body>
+</html>
