@@ -13,7 +13,7 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Outfit für modernen, professionellen Look) -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;650;750;800&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -157,25 +157,27 @@
             opacity: 0;
         }
 
-        #pdf-export-container {
-            display: none; 
+        /* PERFEKTER PDF EXPORT FIX: Stabil & unsichtbar im Hintergrund gerendert */
+        #pdf-export-wrapper {
             position: absolute;
             top: 0;
-            left: 0;
-            z-index: -9999; 
-            width: 210mm; 
-            min-height: 297mm;
+            left: -9999px; /* Komplett aus dem Sichtbereich schieben */
+            z-index: -10;
+        }
+        
+        #pdf-export-container {
+            width: 800px; /* Feste Breite ist essentiell für sauberes html2pdf Rendering */
             background-color: white;
             color: #1C1917;
-            padding: 15mm;
+            padding: 40px;
             box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
         }
         .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-        .pdf-table th { background-color: #F6F3EB; padding: 8px; text-align: right; border-bottom: 2px solid #E7E5E4; font-weight: 800; font-size: 10px; text-transform: uppercase; }
+        .pdf-table th { background-color: #F6F3EB; padding: 10px; text-align: right; border-bottom: 2px solid #E7E5E4; font-weight: 800; font-size: 10px; text-transform: uppercase; }
         .pdf-table th:first-child { text-align: left; }
-        .pdf-table td { padding: 8px; text-align: right; border-bottom: 1px solid #F5F5F4; }
+        .pdf-table td { padding: 10px; text-align: right; border-bottom: 1px solid #F5F5F4; }
         .pdf-table td:first-child { text-align: left; font-weight: 600; }
         .pdf-table tr { page-break-inside: avoid; } 
     </style>
@@ -290,8 +292,8 @@
                                 <input type="checkbox" id="pdf-monthly-grouping" class="accent-[#C5A85C]">
                                 Als Monats-Bericht
                             </label>
-                            <button type="button" onclick="generatePDFReport()" class="btn-gold flex items-center justify-center gap-2 py-2 px-4 text-xs h-full w-full sm:w-auto">
-                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            <button type="button" onclick="generatePDFReport()" class="btn-gold flex items-center justify-center gap-2 py-2 px-4 text-xs h-full w-full sm:w-auto shadow-md">
+                                <i class="fa-solid fa-file-pdf"></i> Statistik als PDF
                             </button>
                         </div>
                     </div>
@@ -502,11 +504,11 @@
                                     <i class="fa-solid fa-download mr-2 text-[#C5A85C]"></i> Backup laden
                                 </button>
 
-                                <button type="button" onclick="deleteAllgemeinerEinkauf()" class="btn-dark bg-orange-500 hover:bg-orange-600 w-full sm:w-auto py-3 px-4 text-xs flex-1" title="Entfernt nur die Position 'Allgemeiner Einkauf' aus den angezeigten Tagen">
+                                <button type="button" id="btn-delete-allg" onclick="deleteAllgemeinerEinkauf()" class="btn-dark bg-orange-500 hover:bg-orange-600 w-full sm:w-auto py-3 px-4 text-xs flex-1" title="Entfernt nur die Position 'Allgemeiner Einkauf' aus den angezeigten Tagen">
                                     <i class="fa-solid fa-broom mr-2"></i> "Allg. Einkauf" löschen
                                 </button>
 
-                                <button type="button" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs flex-1">
+                                <button type="button" id="btn-delete-all" onclick="clearDatabase()" class="btn-dark bg-red-600 hover:bg-red-700 w-full sm:w-auto py-3 px-4 text-xs flex-1">
                                     <i class="fa-solid fa-trash-can mr-2"></i> Tage löschen
                                 </button>
                             </div>
@@ -653,12 +655,12 @@
                         </div>
 
                         <!-- System-Einstellungen (Admin Only) -->
-                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full flex-1">
+                        <div id="admin-sys-config" class="hidden glass-card p-6 space-y-4 w-full flex-1 border-l-4 border-l-[#C5A85C]">
                             <div class="flex items-center gap-2 mb-2">
                                 <i class="fa-solid fa-cogs text-[#C5A85C] text-xl"></i>
                                 <h4 class="font-extrabold text-stone-900 uppercase tracking-wider text-sm">Systemeinstellungen</h4>
                             </div>
-                            <p class="text-[10px] text-stone-500 font-bold mb-4">Hier verwaltest du PINs, Mitarbeiter und Wechselgeld.</p>
+                            <p class="text-[10px] text-stone-500 font-bold mb-4">Hier verwaltest du PINs, Mitarbeiter und Wechselgeld. <br><span class="text-red-500">Nur für Admins sichtbar.</span></p>
                             
                             <div class="space-y-3 mt-2">
                                 <div>
@@ -669,19 +671,20 @@
                                     <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Mitarbeiter (Komma-getrennt)</label>
                                     <textarea id="cfg-employees" rows="2" class="modern-input text-xs py-2 leading-relaxed" placeholder="Adam, Mohammed, Karam..."></textarea>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div class="grid grid-cols-2 gap-4 mt-2 bg-stone-50 p-3 rounded-xl border border-stone-200">
                                     <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Admin-PIN</label>
-                                        <input type="password" id="cfg-admin-pin" maxlength="4" placeholder="1991" class="modern-input text-center font-bold tracking-widest text-sm py-2">
+                                        <label class="block text-[10px] uppercase font-bold text-[#C5A85C] mb-1.5">Aktuelle Admin-PIN</label>
+                                        <input type="text" id="cfg-admin-pin" maxlength="4" class="modern-input text-center font-black tracking-widest text-lg py-2 text-stone-900 border-[#C5A85C]/50" title="Hier kannst du die PIN ändern">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] uppercase font-bold text-stone-400 mb-1.5">Lese-PIN</label>
-                                        <input type="password" id="cfg-read-pin" maxlength="4" placeholder="2024" class="modern-input text-center font-bold tracking-widest text-sm py-2">
+                                        <label class="block text-[10px] uppercase font-bold text-stone-500 mb-1.5">Aktuelle Lese-PIN</label>
+                                        <input type="text" id="cfg-read-pin" maxlength="4" class="modern-input text-center font-black tracking-widest text-lg py-2 text-stone-500" title="Hier kannst du die PIN ändern">
                                     </div>
+                                    <p class="col-span-2 text-[9px] text-stone-400 font-bold text-center mt-1">Einfach überschreiben und unten auf Sichern klicken.</p>
                                 </div>
                             </div>
-                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold flex justify-center items-center gap-2">
-                                System-Settings Sichern <i class="fa-solid fa-cloud-arrow-up text-[#C5A85C]"></i>
+                            <button type="button" onclick="saveSystemSettings()" class="w-full mt-4 py-3 btn-dark text-xs uppercase font-extrabold flex justify-center items-center gap-2 hover:bg-[#C5A85C] transition-colors">
+                                System-Settings Sichern <i class="fa-solid fa-check text-white"></i>
                             </button>
                         </div>
                     </div>
@@ -772,84 +775,95 @@
         </div>
     </div>
 
-    <!-- ================= PDF EXPORT TEMPLATE ================= -->
-    <div id="pdf-export-container">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #C5A85C; display: flex; align-items: center; justify-content: center; background-color: #FAFAFA;">
-                    <span style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: #C5A85C;">3B</span>
+    <!-- ================= PDF EXPORT TEMPLATE (UNSICHTBAR IM HINTERGRUND) ================= -->
+    <div id="pdf-export-wrapper">
+        <div id="pdf-export-container">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #C5A85C; display: flex; align-items: center; justify-content: center; background-color: #FAFAFA;">
+                        <span style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: #C5A85C;">3B</span>
+                    </div>
+                    <div>
+                        <h1 style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: #1C1917; margin: 0; letter-spacing: -0.02em;">GastroFinance</h1>
+                        <p style="font-size: 10px; font-weight: bold; color: #78716C; text-transform: uppercase; letter-spacing: 0.1em; margin: 4px 0 0 0;">Betriebswirtschaftliche Auswertung</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: #1C1917; margin: 0; letter-spacing: -0.02em;">GastroFinance</h1>
-                    <p style="font-size: 10px; font-weight: bold; color: #78716C; text-transform: uppercase; letter-spacing: 0.1em; margin: 4px 0 0 0;">Betriebswirtschaftliche Auswertung</p>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <p style="font-size: 10px; font-weight: bold; color: #A8A29E; margin: 0;">Erstellt am:</p>
-                <p style="font-size: 12px; font-weight: 800; color: #1C1917; margin: 2px 0 0 0;" id="pdf-date-created">--</p>
-            </div>
-        </div>
-
-        <div style="background-color: #FAFAFA; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 25px;">
-            <p style="font-size: 9px; font-weight: bold; color: #A8A29E; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 4px 0;">Ausgewerteter Zeitraum</p>
-            <h2 style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-date-range">--</h2>
-            <p style="font-size: 10px; font-weight: bold; color: #78716C; margin: 4px 0 0 0;">Filter: <span style="color: #C5A85C;" id="pdf-filter-name">--</span></p>
-        </div>
-
-        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-            <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
-                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Umsatz Summe</p>
-                <p style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-kpi-rev">0,00 €</p>
-            </div>
-            <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
-                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Ausgaben</p>
-                <p style="font-size: 16px; font-weight: 900; color: #EF4444; margin: 0;" id="pdf-kpi-exp">0,00 €</p>
-            </div>
-            <div style="flex: 1; border: 1px solid #E7E5E4; background-color: #FAFAFA; border-radius: 8px; padding: 15px; text-align: center;">
-                <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gewinn</p>
-                <p style="font-size: 16px; font-weight: 900; color: #10B981; margin: 0;" id="pdf-kpi-prof">0,00 €</p>
-            </div>
-            <div style="flex: 1; border: 2px solid rgba(197, 168, 92, 0.3); background-color: rgba(246, 243, 235, 0.3); border-radius: 8px; padding: 15px; text-align: center;">
-                <p style="font-size: 9px; font-weight: bold; color: #A3853F; text-transform: uppercase; margin: 0 0 8px 0;">Bar Mitnahmen</p>
-                <p style="font-size: 16px; font-weight: 900; color: #C5A85C; margin: 0;" id="pdf-kpi-tuete">0,00 €</p>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
-            <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter im Zeitraum</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container"></div>
-        </div>
-
-        <div id="pdf-trend-wrapper" style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Entwicklungstrend</h3>
-                <div style="font-size: 9px; font-weight: bold; color: #78716C;">
-                    <span style="color: #10B981; margin-right: 10px;">— Umsatz</span>
-                    <span style="color: #EF4444;">- - Ausgaben</span>
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; font-weight: bold; color: #A8A29E; margin: 0;">Erstellt am:</p>
+                    <p style="font-size: 12px; font-weight: 800; color: #1C1917; margin: 2px 0 0 0;" id="pdf-date-created">--</p>
                 </div>
             </div>
-            <div id="pdf-trend-chart-container" style="height: 100px; width: 100%; position: relative;"></div>
-        </div>
 
-        <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px 0;">Detaillierte Auflistung</h3>
-        <table class="pdf-table">
-            <thead>
-                <tr>
-                    <th id="pdf-th-datum">Datum</th>
-                    <th>Bar (Netto)</th>
-                    <th>Karte</th>
-                    <th>Umsatz</th>
-                    <th>Ausgaben</th>
-                    <th>Gewinn</th>
-                    <th>Bar Mitnahmen</th>
-                </tr>
-            </thead>
-            <tbody id="pdf-tbody"></tbody>
-        </table>
+            <div style="background-color: #FAFAFA; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 25px;">
+                <p style="font-size: 9px; font-weight: bold; color: #A8A29E; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 4px 0;">Ausgewerteter Zeitraum</p>
+                <h2 style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-date-range">--</h2>
+                <p style="font-size: 10px; font-weight: bold; color: #78716C; margin: 4px 0 0 0;">Filter: <span style="color: #C5A85C;" id="pdf-filter-name">--</span></p>
+            </div>
 
-        <div style="margin-top: 30px; border-top: 1px solid #E7E5E4; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #A8A29E;">
-            <span>GastroFinance Report Tool</span>
-            <span>Automatisch generiert aus gesicherten Datenbank-Werten.</span>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Umsatz Summe</p>
+                    <p style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-kpi-rev">0,00 €</p>
+                </div>
+                <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Ausgaben</p>
+                    <p style="font-size: 16px; font-weight: 900; color: #EF4444; margin: 0;" id="pdf-kpi-exp">0,00 €</p>
+                </div>
+                <div style="flex: 1; border: 1px solid #E7E5E4; background-color: #FAFAFA; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gewinn</p>
+                    <p style="font-size: 16px; font-weight: 900; color: #10B981; margin: 0;" id="pdf-kpi-prof">0,00 €</p>
+                </div>
+                <div style="flex: 1; border: 2px solid rgba(197, 168, 92, 0.3); background-color: rgba(246, 243, 235, 0.3); border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="font-size: 9px; font-weight: bold; color: #A3853F; text-transform: uppercase; margin: 0 0 8px 0;">Bar Mitnahmen</p>
+                    <p style="font-size: 16px; font-weight: 900; color: #C5A85C; margin: 0;" id="pdf-kpi-tuete">0,00 €</p>
+                </div>
+            </div>
+
+            <!-- NEU: Ausgaben-Verteilung nach Steuern & Gehälter -->
+            <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                <div style="flex: 2; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
+                    <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Mitarbeiter Gehälter</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="pdf-salaries-container"></div>
+                </div>
+                <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; background-color: #FAFAFA;">
+                    <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px 0;">Ausgaben (Steuer)</h3>
+                    <div id="pdf-tax-container" style="font-size: 10px; font-weight: 600; line-height: 1.6;">
+                        <!-- JS Fills this -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="pdf-trend-wrapper" style="margin-bottom: 25px; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Entwicklungstrend</h3>
+                    <div style="font-size: 9px; font-weight: bold; color: #78716C;">
+                        <span style="color: #10B981; margin-right: 10px;">— Umsatz</span>
+                        <span style="color: #EF4444;">- - Ausgaben</span>
+                    </div>
+                </div>
+                <div id="pdf-trend-chart-container" style="height: 100px; width: 100%; position: relative;"></div>
+            </div>
+
+            <h3 style="font-size: 11px; font-weight: 800; color: #1C1917; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px 0;">Detaillierte Auflistung</h3>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th id="pdf-th-datum">Datum</th>
+                        <th>Bar (Netto)</th>
+                        <th>Karte</th>
+                        <th>Umsatz</th>
+                        <th>Ausgaben</th>
+                        <th>Gewinn</th>
+                        <th>Bar Mitnahmen</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-tbody"></tbody>
+            </table>
+
+            <div style="margin-top: 30px; border-top: 1px solid #E7E5E4; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #A8A29E;">
+                <span>GastroFinance Report Tool</span>
+                <span>Automatisch generiert aus gesicherten Datenbank-Werten.</span>
+            </div>
         </div>
     </div>
 
@@ -857,16 +871,7 @@
     <!-- ================= JAVASCRIPT ================= -->
     <script>
         // === HIER DEINE CONFIG EINFÜGEN ===
-        const firebaseConfig = {
-    apiKey: "AIzaSyDTBNshYI5eng6NHn5yfSXG8wG2-7MPQOs",
-    authDomain: "gastrobuchhaltung.firebaseapp.com",
-    databaseURL: "https://gastrobuchhaltung-default-rtdb.firebaseio.com",
-    projectId: "gastrobuchhaltung",
-    storageBucket: "gastrobuchhaltung.firebasestorage.app",
-    messagingSenderId: "665630321892",
-    appId: "1:665630321892:web:b939ad62c6a1bfafa650f1",
-    measurementId: "G-6HQ1NQSJ5X"
-  };
+        const firebaseConfig = {};
         // ===================================
 
         if (Object.keys(firebaseConfig).length > 0) {
@@ -974,14 +979,23 @@
             if (loggedInUser === 'inhaber') {
                 document.getElementById('user-role-display').innerHTML = `Rolle: Inhaber <span class="text-stone-400 font-bold">(Lesezugriff)</span>`;
                 document.getElementById('admin-sys-config').classList.add('hidden');
+                
+                // === SICHERHEIT: Alle Lösch-Buttons für Inhaber unsichtbar machen ===
                 document.getElementById('btn-export-backup').classList.add('hidden'); 
+                document.getElementById('btn-delete-allg').classList.add('hidden'); 
+                document.getElementById('btn-delete-all').classList.add('hidden'); 
+                
                 disableWritePermissions();
             } else {
                 document.getElementById('user-role-display').textContent = `Rolle: Admin (Vollzugriff)`;
                 document.getElementById('admin-sys-config').classList.remove('hidden');
-                document.getElementById('btn-export-backup').classList.remove('hidden'); 
                 
-                // === START SMART AUTO-BACKUP ===
+                // === Ansicht für Admin ===
+                document.getElementById('btn-export-backup').classList.remove('hidden'); 
+                document.getElementById('btn-delete-allg').classList.remove('hidden'); 
+                document.getElementById('btn-delete-all').classList.remove('hidden'); 
+                
+                // === START SMART AUTO-BACKUP (Nur für Admins) ===
                 setTimeout(checkAndRunDailyBackup, 1500); 
             }
 
@@ -990,26 +1004,18 @@
             loadYearFromCloud(currentYear); 
         }
 
-        // ==========================================
-        // === NEU: SMART DOWNLOAD AUTO-BACKUP ======
-        // ==========================================
         async function checkAndRunDailyBackup() {
             const today = new Date().toISOString().split('T')[0];
             const lastBackup = localStorage.getItem('gastro_last_auto_backup');
 
-            // Wenn das Backup für "heute" noch nicht gemacht wurde
             if (lastBackup !== today) {
-                
-                // Wir haben keine Cloud verbindung konfiguriert -> Abbrechen
                 if (Object.keys(firebaseConfig).length === 0) return;
-
                 showToast("Auto-Backup startet", "Jahres-Backups werden nacheinander heruntergeladen...", true);
                 
                 try {
                     const years = ['2024', '2025', '2026'];
                     let backupCount = 0;
                     
-                    // Wir iterieren durch die Jahre
                     for (let i = 0; i < years.length; i++) {
                         const y = years[i];
                         const snap = await db.collection('restaurant_daten').doc(y).collection('tage').get();
@@ -1025,19 +1031,14 @@
                                 data: yearData
                             };
                             
-                            // JSON zusammenbauen
                             const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
                             const url = URL.createObjectURL(blob);
                             
-                            // Unsichtbarer Download-Trigger
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = `GastroFinance_AutoBackup_${y}_${today}.json`;
                             document.body.appendChild(a);
                             
-                            // WICHTIG: Verzögerung einbauen (800ms pro Jahr)!
-                            // Wenn wir 3 Dateien auf die exakt gleiche Millisekunde runterladen wollen, 
-                            // blockiert der Browser (Chrome/Safari) das als Spam/Sicherheitsrisiko.
                             setTimeout(() => {
                                 a.click();
                                 document.body.removeChild(a);
@@ -1049,10 +1050,7 @@
                     }
 
                     if (backupCount > 0) {
-                        // Erfolgreich gemerkt, damit es heute nicht nochmal aufploppt!
                         localStorage.setItem('gastro_last_auto_backup', today);
-                        
-                        // Zeige den Erfolgs-Toast, wenn alle Downloads durch sind
                         setTimeout(() => {
                             showToast("Sicherung Abgeschlossen", `${backupCount} Jahres-Backups liegen in deinem Downloads-Ordner.`);
                         }, years.length * 800);
@@ -1060,13 +1058,9 @@
 
                 } catch (e) {
                     console.error("Auto-Backup Error", e);
-                    // Wir setzen localStorage hier absichtlich nicht!
-                    // Wenn es fehlgeschlagen ist, soll er es beim nächsten Login nochmal probieren.
                 }
             }
         }
-        // ==========================================
-
 
         function logout() {
             loggedInUser = null;
@@ -1151,6 +1145,10 @@
             if(document.getElementById('cfg-wechselgeld')) document.getElementById('cfg-wechselgeld').value = appSettings.changeMoney;
             if(document.getElementById('cfg-employees')) document.getElementById('cfg-employees').value = appSettings.employees.join(", ");
             if(document.getElementById('hint-wechselgeld')) document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
+            
+            // UI Update: PINs direkt im Klartext ins Formular eintragen
+            if(document.getElementById('cfg-admin-pin')) document.getElementById('cfg-admin-pin').value = adminPin;
+            if(document.getElementById('cfg-read-pin')) document.getElementById('cfg-read-pin').value = readPin;
         }
 
         function buildDynamicEmployeeUI() {
@@ -1187,7 +1185,7 @@
 
                 if (pdfContainer) {
                     pdfContainer.insertAdjacentHTML('beforeend', `
-                        <div style="flex: 1 1 18%; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #E7E5E4;">
+                        <div style="flex: 1 1 30%; background-color: #FAFAFA; padding: 10px; border-radius: 6px; text-align: left; border: 1px solid #E7E5E4;">
                             <p style="font-size: 8px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 4px 0;">${emp}</p>
                             <p style="font-size: 12px; font-weight: 900; color: #1C1917; margin: 0;" class="pdf-sal-val" data-emp="${emp}">0,00 €</p>
                         </div>
@@ -1201,11 +1199,17 @@
 
             const newAdmin = document.getElementById('cfg-admin-pin').value.trim();
             const newRead = document.getElementById('cfg-read-pin').value.trim();
+            
             if (newAdmin && newAdmin.length === 4 && !isNaN(newAdmin)) {
-                adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', adminPin); document.getElementById('cfg-admin-pin').value = '';
+                adminPin = newAdmin; localStorage.setItem('gastro_admin_pin', adminPin); 
+            } else if (newAdmin !== adminPin) {
+                showToast("Hinweis", "Admin-PIN muss 4 Zahlen haben.", false);
             }
+            
             if (newRead && newRead.length === 4 && !isNaN(newRead)) {
-                readPin = newRead; localStorage.setItem('gastro_read_pin', readPin); document.getElementById('cfg-read-pin').value = '';
+                readPin = newRead; localStorage.setItem('gastro_read_pin', readPin);
+            } else if (newRead !== readPin) {
+                showToast("Hinweis", "Lese-PIN muss 4 Zahlen haben.", false);
             }
 
             const wg = parseFloat(document.getElementById('cfg-wechselgeld').value);
@@ -1223,7 +1227,7 @@
                 if(Object.keys(firebaseConfig).length > 0) {
                     await db.collection('restaurant_daten').doc(currentYear).set({ settings: appSettings }, { merge: true });
                 }
-                showToast("Gesichert", "System-Einstellungen in Firebase aktualisiert.");
+                showToast("Gesichert", "System-Einstellungen & PINs aktualisiert.");
             } catch (e) {
                 showToast("Fehler", "Settings konnten nicht in die Cloud gespeichert werden.", false);
             }
@@ -2028,6 +2032,8 @@
         }
 
         async function deleteSingleDay(d) {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+            
             showConfirmModal("Löschen?", "Diesen Tag dauerhaft aus der Cloud entfernen?", async () => {
                 try {
                     setDbStatus('connecting');
@@ -2050,6 +2056,8 @@
         }
 
         async function clearDatabase() {
+            if (loggedInUser === 'inhaber') { showToast("Fehler", "Nur Leserechte.", false); return; }
+            
             if (dbDays.length === 0) {
                 showToast("Hinweis", "Es gibt aktuell keine Daten zum Löschen.", false);
                 return;
@@ -2387,10 +2395,10 @@
             const isMonthly = document.getElementById('pdf-monthly-grouping').checked;
 
             showToast("Generiere PDF...", isMonthly ? "Jahresbericht wird erstellt." : "Bericht wird erstellt.");
-            const element = document.getElementById('pdf-export-container');
             
-            // Bugfix PDF Rendering: Container wird block geschaltet, bleibt aber durch z-index: -9999 unsichtbar!
-            element.style.display = 'block';
+            // WICHTIG: Kein 'display: block' oder 'display: none' mehr!
+            // Der Container liegt einfach außerhalb des Bildschirms, ist aber physisch gerendert.
+            const element = document.getElementById('pdf-export-container');
 
             const now = new Date();
             document.getElementById('pdf-date-created').textContent = `${now.toLocaleDateString('de-DE')} - ${now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})} Uhr`;
@@ -2407,11 +2415,53 @@
             document.getElementById('pdf-filter-name').textContent = sel.options[sel.selectedIndex].text;
 
             let r=0, e=0, p=0, t=0;
-            filtered.forEach(d => { r+=d.revenue.total; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; });
+            let tax0 = 0, tax7 = 0, tax19 = 0;
+
+            filtered.forEach(d => { 
+                r+=d.revenue.total; e+=d.expensesSum.total; p+=d.profit; t+=d.tuete; 
+                
+                // Berechne Steuern für das PDF
+                if(d.expensesDetail && d.expensesDetail.salaries) {
+                    const sal = d.expensesDetail.salaries;
+                    Object.keys(sal).forEach(empKey => {
+                        tax0 += (parseFloat(sal[empKey]?.bar)||0) + (parseFloat(sal[empKey]?.card)||0);
+                    });
+                }
+                if(d.expensesDetail && d.expensesDetail.general) {
+                    d.expensesDetail.general.forEach(g => {
+                        const v = (parseFloat(g.bar)||0) + (parseFloat(g.card)||0);
+                        if (g.tax == 7) tax7 += v;
+                        else if (g.tax == 19) tax19 += v;
+                        else tax0 += v;
+                    });
+                }
+            });
+
             document.getElementById('pdf-kpi-rev').textContent = formatCurrency(r);
             document.getElementById('pdf-kpi-exp').textContent = formatCurrency(e);
             document.getElementById('pdf-kpi-prof').textContent = formatCurrency(p);
             document.getElementById('pdf-kpi-tuete').textContent = formatCurrency(t);
+
+            // Steuern in PDF einfügen
+            const totalTax = tax0 + tax7 + tax19;
+            const p0 = totalTax > 0 ? ((tax0/totalTax)*100).toFixed(1) : 0;
+            const p7 = totalTax > 0 ? ((tax7/totalTax)*100).toFixed(1) : 0;
+            const p19 = totalTax > 0 ? ((tax19/totalTax)*100).toFixed(1) : 0;
+
+            document.getElementById('pdf-tax-container').innerHTML = `
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #E7E5E4; padding-bottom: 4px; margin-bottom: 4px;">
+                    <span style="color: #78716C;">0% Steuer (Ohne):</span> 
+                    <span style="color: #1C1917;">${formatCurrency(tax0)} <span style="font-size: 8px; color: #A8A29E;">(${p0}%)</span></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #E7E5E4; padding-bottom: 4px; margin-bottom: 4px;">
+                    <span style="color: #78716C;">7% Steuer (Lebensm.):</span> 
+                    <span style="color: #10B981;">${formatCurrency(tax7)} <span style="font-size: 8px; color: #A8A29E;">(${p7}%)</span></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #78716C;">19% Steuer (Dienstl.):</span> 
+                    <span style="color: #3B82F6;">${formatCurrency(tax19)} <span style="font-size: 8px; color: #A8A29E;">(${p19}%)</span></span>
+                </div>
+            `;
 
             if (!isMonthly) {
                 document.getElementById('pdf-trend-wrapper').style.display = 'block';
@@ -2485,19 +2535,17 @@
                     margin:       10, 
                     filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${currentYear}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 html2pdf().set(opt).from(element).save().then(() => {
                     showToast("Erfolg!", "Die PDF wurde heruntergeladen.");
-                    element.style.display = 'none'; // Container wieder verstecken
                 }).catch(err => {
                     console.error("PDF Error:", err);
                     showToast("Fehler", "PDF konnte nicht generiert werden.", false);
-                    element.style.display = 'none'; // Container wieder verstecken
                 });
-            }, 200); 
+            }, 300); // 300ms warten, damit die Diagramme fertig gezeichnet sind
         }
 
         function setDbStatus(state) {
@@ -2568,7 +2616,9 @@
             });
             const buttons = document.querySelectorAll('form button, #tab-daten button');
             buttons.forEach(b => {
-                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup')) b.disabled = true;
+                if(!b.id.includes('btn-tab') && !b.innerText.includes('laden') && !b.innerText.includes('Backup') && !b.innerText.includes('PDF')) {
+                    b.disabled = true;
+                }
             });
         }
 
