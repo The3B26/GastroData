@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -917,22 +918,26 @@
     <!-- ================= JAVASCRIPT ================= -->
     <script>
         // === HIER DEINE CONFIG EINFÜGEN ===
-        const firebaseConfig = {
-    apiKey: "AIzaSyDTBNshYI5eng6NHn5yfSXG8wG2-7MPQOs",
-    authDomain: "gastrobuchhaltung.firebaseapp.com",
-    databaseURL: "https://gastrobuchhaltung-default-rtdb.firebaseio.com",
-    projectId: "gastrobuchhaltung",
-    storageBucket: "gastrobuchhaltung.firebasestorage.app",
-    messagingSenderId: "665630321892",
-    appId: "1:665630321892:web:b939ad62c6a1bfafa650f1",
-    measurementId: "G-6HQ1NQSJ5X"
-  };
+        // ⚠️ WICHTIG: Füge nur die Schlüssel/Werte in die Klammern ein, 
+        // lass "let firebaseConfig = " genau so stehen!
+        let firebaseConfig = {
+            // apiKey: "...",
+            // authDomain: "...",
+            // projectId: "..."
+        };
         // ===================================
 
-        if (Object.keys(firebaseConfig).length > 0) {
-            firebase.initializeApp(firebaseConfig);
+        // Sicherer Firebase-Start (verhindert komplette App-Abstürze)
+        let db = null;
+        try {
+            if (typeof firebase !== 'undefined' && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                console.log("Firebase Database erfolgreich initialisiert.");
+            }
+        } catch (e) {
+            console.warn("Firebase Init fehlgeschlagen, laufe im Demo/Offline Modus.", e);
         }
-        const db = firebase.firestore();
 
         // GLOBALE VARIABLEN
         let dbDays = [];
@@ -1082,7 +1087,7 @@
             dbDays = [];
             
             try {
-                if(Object.keys(firebaseConfig).length === 0) {
+                if(!db) {
                      showToast("Demo-Modus", "Firebase nicht konfiguriert. Lade lokale Daten.");
                      if (localStorage.getItem('gastro_finance_premium_db')) {
                          dbDays = JSON.parse(localStorage.getItem('gastro_finance_premium_db'));
@@ -1243,7 +1248,7 @@
             document.getElementById('hint-wechselgeld').textContent = appSettings.changeMoney;
             
             try {
-                if(Object.keys(firebaseConfig).length > 0) {
+                if(db) {
                     await db.collection('restaurant_daten').doc(currentYear).set({ settings: appSettings }, { merge: true });
                 }
                 showToast("Gesichert", "System-Einstellungen & PINs aktualisiert.");
@@ -1449,7 +1454,7 @@
 
             try {
                 setDbStatus('connecting');
-                if(Object.keys(firebaseConfig).length > 0) {
+                if(db) {
                     await db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(pickedDate).set(dayObj);
                 }
                 
@@ -2001,7 +2006,7 @@
 
             let count = 0;
             
-            if(Object.keys(firebaseConfig).length > 0) {
+            if(db) {
                 const batch = db.batch();
                 tempImportBuffer.forEach(day => {
                     const targetYear = day.date.substring(0, 4); 
@@ -2101,7 +2106,7 @@
             showConfirmModal("Löschen?", "Diesen Tag dauerhaft aus der Cloud entfernen?", async () => {
                 try {
                     setDbStatus('connecting');
-                    if(Object.keys(firebaseConfig).length > 0) {
+                    if(db) {
                         const targetYear = d.substring(0, 4);
                         await db.collection('restaurant_daten').doc(targetYear).collection('tage').doc(d).delete();
                     }
@@ -2148,7 +2153,7 @@
                 const datesToRemove = new Set(filtered.map(d => d.date));
                 
                 try {
-                    if(Object.keys(firebaseConfig).length > 0) {
+                    if(db) {
                         const batch = db.batch();
                         datesToRemove.forEach(date => {
                             const targetYear = date.substring(0, 4);
@@ -2189,7 +2194,7 @@
                 showToast("Bereinige...", "Datenbank wird gescannt und gepusht.");
                 
                 let batch = null;
-                if(Object.keys(firebaseConfig).length > 0) {
+                if(db) {
                     batch = db.batch(); 
                 }
 
