@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -157,7 +158,7 @@
             opacity: 0;
         }
 
-        /* PDF Export Styling (Unsichtbar im Hintergrund) */
+        /* PDF Export Styling */
         #pdf-export-wrapper {
             position: absolute;
             top: 0;
@@ -166,18 +167,19 @@
         }
         
         #pdf-export-container {
-            width: 800px; 
+            width: 750px; /* Safe width for A4 aspect ratio rendering */
+            max-width: 750px;
             background-color: white;
             color: #1C1917;
-            padding: 40px;
+            padding: 30px;
             box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            margin: 0;
+            margin: 0 auto;
         }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-        .pdf-table th { background-color: #F6F3EB; padding: 10px; text-align: right; border-bottom: 2px solid #E7E5E4; font-weight: 800; font-size: 10px; text-transform: uppercase; }
-        .pdf-table th:first-child { text-align: left; }
-        .pdf-table td { padding: 10px; text-align: right; border-bottom: 1px solid #F5F5F4; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; table-layout: fixed; }
+        .pdf-table th { background-color: #F6F3EB; padding: 10px; text-align: right; border-bottom: 2px solid #E7E5E4; font-weight: 800; font-size: 10px; text-transform: uppercase; word-break: break-word; }
+        .pdf-table th:first-child { text-align: left; width: 12%; }
+        .pdf-table td { padding: 10px; text-align: right; border-bottom: 1px solid #F5F5F4; word-break: break-word; white-space: normal; }
         .pdf-table td:first-child { text-align: left; font-weight: 600; }
         .pdf-table tr { page-break-inside: avoid; } 
     </style>
@@ -311,43 +313,75 @@
 
                 <div id="dashboard-active" class="space-y-6 w-full max-w-full">
                     
-                    <!-- 5 Spalten Layout für die KPIs -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-                        <div class="glass-card p-4 sm:p-6 bg-white">
-                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Umsatz Summe</span>
-                            <div class="text-xl sm:text-2xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
-                            <div class="flex justify-between items-center mt-3 text-[10px] sm:text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Bar (Netto) + Karte</span>
+                    <!-- NEUES VERTIKALES LAYOUT FÜR KPIs -->
+                    <div class="flex flex-col gap-5 w-full">
+                        
+                        <!-- Card 1: Gesamtumsatz -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtumsatz (Bar + Karte)</span>
+                                <div class="text-3xl sm:text-4xl font-black text-stone-950 truncate" id="kpi-revenue">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-500 font-bold bg-stone-50 px-4 py-3 rounded-xl border border-stone-100">
+                                <i class="fa-solid fa-calculator mr-2 text-stone-400"></i> Alle Einnahmen des Zeitraums
                             </div>
                         </div>
-                        <div class="glass-card p-4 sm:p-6 bg-white border border-blue-100">
-                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Karteneinnahmen</span>
-                            <div class="text-xl sm:text-2xl font-black text-blue-600 truncate" id="kpi-karte">0,00 €</div>
-                            <div class="flex justify-between items-center mt-3 text-[10px] sm:text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Davon Karte</span>
+
+                        <!-- Card 2: Karteneinnahmen -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Karteneinnahmen</span>
+                                <div class="text-3xl sm:text-4xl font-black text-blue-600 truncate" id="kpi-karte">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-500 font-bold bg-blue-50/50 px-4 py-3 rounded-xl border border-blue-100">
+                                <i class="fa-regular fa-credit-card mr-2 text-blue-400"></i> Davon Anteilig per Karte
                             </div>
                         </div>
-                        <div class="glass-card p-4 sm:p-6 bg-white">
-                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Ausgaben Gesamt</span>
-                            <div class="text-xl sm:text-2xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
-                            <div class="flex justify-between items-center mt-3 text-[10px] sm:text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Alle Ausgaben addiert</span>
+
+                        <!-- Card 3: NEU Kartengewinn (Überschuss) -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full border-l-4 border-l-blue-400 transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-blue-500 uppercase tracking-widest block mb-1">Karten-Überschuss (Kartengewinn)</span>
+                                <div class="text-3xl sm:text-4xl font-black text-blue-800 truncate" id="kpi-karte-gewinn">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-500 font-bold bg-blue-100/50 px-4 py-3 rounded-xl border border-blue-200">
+                                <i class="fa-solid fa-money-check-dollar mr-2 text-blue-500"></i> Einnahmen minus Ausgaben (Karte)
                             </div>
                         </div>
-                        <div class="glass-card p-4 sm:p-6 bg-white">
-                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gewinn</span>
-                            <div class="text-xl sm:text-2xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
-                            <div class="flex justify-between items-center mt-3 text-[10px] sm:text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Umsatz minus Ausgaben</span>
+
+                        <!-- Card 4: Gesamtausgaben -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtausgaben</span>
+                                <div class="text-3xl sm:text-4xl font-black text-red-500 truncate" id="kpi-expenses">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-500 font-bold bg-red-50 px-4 py-3 rounded-xl border border-red-100">
+                                <i class="fa-solid fa-receipt mr-2 text-red-400"></i> Gehälter & Sonstiges
                             </div>
                         </div>
-                        <div class="glass-card p-4 sm:p-6 bg-white md:col-span-2 lg:col-span-1">
-                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Bar Mitnahmen</span>
-                            <div class="text-xl sm:text-2xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
-                            <div class="flex justify-between items-center mt-3 text-[10px] sm:text-xs text-stone-500 font-bold border-t border-stone-100 pt-2.5">
-                                <span>Bargeld minus Bar Ausg.</span>
+
+                        <!-- Card 5: Gesamtgewinn -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtgewinn (Umsatz - Ausgaben)</span>
+                                <div class="text-3xl sm:text-4xl font-black text-emerald-600 truncate" id="kpi-profit">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-500 font-bold bg-emerald-50 px-4 py-3 rounded-xl border border-emerald-100">
+                                <i class="fa-solid fa-chart-line mr-2 text-emerald-500"></i> Reiner Profit
                             </div>
                         </div>
+
+                        <!-- Card 6: Bargeld Mitnahme -->
+                        <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full border-2 border-[#C5A85C]/30 shadow-[0_4px_20px_rgba(197,168,92,0.15)] transition-transform hover:-translate-y-1">
+                            <div>
+                                <span class="text-[11px] font-bold text-[#C5A85C] uppercase tracking-widest block mb-1">Bargeld-Mitnahme (Kasse)</span>
+                                <div class="text-3xl sm:text-4xl font-black text-[#C5A85C] truncate" id="kpi-tuete">0,00 €</div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center justify-center text-xs text-stone-600 font-bold bg-[#F6F3EB] px-4 py-3 rounded-xl border border-[#C5A85C]/40">
+                                <i class="fa-solid fa-sack-dollar mr-2 text-[#C5A85C]"></i> Reines Bargeld (Netto Bar - Bar Ausg.)
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="glass-card p-6 w-full">
@@ -441,7 +475,7 @@
                                         </div>
                                         <div class="flex justify-between items-center bg-stone-950 p-3 rounded-lg border border-stone-800">
                                             <div>
-                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Bar Mitnahmen</span>
+                                                <span class="text-[10px] uppercase text-stone-400 font-bold block">Bargeld Mitnahmen</span>
                                                 <span class="text-[8px] text-stone-500">Bar (Netto) - Bar Ausg.</span>
                                             </div>
                                             <span class="text-[#C5A85C] text-base font-black truncate max-w-[100px] text-right" id="calc-preview-tuete">0,00 €</span>
@@ -585,7 +619,7 @@
                             <input type="file" id="excel-input" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
                             <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#C5A85C]/70 mb-2"></i>
                             <p class="font-bold text-stone-800 text-xs">Umsatz/Excel Mappen</p>
-                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Liest Bar, Karte & Gehalt aus.</p>
+                            <p class="text-[9px] text-stone-500 font-semibold mt-1">Mit Duplikat-Schutz!</p>
                         </div>
                     </div>
 
@@ -728,7 +762,7 @@
                                     <th class="p-3 text-right">Umsatz Summe</th>
                                     <th class="p-3 text-right">Ausgaben</th>
                                     <th class="p-3 text-right">Gewinn</th>
-                                    <th class="p-3 text-right">Bar Mitnahmen</th>
+                                    <th class="p-3 text-right">Bargeld Mitnahmen</th>
                                     <th class="p-3 text-center">Aktion</th>
                                 </tr>
                             </thead>
@@ -788,7 +822,7 @@
         </div>
     </div>
 
-    <!-- ================= PDF EXPORT TEMPLATE (UNSICHTBAR IM HINTERGRUND) ================= -->
+    <!-- ================= PDF EXPORT TEMPLATE ================= -->
     <div id="pdf-export-wrapper">
         <div id="pdf-export-container">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1C1917; padding-bottom: 20px; margin-bottom: 20px;">
@@ -815,19 +849,19 @@
 
             <div style="display: flex; gap: 15px; margin-bottom: 20px;">
                 <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
-                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Umsatz Summe</p>
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gesamtumsatz</p>
                     <p style="font-size: 16px; font-weight: 900; color: #1C1917; margin: 0;" id="pdf-kpi-rev">0,00 €</p>
                 </div>
                 <div style="flex: 1; border: 1px solid #E7E5E4; border-radius: 8px; padding: 15px; text-align: center;">
-                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Ausgaben</p>
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gesamtausgaben</p>
                     <p style="font-size: 16px; font-weight: 900; color: #EF4444; margin: 0;" id="pdf-kpi-exp">0,00 €</p>
                 </div>
                 <div style="flex: 1; border: 1px solid #E7E5E4; background-color: #FAFAFA; border-radius: 8px; padding: 15px; text-align: center;">
-                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gewinn</p>
+                    <p style="font-size: 9px; font-weight: bold; color: #78716C; text-transform: uppercase; margin: 0 0 8px 0;">Gesamtgewinn</p>
                     <p style="font-size: 16px; font-weight: 900; color: #10B981; margin: 0;" id="pdf-kpi-prof">0,00 €</p>
                 </div>
                 <div style="flex: 1; border: 2px solid rgba(197, 168, 92, 0.3); background-color: rgba(246, 243, 235, 0.3); border-radius: 8px; padding: 15px; text-align: center;">
-                    <p style="font-size: 9px; font-weight: bold; color: #A3853F; text-transform: uppercase; margin: 0 0 8px 0;">Bar Mitnahmen</p>
+                    <p style="font-size: 9px; font-weight: bold; color: #A3853F; text-transform: uppercase; margin: 0 0 8px 0;">Bargeld Mitnahme</p>
                     <p style="font-size: 16px; font-weight: 900; color: #C5A85C; margin: 0;" id="pdf-kpi-tuete">0,00 €</p>
                 </div>
             </div>
@@ -1081,7 +1115,6 @@
             }
         }
 
-        // === NEU: Manueller Download des gewählten Jahres ===
         function downloadYearBackup() {
             if (loggedInUser !== 'buchhaltung') { showToast("Fehler", "Nur Admins dürfen Backups erstellen.", false); return; }
             if (dbDays.length === 0) { showToast("Fehler", `Keine Daten für das Jahr ${currentYear} vorhanden.`, false); return; }
@@ -1366,6 +1399,8 @@
             });
 
             let genExpenses = [];
+            let duplikateEntfernt = 0;
+            
             document.querySelectorAll('.dynamic-expense-row').forEach(row => {
                 const name = row.querySelector('.dyn-name').value.trim();
                 const b = parseFloat(row.querySelector('.dyn-bar').value) || 0;
@@ -1373,8 +1408,19 @@
                 const t = parseInt(row.querySelector('.dyn-tax').value) || 0;
                 
                 if (name || b !== 0 || c !== 0) {
-                    genExpenses.push({ name: name, bar: b, card: c, tax: t });
-                    expSumBar += b; expSumCard += c;
+                    // STRIKTER DUPLIKAT-SCHUTZ: Prüfe, ob genau so eine Ausgabe in der aktuellen Speicherung schon ist
+                    const isDup = genExpenses.some(u => 
+                        u.name.toLowerCase() === name.toLowerCase() && 
+                        u.bar === b && 
+                        u.card === c
+                    );
+                    
+                    if (!isDup) {
+                        genExpenses.push({ name: name, bar: b, card: c, tax: t });
+                        expSumBar += b; expSumCard += c;
+                    } else {
+                        duplikateEntfernt++;
+                    }
                 }
             });
 
@@ -1407,7 +1453,12 @@
                     renderAll();
                 }
                 
-                showToast("Live Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
+                if (duplikateEntfernt > 0) {
+                    showToast("Live Gespeichert", `Tag gesichert. Es wurden ${duplikateEntfernt} identische Duplikate ignoriert.`);
+                } else {
+                    showToast("Live Gespeichert", `Tag ${formatGermanDate(pickedDate)} verbucht.`);
+                }
+                
                 setDbStatus('connected');
                 switchTab('dashboard');
             } catch(e) {
@@ -1493,6 +1544,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     tempImportBuffer = [];
                     let skippedCount = 0;
+                    let duplicatesSkipped = 0;
 
                     const dateRegex = /^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/;
 
@@ -1658,16 +1710,38 @@
                                 dayObj.expensesDetail.salaries[empKey].bar += exSalaries[empKey].bar;
                                 dayObj.expensesDetail.salaries[empKey].card += exSalaries[empKey].card;
                             });
+                            
                             exGeneral.forEach(nx => {
-                                const exists = dayObj.expensesDetail.general.find(g => g.name === nx.name && g.bar === nx.bar && g.card === nx.card);
-                                if (!exists) dayObj.expensesDetail.general.push(nx);
+                                // STRIKTER DUPLIKAT-SCHUTZ beim Excel Merge
+                                const exists = dayObj.expensesDetail.general.some(g => 
+                                    g.name.toLowerCase() === nx.name.toLowerCase() && 
+                                    g.bar === nx.bar && 
+                                    g.card === nx.card
+                                );
+                                if (!exists) {
+                                    dayObj.expensesDetail.general.push(nx);
+                                } else {
+                                    duplicatesSkipped++;
+                                }
                             });
                             recalcDaySums(dayObj);
                         } else {
+                            // Für neue Tage: Sicherstellen dass innerhalb von exGeneral keine Duplikate sind
+                            let uniqueNew = [];
+                            exGeneral.forEach(nx => {
+                                const exists = uniqueNew.some(u => 
+                                    u.name.toLowerCase() === nx.name.toLowerCase() && 
+                                    u.bar === nx.bar && 
+                                    u.card === nx.card
+                                );
+                                if(!exists) uniqueNew.push(nx);
+                                else duplicatesSkipped++;
+                            });
+                            
                             dayObj = {
                                 date: isoDate, germanDate: fullGermanDate,
                                 revenue: { total: calculatedTotalRevenue, bar: actualBarRevenue, card: revCard },
-                                expensesDetail: { salaries: exSalaries, general: exGeneral },
+                                expensesDetail: { salaries: exSalaries, general: uniqueNew },
                                 note: "Mappen-Import"
                             };
                             recalcDaySums(dayObj);
@@ -1680,7 +1754,11 @@
                         else showToast("Keine Daten", "Keine gültigen Mappen gefunden.", false); 
                         return; 
                     }
-                    if (skippedCount > 0) showToast("Smart Filter", `${skippedCount} Mappen aus anderen Jahren ignoriert.`);
+                    
+                    let msg = "Mappen verarbeitet.";
+                    if (skippedCount > 0) msg += ` ${skippedCount} Mappen (Anderes Jahr) ignoriert.`;
+                    if (duplicatesSkipped > 0) msg += ` ${duplicatesSkipped} doppelte Ausgaben verworfen.`;
+                    showToast("Smart Import", msg);
                     
                     importSortDesc = true;
                     tempImportBuffer.sort((a, b) => b.date.localeCompare(a.date));
@@ -1780,7 +1858,7 @@
                         
                         const uniqueNew = [];
                         newExpenses.forEach(nx => {
-                            const isDupInFile = uniqueNew.some(u => u.name === nx.name && u.bar === nx.bar && u.card === nx.card && u.tax === nx.tax);
+                            const isDupInFile = uniqueNew.some(u => u.name.toLowerCase() === nx.name.toLowerCase() && u.bar === nx.bar && u.card === nx.card);
                             if (!isDupInFile) uniqueNew.push(nx);
                         });
                         newExpenses = uniqueNew;
@@ -1796,11 +1874,11 @@
 
                             let addedCount = 0;
                             newExpenses.forEach(nx => {
+                                // STRIKTER DUPLIKAT-SCHUTZ beim CSV Import
                                 const isDuplicate = dayCopy.expensesDetail.general.some(g =>
                                     g.name.toLowerCase() === nx.name.toLowerCase() && 
                                     g.bar === nx.bar && 
-                                    g.card === nx.card && 
-                                    g.tax === nx.tax
+                                    g.card === nx.card
                                 );
                                 if (!isDuplicate) {
                                     dayCopy.expensesDetail.general.push(nx);
@@ -2259,6 +2337,7 @@
 
             if (activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
+                let cardExp = 0; // Für die neue Kennzahl Kartengewinn
                 
                 document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
                 if (document.querySelectorAll('.pdf-sal-val')) {
@@ -2273,8 +2352,12 @@
                     if(d.expensesDetail && d.expensesDetail.salaries) {
                         const sal = d.expensesDetail.salaries;
                         Object.keys(sal).forEach(empKey => {
-                            const val = (parseFloat(sal[empKey]?.bar)||0) + (parseFloat(sal[empKey]?.card)||0);
+                            const bVal = parseFloat(sal[empKey]?.bar)||0;
+                            const cVal = parseFloat(sal[empKey]?.card)||0;
+                            const val = bVal + cVal;
+                            
                             tax0 += val; 
+                            cardExp += cVal; // Karten-Gehälter addieren
                             
                             document.querySelectorAll('.dash-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
@@ -2293,7 +2376,12 @@
 
                     if(d.expensesDetail && d.expensesDetail.general) {
                         d.expensesDetail.general.forEach(g => {
-                            const v = (parseFloat(g.bar)||0) + (parseFloat(g.card)||0);
+                            const bVal = parseFloat(g.bar)||0;
+                            const cVal = parseFloat(g.card)||0;
+                            const v = bVal + cVal;
+                            
+                            cardExp += cVal; // Normale Karten-Ausgaben addieren
+                            
                             if (g.tax == 7) tax7 += v;
                             else if (g.tax == 19) tax19 += v;
                             else tax0 += v;
@@ -2303,6 +2391,7 @@
                 
                 document.getElementById('kpi-revenue').textContent = formatCurrency(r);
                 document.getElementById('kpi-karte').textContent = formatCurrency(c);
+                document.getElementById('kpi-karte-gewinn').textContent = formatCurrency(c - cardExp); // Einnahme - Ausgabe der Karten
                 document.getElementById('kpi-expenses').textContent = formatCurrency(e);
                 document.getElementById('kpi-profit').textContent = formatCurrency(p);
                 document.getElementById('kpi-tuete').textContent = formatCurrency(t);
@@ -2387,7 +2476,6 @@
             else if (from) rangeText = `Ab ${formatGermanDate(from)}`;
             else if (to) rangeText = `Bis ${formatGermanDate(to)}`;
             
-            // NEU: Deutliche Formatierung für das Filterdatum
             document.getElementById('pdf-date-range').textContent = isMonthly ? `Filterdatum: ${rangeText} (Monatlich)` : `Filterdatum: ${rangeText}`;
             const sel = document.getElementById('filter-preset');
             document.getElementById('pdf-filter-name').textContent = sel.options[sel.selectedIndex].text;
@@ -2508,10 +2596,10 @@
 
             setTimeout(() => {
                 const opt = {
-                    margin:       10, 
+                    margin:       [10, 10, 10, 10], 
                     filename:     `GastroFinance_${isMonthly?'Jahresbericht':'Bericht'}_${currentYear}_${new Date().getTime()}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 }, // windowWidth zwingt die Berechnung
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
