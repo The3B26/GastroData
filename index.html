@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -166,7 +167,7 @@
         }
         
         #pdf-export-container {
-            width: 750px; /* Safe width for A4 aspect ratio rendering */
+            width: 750px; 
             max-width: 750px;
             background-color: white;
             color: #1C1917;
@@ -312,10 +313,8 @@
 
                 <div id="dashboard-active" class="space-y-6 w-full max-w-full">
                     
-                    <!-- NEUES VERTIKALES LAYOUT FÜR KPIs -->
                     <div class="flex flex-col gap-5 w-full">
                         
-                        <!-- Card 1: Gesamtumsatz -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtumsatz (Bar + Karte)</span>
@@ -326,7 +325,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Karteneinnahmen -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Karteneinnahmen</span>
@@ -337,7 +335,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 3: NEU Kartengewinn (Überschuss) -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full border-l-4 border-l-blue-400 transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-blue-500 uppercase tracking-widest block mb-1">Karten-Überschuss (Kartengewinn)</span>
@@ -348,7 +345,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 4: Gesamtausgaben -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtausgaben</span>
@@ -359,7 +355,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 5: Gesamtgewinn -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest block mb-1">Gesamtgewinn (Umsatz - Ausgaben)</span>
@@ -370,7 +365,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 6: Bargeld Mitnahme -->
                         <div class="glass-card p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-between items-start md:items-center w-full border-2 border-[#C5A85C]/30 shadow-[0_4px_20px_rgba(197,168,92,0.15)] transition-transform hover:-translate-y-1">
                             <div>
                                 <span class="text-[11px] font-bold text-[#C5A85C] uppercase tracking-widest block mb-1">Bargeld-Mitnahme (Kasse)</span>
@@ -917,25 +911,18 @@
     <!-- ================= JAVASCRIPT ================= -->
     <script>
         // === HIER DEINE CONFIG EINFÜGEN ===
-        // ⚠️ WICHTIG: Füge nur die Schlüssel/Werte in die Klammern ein, 
-        // lass "let firebaseConfig = " genau so stehen!
-        let firebaseConfig = {
-    apiKey: "AIzaSyDTBNshYI5eng6NHn5yfSXG8wG2-7MPQOs",
-    authDomain: "gastrobuchhaltung.firebaseapp.com",
-    databaseURL: "https://gastrobuchhaltung-default-rtdb.firebaseio.com",
-    projectId: "gastrobuchhaltung",
-    storageBucket: "gastrobuchhaltung.firebasestorage.app",
-    messagingSenderId: "665630321892",
-    appId: "1:665630321892:web:b939ad62c6a1bfafa650f1",
-    measurementId: "G-6HQ1NQSJ5X"
-  };
+        // WICHTIG: Ersetze den folgenden Block exakt mit dem { ... } Teil aus Firebase.
+        // ACHTUNG: Füge KEINE 'import'-Befehle ein (wie "import { ... }"), das zerstört die App!
+        
+        const firebaseConfig = {
             // apiKey: "...",
             // authDomain: "...",
             // projectId: "..."
         };
+        
         // ===================================
 
-        // Sicherer Firebase-Start (verhindert komplette App-Abstürze)
+        // 🛡️ SICHERER FIREBASE-START (Verhindert App-Abstürze)
         let db = null;
         try {
             if (typeof firebase !== 'undefined' && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
@@ -944,7 +931,7 @@
                 console.log("Firebase Database erfolgreich initialisiert.");
             }
         } catch (e) {
-            console.warn("Firebase Init fehlgeschlagen, laufe im Demo/Offline Modus.", e);
+            console.warn("Firebase Init fehlgeschlagen. Die App läuft im lokalen Demo-Modus weiter.", e);
         }
 
         // GLOBALE VARIABLEN
@@ -1429,7 +1416,6 @@
                 const t = parseInt(row.querySelector('.dyn-tax').value) || 0;
                 
                 if (name || b !== 0 || c !== 0) {
-                    // STRIKTER DUPLIKAT-SCHUTZ: Prüfe, ob genau so eine Ausgabe in der aktuellen Speicherung schon ist
                     const isDup = genExpenses.some(u => 
                         u.name.toLowerCase() === name.toLowerCase() && 
                         u.bar === b && 
@@ -1733,7 +1719,6 @@
                             });
                             
                             exGeneral.forEach(nx => {
-                                // STRIKTER DUPLIKAT-SCHUTZ beim Excel Merge
                                 const exists = dayObj.expensesDetail.general.some(g => 
                                     g.name.toLowerCase() === nx.name.toLowerCase() && 
                                     g.bar === nx.bar && 
@@ -1747,7 +1732,6 @@
                             });
                             recalcDaySums(dayObj);
                         } else {
-                            // Für neue Tage: Sicherstellen dass innerhalb von exGeneral keine Duplikate sind
                             let uniqueNew = [];
                             exGeneral.forEach(nx => {
                                 const exists = uniqueNew.some(u => 
@@ -1895,7 +1879,6 @@
 
                             let addedCount = 0;
                             newExpenses.forEach(nx => {
-                                // STRIKTER DUPLIKAT-SCHUTZ beim CSV Import
                                 const isDuplicate = dayCopy.expensesDetail.general.some(g =>
                                     g.name.toLowerCase() === nx.name.toLowerCase() && 
                                     g.bar === nx.bar && 
@@ -2358,7 +2341,7 @@
 
             if (activeTab === 'dashboard') {
                 let r=0, c=0, e=0, p=0, t=0;
-                let cardExp = 0; // Für die neue Kennzahl Kartengewinn
+                let cardExp = 0; 
                 
                 document.querySelectorAll('.dash-sal-val').forEach(el => el.textContent = '0,00 €');
                 if (document.querySelectorAll('.pdf-sal-val')) {
@@ -2378,7 +2361,7 @@
                             const val = bVal + cVal;
                             
                             tax0 += val; 
-                            cardExp += cVal; // Karten-Gehälter addieren
+                            cardExp += cVal; 
                             
                             document.querySelectorAll('.dash-sal-val').forEach(el => {
                                 if (el.getAttribute('data-emp') === empKey) {
@@ -2401,7 +2384,7 @@
                             const cVal = parseFloat(g.card)||0;
                             const v = bVal + cVal;
                             
-                            cardExp += cVal; // Normale Karten-Ausgaben addieren
+                            cardExp += cVal; 
                             
                             if (g.tax == 7) tax7 += v;
                             else if (g.tax == 19) tax19 += v;
@@ -2412,7 +2395,7 @@
                 
                 document.getElementById('kpi-revenue').textContent = formatCurrency(r);
                 document.getElementById('kpi-karte').textContent = formatCurrency(c);
-                document.getElementById('kpi-karte-gewinn').textContent = formatCurrency(c - cardExp); // Einnahme - Ausgabe der Karten
+                document.getElementById('kpi-karte-gewinn').textContent = formatCurrency(c - cardExp); 
                 document.getElementById('kpi-expenses').textContent = formatCurrency(e);
                 document.getElementById('kpi-profit').textContent = formatCurrency(p);
                 document.getElementById('kpi-tuete').textContent = formatCurrency(t);
